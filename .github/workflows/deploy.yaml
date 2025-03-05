@@ -45,6 +45,7 @@ jobs:
         script: |
             cd E-Vote-BE
             git pull
+            git checkout features/devops-test
             npm install
             ./install.sh
             npm run build
