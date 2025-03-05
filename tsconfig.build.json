@@ -6,12 +6,6 @@
     "removeComments": true,
     "declaration": false
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "test",
-    "dist"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "test", "dist"]
 }
