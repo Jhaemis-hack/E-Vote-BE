@@ -75,7 +75,9 @@ module.exports = [
     files: ['**/*.{js,ts,tsx,jsx}'],
     settings: {
       'import/resolver': {
-        typescript: {},
+        typescript: {
+          project: './tsconfig.json',
+        },
       },
     },
   },
