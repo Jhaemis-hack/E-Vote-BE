@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
   const config = new DocumentBuilder()
@@ -15,6 +16,7 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
   app.enableCors();
