@@ -4,8 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 // import * as Joi from 'joi';
-import databaseConfig from './config/database.config';
 import { join } from 'path';
+import dataSource from './migrations/migration.config';
 
 @Module({
   imports: [
@@ -19,25 +19,12 @@ import { join } from 'path';
       // envFilePath: ['.env.development.local', `.env.${process.env.PROFILE}`],
       isGlobal: true,
       expandVariables: true,
-      load: [databaseConfig],
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DATABASE_HOST'),
-        port: configService.get<number>('DATABASE_PORT'),
-        username: configService.get<string>('DATABASE_USERNAME'),
-        password: configService.get<string>('DATABASE_PASSWORD'),
-        database: configService.get<string>('DATABASE_NAME'),
-        entities: [join(__dirname, '**', '*.entity.{ts,js}')],
-        synchronize: false,
-        migrations: [join(__dirname, '..', 'migrations', '*.{ts,js}')],
-        cli: {
-          migrationsDir: 'src/migrations',
-        },
+      useFactory: () => ({
+        ...dataSource.options,
       }),
+      dataSourceFactory: async () => dataSource,
     }),
   ],
   controllers: [AppController],

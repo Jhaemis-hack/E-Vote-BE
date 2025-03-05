@@ -4,5 +4,9 @@ node_modules/
 
 dist/
 coverage/
+src/db/migrations/*.ts
+src/db/migrations/*.js
 
 package-lock.json
+
+tsconfig.build.tsbuildinfo
