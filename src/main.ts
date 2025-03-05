@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
-  
+
   // Log migration status
   logger.log('Database migrations were applied automatically on startup');
 
@@ -25,10 +25,7 @@ async function bootstrap() {
   app.enableCors();
   app.setGlobalPrefix('api/v1');
 
-  const port: number = parseInt(
-    configService.get<string>('PORT') || '3000',
-    10,
-  );
+  const port: number = parseInt(configService.get<string>('PORT') || '3000', 10);
   await app.listen(port);
 
   logger.log({
@@ -40,7 +37,7 @@ async function bootstrap() {
   });
 }
 
-bootstrap().catch((err) => {
+bootstrap().catch(err => {
   console.error('Error during bootstrap', err);
   process.exit(1);
 });
