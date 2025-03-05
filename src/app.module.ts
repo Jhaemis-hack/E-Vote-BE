@@ -15,7 +15,7 @@ import databaseConfig from './config/database.config';
        * To specify multiple. env files, set the envFilePath property.
        * If a variable is found in multiple files, the first one takes precedence.
        */
-      envFilePath: ['.env.development.local', `.env.${process.env.PROFILE}`],
+      // envFilePath: ['.env.development.local', `.env.${process.env.PROFILE}`],
       isGlobal: true,
       expandVariables: true,
       load: [databaseConfig],
