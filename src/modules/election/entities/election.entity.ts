@@ -2,32 +2,27 @@ import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { VoterLink } from 'src/modules/votelink/entities/votelink.entity';
 import { Vote } from 'src/modules/votes/entities/votes.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 @Entity({ name: 'elections' })
-export class Election {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ nullable: false })
+export class Election extends AbstractBaseEntity {
+  @Column()
   title: string;
 
-  @Column({ nullable: false })
+  @Column()
   description: string;
 
-  @Column({ nullable: false })
+  @Column()
   start_date: Date;
 
-  @Column({ nullable: false })
+  @Column()
   end_date: Date;
 
-  @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-  created_at: Date;
-
-  @Column({ nullable: false })
+  @Column()
   status: string;
 
-  @Column({ nullable: false })
+  @Column()
   type: string;
 
   @ManyToOne(() => User, user => user.created_elections)

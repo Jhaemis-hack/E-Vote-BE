@@ -1,5 +1,6 @@
 import { Election } from 'src/modules/election/entities/election.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 export enum UserType {
   Admin = 'admin',
@@ -7,23 +8,20 @@ export enum UserType {
 }
 
 @Entity({ name: 'users' })
-export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ nullable: false })
+export class User extends AbstractBaseEntity {
+  @Column()
   first_name: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   last_name: string;
 
-  @Column({ nullable: false, unique: true })
+  @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: false })
+  @Column()
   password: string;
 
-  @Column({ nullable: false, default: false })
+  @Column({ default: false })
   verified: boolean;
 
   @Column({
@@ -33,7 +31,6 @@ export class User {
   })
   user_type: UserType;
 
-  // One-to-Many relationship with Elections
   @OneToMany(() => Election, election => election.created_by_user)
   created_elections: Election[];
 }
