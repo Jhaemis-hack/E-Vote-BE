@@ -5,7 +5,7 @@ import { UpdateElectionDto } from './dto/update-election.dto';
 @Injectable()
 export class ElectionService {
   create(createElectionDto: CreateElectionDto) {
-    return 'This action adds a new election';
+    return createElectionDto;
   }
 
   findAll() {
@@ -17,7 +17,7 @@ export class ElectionService {
   }
 
   update(id: number, updateElectionDto: UpdateElectionDto) {
-    return `This action updates a #${id} election`;
+    return updateElectionDto;
   }
 
   remove(id: number) {
