@@ -22,4 +22,4 @@ jobs:
             git pull
             npm install
             echo "run install db script"
-            ./start_db.sh
+            ./db_setup.sh
