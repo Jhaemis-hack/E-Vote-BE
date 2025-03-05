@@ -27,10 +27,12 @@ export class Election {
   @Column({ nullable: false })
   type: string;
 
+  // Many-to-One relationship with User
   @ManyToOne(() => User, user => user.created_elections)
   @JoinColumn({ name: 'created_by' })
   created_by_user: User;
 
+  // Foreign key column
   @Column()
   created_by: string;
 }
