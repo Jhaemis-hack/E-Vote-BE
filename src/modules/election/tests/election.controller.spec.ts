@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ElectionController } from './election.controller';
-import { ElectionService } from './election.service';
+import { ElectionController } from '../election.controller';
+import { ElectionService } from '../election.service';
 
 describe('ElectionController', () => {
   let controller: ElectionController;
