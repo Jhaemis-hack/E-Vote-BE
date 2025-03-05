@@ -22,7 +22,6 @@ async function bootstrap() {
   app.enableCors();
   app.setGlobalPrefix('api/v1');
 
-  const configService = app.get(ConfigService);
   const port: number = parseInt(
     configService.get<string>('PORT') || '3000',
     10,
