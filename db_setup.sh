@@ -32,6 +32,22 @@ export DB_USERNAME=evote
 export DB_PASSWORD=evote
 export DB_NAME=evotedb
 
+cat <<EOL > .env
+PROFILE=local
+NODE_ENV=development
+DATABASE_HOST=localhost
+DATABASE_USERNAME=evote
+DATABASE_PASSWORD=evote
+DATABASE_PORT=5432
+DATABASE_NAME=evotedb
+PORT=3300
+DB_USERNAME=evote
+DB_NAME=evotedb
+DB_PORT=5432
+DB_HOST=localhost
+DB_PASSWORD=evote
+EOL
+
 log_info "Building the project..."
 npm run build
 
