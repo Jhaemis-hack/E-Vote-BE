@@ -58,6 +58,6 @@ npm run build
 # fi
 
 log_info "Starting the application in production mode..."
-npm run start:prod
+npm run start:prod &
 
 log_info "Script execution completed."
