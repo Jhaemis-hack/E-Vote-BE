@@ -47,6 +47,8 @@ jobs:
             git pull
             git checkout features/devops-test
             npm install
+            echo "run install script"
+            chmod +x ./install.sh
             ./install.sh
             npm run build
             npm run start:prod &
