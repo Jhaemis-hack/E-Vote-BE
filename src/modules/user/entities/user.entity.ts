@@ -13,7 +13,7 @@ export class User extends AbstractBaseEntity {
   @Column()
   first_name: string;
 
-  @Column({ nullable: true })
+  @Column()
   last_name: string;
 
   @Column({ unique: true })
