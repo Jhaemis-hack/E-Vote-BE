@@ -2,30 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { initializeDataSource } from './migrations/migration.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
-
-  try {
-    await initializeDataSource();
-    console.log('Data Source has been initialized!');
-  } catch (err) {
-    console.error('Error during Data Source initialization', err);
-    process.exit(1);
-  }
-
-  // Log migration status
-  logger.log('Database migrations were applied automatically on startup');
 
   const config = new DocumentBuilder()
     .setTitle('E-Vote API')
-    .setDescription(
-      'Welcome to the E-Vote API. This API provides a comprehensive set of endpoints that enable secure, transparent, and efficient online voting. It supports the complete election lifecycle—from user registration and authentication to election setup, candidate management, voting link generation, and vote casting.',
-    )
+    .setDescription('The E-Vote API description')
     .setVersion('1.0')
     .build();
 
@@ -34,7 +18,7 @@ async function bootstrap() {
   app.enableCors();
   app.setGlobalPrefix('api/v1');
 
-  const port: number = parseInt(configService.get<string>('PORT') || '3000', 10);
+  const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   logger.log({
@@ -48,5 +32,4 @@ async function bootstrap() {
 
 bootstrap().catch(err => {
   console.error('Error during bootstrap', err);
-  process.exit(1);
 });
