@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
 // import * as Joi from 'joi';
 import databaseConfig from './config/database.config';
 
@@ -16,7 +15,7 @@ import databaseConfig from './config/database.config';
        * To specify multiple. env files, set the envFilePath property.
        * If a variable is found in multiple files, the first one takes precedence.
        */
-      envFilePath: ['.env.development.local', `.env.${process.env.PROFILE}`],
+      // envFilePath: ['.env.development.local', `.env.${process.env.PROFILE}`],
       isGlobal: true,
       expandVariables: true,
       load: [databaseConfig],
