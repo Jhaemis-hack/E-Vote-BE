@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 // import * as Joi from 'joi';
 import { join } from 'path';
 import dataSource from './migrations/migration.config';
+// import dataSource from './migrations/migration.config';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import dataSource from './migrations/migration.config';
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         ...dataSource.options,
+        autoLoadEntities: true,
       }),
       dataSourceFactory: async () => dataSource,
     }),
