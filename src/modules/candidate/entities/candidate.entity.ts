@@ -2,13 +2,11 @@ import { Election } from 'src/modules/election/entities/election.entity';
 import { Vote } from 'src/modules/votes/entities/votes.entity';
 
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 @Entity({ name: 'candidates' })
-export class Candidate {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ nullable: false })
+export class Candidate extends AbstractBaseEntity {
+  @Column()
   name: string;
 
   @ManyToOne(() => Election, election => election.candidates)
