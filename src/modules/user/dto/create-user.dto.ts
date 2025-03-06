@@ -49,4 +49,6 @@ export class CreateUserDto {
     },
   )
   password: string;
+  @IsNotEmpty()
+  user_type: UserType;
 }
