@@ -9,7 +9,7 @@ on:
       - dev
 
 jobs:
-  deploy:
+  test:
     runs-on: evote
     steps:
     - name: Use Node.js

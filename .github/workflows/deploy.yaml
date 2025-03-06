@@ -20,8 +20,9 @@ jobs:
       run: echo ${{ secrets.DEV_ENV }} | base64 --decode > env.txt
 
     - name: Build Application
-      run: npm run build
-           cp package.json env.txt dev-ecosystem-config.json dist
+      run: |
+        npm run build
+        cp package.json env.txt dev-ecosystem-config.json dist
     
     - name: Archive Production Artifact
       run: | 
