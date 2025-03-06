@@ -35,29 +35,29 @@ export DB_NAME=evotedb
 log_info "Building the project..."
 npm run build
 
-# log_info "Running migration:generate..."
-# npm run migration:generate
-# generate_exit_code=$?
+log_info "Running migration:generate..."
+npm run migration:generate
+generate_exit_code=$?
 
-# if [ $generate_exit_code -ne 0 ]; then
-#   log_error "migration:generate failed, but continuing..."
-# fi
+if [ $generate_exit_code -ne 0 ]; then
+  log_error "migration:generate failed, but continuing..."
+fi
 
-# log_info "Running migration:run..."
-# npm run migration:run
-# run_exit_code=$?
+log_info "Running migration:run..."
+npm run migration:run
+run_exit_code=$?
 
-# if [ $run_exit_code -eq 0 ]; then
-#   log_info "Migration completed successfully. Running setup commands..."
+if [ $run_exit_code -eq 0 ]; then
+  log_info "Migration completed successfully. Running setup commands..."
 
-#   log_info "Setup commands executed successfully. Deleting db/ directory..."
-#   rm -rf src/db/migrations
-#   log_info "src/db/migrations directory deleted successfully."
-# else
-#   log_error "Migration failed, but script will continue..."
-# fi
+  log_info "Setup commands executed successfully. Deleting db/ directory..."
+  rm -rf src/db/migrations
+  log_info "src/db/migrations directory deleted successfully."
+else
+  log_error "Migration failed, but script will continue..."
+fi
 
 log_info "Starting the application in production mode..."
-npm run start:prod &
+nohup npm run start:prod > /dev/null 2>&1 &
 
 log_info "Script execution completed."
