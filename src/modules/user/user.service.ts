@@ -5,11 +5,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { User, UserType } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { sign, Secret } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
-import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -69,6 +69,7 @@ export class UserService {
       token, // Admin can log in immediately
     };
   }
+
   async login(payload: LoginDto) {
     const userExist = await this.userRepository.findOne({
       where: { email: payload.email },
