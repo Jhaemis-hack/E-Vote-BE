@@ -75,7 +75,7 @@ export class ElectionService {
     const [result, total] = await this.electionRepository.findAndCount({
       skip,
       take: pageSize,
-      relations: ['created_by'],
+      relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
     });
 
     const data = this.mapElections(result);
