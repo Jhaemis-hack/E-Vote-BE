@@ -3,7 +3,7 @@ import { VoteLinkService } from './votelink.service';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
 
-@Controller('votelink')
+@Controller('elections/:id/votelink')
 export class VoteLinkController {
   constructor(private readonly voteLinkService: VoteLinkService) {}
 
@@ -17,18 +17,25 @@ export class VoteLinkController {
     return this.voteLinkService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.voteLinkService.findOne(+id);
+  // NACHO: Get voting link by electionId and linkId
+  @Get(':linkId')
+  findOne(@Param('id') electionId: string, @Param('linkId') linkId: string) {
+    return this.voteLinkService.findOne(+electionId, +linkId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateVoteLinkDto) {
-    return this.voteLinkService.update(+id, updateUserDto);
+  @Patch(':linkId')
+  update(@Param('id') electionId: string, @Param('linkId') linkId: string, @Body() updateUserDto: UpdateVoteLinkDto) {
+    return this.voteLinkService.update(+electionId, updateUserDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.voteLinkService.remove(+id);
+  @Delete(':linkId')
+  remove(@Param('id') electionId: string, @Param('linkId') linkId: string) {
+    return this.voteLinkService.remove(+electionId);
+  }
+
+  // NACHO: Check voting link status by electionId and linkId
+  @Get(':linkId/status')
+  checkVotingLinkStatus(@Param('id') electionId: string, @Param('linkId') linkId: string) {
+    return this.voteLinkService.checkVotingLinkStatus(+electionId, +linkId);
   }
 }

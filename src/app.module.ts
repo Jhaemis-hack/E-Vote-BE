@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { join } from 'path';
 import dataSource from './migrations/migration.config';
 // import dataSource from './migrations/migration.config';
+import { VoteLinkModule } from './modules/votelink/votelink.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import dataSource from './migrations/migration.config';
       }),
       dataSourceFactory: async () => dataSource,
     }),
+    VoteLinkModule,
   ],
   controllers: [AppController],
   providers: [AppService],
