@@ -30,12 +30,16 @@ export class UserController {
     type: UpdateUserDto,
   })
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(id, updateUserDto);
+  async update(@Param('id') id: string, @Body() updateData: UpdateUserDto, @req() req) {
+    const currentUser = req.user;
+    return this.userService.update(id, updateData, currentUser);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
+}
+function req(): (target: UserController, propertyKey: 'update', parameterIndex: 2) => void {
+  throw new Error('Function not implemented.');
 }

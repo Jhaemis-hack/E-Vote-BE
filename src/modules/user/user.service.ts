@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -32,12 +38,24 @@ export class UserService {
     return `This action returns a #${id} user`;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto, createUserDto: CreateUserDto) {
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new BadRequestException('User not found');
+  async update(id: string, updateUserDto: UpdateUserDto, currentUser: any) {
+    if (!currentUser) {
+      throw new UnauthorizedException({
+        message: 'Unauthorized request',
+        status_code: 401,
+      });
     }
-    if (updateUserDto.user_type && createUserDto.user_type !== 'admin') {
+
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException({
+        message: 'User not found',
+        status_code: 404,
+      });
+    }
+
+    if (updateUserDto.user_type && currentUser.user_type !== 'admin') {
       throw new ForbiddenException({
         message: 'Forbidden: Only admins can modify this field',
         status_code: 403,
@@ -55,6 +73,7 @@ export class UserService {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
+    // Validate email format
     if (updateUserDto.email && !/\S+@\S+\.\S+/.test(updateUserDto.email)) {
       throw new BadRequestException({
         message: 'Validation failed',
@@ -63,10 +82,11 @@ export class UserService {
       });
     }
 
-    const updatedUser = this.userRepository.merge(user, updateUserDto);
-    await this.userRepository.save(updatedUser);
+    // Merge and save updated user
+    Object.assign(user, updateUserDto);
+    await this.userRepository.save(user);
 
-    return { message: 'User updated successfully', data: updatedUser };
+    return { message: 'User updated successfully', data: user };
   }
 
   remove(id: number) {

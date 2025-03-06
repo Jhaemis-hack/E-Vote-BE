@@ -1,4 +1,4 @@
-import { Election } from 'src/modules/election/entities/election.entity';
+import { Election } from '../../election/entities/election.entity';
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 import * as bcrypt from 'bcryptjs';
