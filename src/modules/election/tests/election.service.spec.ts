@@ -27,7 +27,7 @@ describe('ElectionService', () => {
       created_by_user: {} as User,
       candidates: [] as Candidate[],
       votes: [] as Vote[],
-      voter_links: [] as VoterLink[],
+      voter_links: [] as VoteLink[],
     })),
     save: jest
       .fn()
@@ -208,7 +208,7 @@ describe('ElectionService', () => {
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: pageSize,
-        relations: ['created_by'],
+        relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
       });
     });
 
@@ -240,7 +240,7 @@ describe('ElectionService', () => {
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: pageSize,
-        relations: ['created_by'],
+        relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
       });
     });
 
@@ -255,7 +255,7 @@ describe('ElectionService', () => {
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: pageSize,
-        relations: ['created_by'],
+        relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
       });
     });
 
