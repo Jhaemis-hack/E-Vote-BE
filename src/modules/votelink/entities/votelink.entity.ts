@@ -1,5 +1,5 @@
-import { Election } from 'src/modules/election/entities/election.entity';
-import { Column, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Election } from '../../election/entities/election.entity';
+import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 @Entity({ name: 'voter_links' })
