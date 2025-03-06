@@ -26,9 +26,8 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'The user has been successfully logged in.', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async login(@Body() loginDto: LoginDto) {
-    const { result: user } = await this.userService.login(loginDto);
-    const accessToken = await this.userService.accessToken(user);
-    return { accessToken, user };
+    const { result: user, message, token } = await this.userService.login(loginDto);
+    return { message, token, user };
   }
 
   @Get()
