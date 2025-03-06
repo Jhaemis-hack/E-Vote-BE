@@ -17,5 +17,5 @@ export class AbstractBaseEntity {
 
   @ApiProperty()
   @DeleteDateColumn({ nullable: true })
-  deleted_at: Date;
+  deleted_at: Date | null;
 }
