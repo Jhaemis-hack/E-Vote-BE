@@ -32,6 +32,7 @@ describe('ElectionService', () => {
     save: jest
       .fn()
       .mockImplementation((entity: DeepPartial<Election>) => Promise.resolve(Object.assign(new Election(), entity))),
+    findOne: jest.fn().mockResolvedValue(null),
   });
 
   const mockCandidateRepository = () => ({
@@ -266,6 +267,50 @@ describe('ElectionService', () => {
       await expect(service.findAll(page, pageSize)).rejects.toThrow(
         'Invalid pagination parameters. Page and pageSize must be greater than 0.',
       );
+    });
+  });
+  describe('Get single election', () => {
+    it('should return an election by ID', async () => {
+      const electionId = '550e8400-e29b-41d4-a716-446655440000';
+      const candidate = {
+        id: '6bd6825a-313b-43e6-b3f5-616ec491ba2a',
+        created_at: new Date('2025-03-06T11:29:44.467Z'),
+        updated_at: new Date('2025-03-06T11:29:44.467Z'),
+        deleted_at: null,
+        name: 'John Doe',
+        election_id: electionId,
+        vote_count: 0,
+      };
+      const expectedElection = {
+        id: electionId,
+        created_at: new Date('2025-03-06T13:35:13.731Z'),
+        updated_at: new Date('2025-03-06T13:35:13.731Z'),
+        deleted_at: null,
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president of the country',
+        start_date: new Date('2025-03-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        status: 'ongoing',
+        type: 'single choice',
+        created_by: 'admin123',
+        candidates: [candidate],
+      };
+
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(expectedElection as Election);
+
+      const result = await service.findOne(electionId);
+      expect(result).toEqual(expectedElection);
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { id: electionId },
+        relations: ['candidates'],
+      });
+    });
+
+    it('should throw an error if the election is not found', async () => {
+      const electionId = '550e8400-e29b-41d4-a716-446655440001';
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(service.findOne(electionId)).rejects.toThrow('Election not found');
     });
   });
 });
