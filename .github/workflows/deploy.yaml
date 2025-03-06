@@ -30,9 +30,9 @@ jobs:
 
     - name: Copy Production Artifact to Server
       run: |
-        scp -i ${{ secrets.SERVER_SSH_KEY }} -o StrictHostKeyChecking=no evote.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/evote
+        sshpass -p ${{ secrets.SERVER_SSH_KEY }} scp -o StrictHostKeyChecking=no evote.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/evote
         rm -rf evote.tar.gz
-      
+        
     - name: Deploy To Server via SSH
       uses: appleboy/ssh-action@master
       with:
