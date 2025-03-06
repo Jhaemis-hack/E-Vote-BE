@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateElectionDto } from './dto/create-election.dto';
-// import { ElectionResponseDto, ElectionType } from './dto/election-response.dto';
+
 import { ElectionResponseDto, ElectionType } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election } from './entities/election.entity';
