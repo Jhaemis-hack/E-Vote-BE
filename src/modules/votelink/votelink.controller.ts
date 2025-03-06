@@ -6,6 +6,7 @@ import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
 import { GetVoteLinkDto } from './dto/get-votelink.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { VoteLinkResponseDto } from './dto/VoteLinkResponse.dto';
+import { AuthGuard } from 'src/guards/auth.guard';
 
 @ApiTags('votelink') // Add a tag name for Swagger grouping
 @Controller('/votelink')
@@ -13,6 +14,7 @@ export class VoteLinkController {
   constructor(private readonly voteLinkService: VoteLinkService) {}
 
   @Post()
+  @UseGuards(AuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Create a voter link to invite users to vote' })
   @ApiResponse({
     status: 201,
@@ -25,7 +27,7 @@ export class VoteLinkController {
   }
 
   @Get('/elections/:id/voting-links')
-  @UseGuards(AdminGuard)
+  @UseGuards(AuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Get voting links for an election' })
   @ApiResponse({
     status: 200,
