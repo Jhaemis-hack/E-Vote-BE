@@ -7,30 +7,121 @@ import { User } from '../../user/entities/user.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { VoterLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
+import { CreateElectionDto } from '../dto/create-election.dto';
+import { ElectionResponseDto, ElectionType } from '../dto/election-response.dto';
+import { DeepPartial } from 'typeorm';
 
 describe('ElectionService', () => {
   let service: ElectionService;
   let electionRepository: Repository<Election>;
+  let candidateRepository: Repository<Candidate>;
 
   const mockElectionRepository = () => ({
-    findAndCount: jest.fn(),
+    findAndCount: jest.fn().mockResolvedValue([[], 0]),
+    create: jest.fn().mockImplementation((data: Partial<Election>) => ({
+      ...data,
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      created_at: new Date(),
+      updated_at: new Date(),
+      deleted_at: null,
+      created_by_user: {} as User,
+      candidates: [] as Candidate[],
+      votes: [] as Vote[],
+      voter_links: [] as VoterLink[],
+    })),
+    save: jest
+      .fn()
+      .mockImplementation((entity: DeepPartial<Election>) => Promise.resolve(Object.assign(new Election(), entity))),
+  });
+
+  const mockCandidateRepository = () => ({
+    save: jest
+      .fn()
+      .mockImplementation((entities: DeepPartial<Candidate>[]) =>
+        Promise.resolve(entities.map(entity => Object.assign(new Candidate(), entity))),
+      ),
   });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ElectionService, { provide: getRepositoryToken(Election), useFactory: mockElectionRepository }],
+      providers: [
+        ElectionService,
+        { provide: getRepositoryToken(Election), useFactory: mockElectionRepository },
+        { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
+      ],
     }).compile();
 
     service = module.get<ElectionService>(ElectionService);
     electionRepository = module.get<Repository<Election>>(getRepositoryToken(Election));
+    candidateRepository = module.get<Repository<Candidate>>(getRepositoryToken(Candidate));
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('create', () => {
+    it('should create a new election with valid data', async () => {
+      const createElectionDto: CreateElectionDto = {
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president of the country',
+        startDate: new Date('2025-03-01T00:00:00.000Z'),
+        endDate: new Date('2025-03-31T23:59:59.999Z'),
+        electionType: ElectionType.SINGLE_CHOICE,
+        status: ElectionStatus.ONGOING,
+        candidates: ['Candidate A', 'Candidate B'],
+      };
+
+      const result = await service.create(createElectionDto, 'admin123');
+
+      expect(result).toEqual({
+        election_id: '550e8400-e29b-41d4-a716-446655440000',
+        election_title: createElectionDto.title,
+        description: createElectionDto.description,
+        start_date: createElectionDto.startDate,
+        end_date: createElectionDto.endDate,
+        election_type: ElectionType.SINGLE_CHOICE,
+        created_by: 'admin123',
+        candidates: createElectionDto.candidates,
+      });
+
+      expect(electionRepository.create).toHaveBeenCalledWith({
+        title: createElectionDto.title,
+        description: createElectionDto.description,
+        start_date: createElectionDto.startDate,
+        end_date: createElectionDto.endDate,
+        status: ElectionStatus.ONGOING,
+        type: createElectionDto.electionType,
+        created_by: 'admin123',
+      });
+
+      expect(electionRepository.save).toHaveBeenCalled();
+      expect(candidateRepository.save).toHaveBeenCalled();
+    });
+
+    it('should handle errors during election creation', async () => {
+      const createElectionDto: CreateElectionDto = {
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president of the country',
+        startDate: new Date('2025-03-01T00:00:00.000Z'),
+        endDate: new Date('2025-03-31T23:59:59.999Z'),
+        electionType: ElectionType.SINGLE_CHOICE,
+        status: ElectionStatus.ONGOING,
+        candidates: ['Candidate A', 'Candidate B'],
+      };
+
+      jest.spyOn(electionRepository, 'create').mockImplementationOnce(() => {
+        throw new Error('Error creating election');
+      });
+
+      await expect(service.create(createElectionDto, 'admin123')).rejects.toThrow('Error creating election');
+    });
   });
 
   describe('Get all elections', () => {
     it('should return all elections', async () => {
       const userId = '3ee3ee33-0f22-41bf-b5d1-2be27e085bbd';
-      const user = {
-        id: userId,
-      } as User;
+      const user = { id: userId } as User;
       const elections: Election[] = [
         {
           id: '550e8400-e29b-41d4-a716-446655440000',
@@ -72,12 +163,10 @@ describe('ElectionService', () => {
       const page = 1;
       const pageSize = 10;
 
-      // Mock the findAndCount method
       jest.spyOn(electionRepository, 'findAndCount').mockResolvedValue([elections, total]);
 
       const result = await service.findAll(page, pageSize);
 
-      // Verify the result
       expect(result).toEqual({
         status_code: 200,
         message: 'Successfully fetched elections',
@@ -94,6 +183,7 @@ describe('ElectionService', () => {
               end_date: new Date('2023-10-31T23:59:59.000Z'),
               election_type: 'single choice',
               created_by: userId,
+              candidates: [],
             },
             {
               election_id: '550e8400-e29b-41d4-a716-446655440001',
@@ -103,6 +193,7 @@ describe('ElectionService', () => {
               end_date: new Date('2023-11-30T23:59:59.000Z'),
               election_type: 'multiple choice',
               created_by: userId,
+              candidates: [],
             },
           ],
           meta: {
@@ -115,7 +206,7 @@ describe('ElectionService', () => {
       });
 
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
-        skip: 0, // (page - 1) * pageSize
+        skip: 0,
         take: pageSize,
         relations: ['created_by'],
       });
@@ -125,12 +216,10 @@ describe('ElectionService', () => {
       const page = 1;
       const pageSize = 10;
 
-      // Mock the findAndCount method to return an empty list
       jest.spyOn(electionRepository, 'findAndCount').mockResolvedValue([[], 0]);
 
       const result = await service.findAll(page, pageSize);
 
-      // Verify the result
       expect(result).toEqual({
         status_code: 200,
         message: 'Successfully fetched elections',
@@ -159,15 +248,20 @@ describe('ElectionService', () => {
       const page = 1;
       const pageSize = 10;
 
-      // Mock the findAndCount method to throw an error
       jest.spyOn(electionRepository, 'findAndCount').mockRejectedValue(new Error('Database connection failed'));
 
       await expect(service.findAll(page, pageSize)).rejects.toThrow('Database connection failed');
+
+      expect(electionRepository.findAndCount).toHaveBeenCalledWith({
+        skip: 0,
+        take: pageSize,
+        relations: ['created_by'],
+      });
     });
 
     it('should throw an error if pagination parameters are invalid', async () => {
-      const page = 0; // Invalid page
-      const pageSize = -10; // Invalid pageSize
+      const page = 0;
+      const pageSize = -10;
 
       await expect(service.findAll(page, pageSize)).rejects.toThrow(
         'Invalid pagination parameters. Page and pageSize must be greater than 0.',
