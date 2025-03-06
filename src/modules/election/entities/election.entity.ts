@@ -1,9 +1,14 @@
-import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
-import { User } from 'src/modules/user/entities/user.entity';
-import { VoterLink } from 'src/modules/votelink/entities/votelink.entity';
-import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
+import { Candidate } from '../../candidate/entities/candidate.entity';
+import { User } from '../../user/entities/user.entity';
+import { VoterLink } from '../../votelink/entities/votelink.entity';
+import { Vote } from '../../votes/entities/votes.entity';
+
+export enum ElectionStatus {
+  ONGOING = 'ongoing',
+  COMPLETED = 'completed',
+}
 
 @Entity({ name: 'elections' })
 export class Election extends AbstractBaseEntity {
@@ -19,8 +24,12 @@ export class Election extends AbstractBaseEntity {
   @Column()
   end_date: Date;
 
-  @Column()
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: ElectionStatus,
+    default: ElectionStatus.ONGOING, // Set a default if needed
+  })
+  status: ElectionStatus;
 
   @Column()
   type: string;
