@@ -3,12 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { VoteLinkModule } from './modules/votelink/votelink.module';
 import { UserModule } from './modules/user/user.module';
+import { ElectionModule } from './modules/election/election.module';
 // import * as Joi from 'joi';
 import { join } from 'path';
 import dataSource from './migrations/migration.config';
 // import dataSource from './migrations/migration.config';
-import { VoteLinkModule } from './modules/votelink/votelink.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { VoteLinkModule } from './modules/votelink/votelink.module';
     }),
     UserModule,
     VoteLinkModule,
+    ElectionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

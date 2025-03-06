@@ -3,7 +3,7 @@ import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 @Entity({ name: 'voter_links' })
-export class VoterLink extends AbstractBaseEntity {
+export class VoteLink extends AbstractBaseEntity {
   @ManyToOne(() => Election, election => election.voter_links)
   @JoinColumn({ name: 'election_id' })
   election: Election;
