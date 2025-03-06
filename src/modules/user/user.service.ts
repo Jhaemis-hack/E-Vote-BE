@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { UserType } from './entities/user.entity';
 import { LoginDto } from './dto/login-user.dto';
 import { sign, Secret } from 'jsonwebtoken';
@@ -10,6 +10,7 @@ import { NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+
 @Injectable()
 export class UserService {
   constructor(
@@ -17,21 +18,20 @@ export class UserService {
     private userRepository: Repository<User>,
     private configService: ConfigService,
   ) {}
-  async registerAdmin(createAdminDto: CreateUserDto) {
-    if (createAdminDto.user_type !== UserType.Admin) {
-      throw new BadRequestException('Only admins can be registered here.');
-    }
 
-    const hashedPassword = await bcrypt.hash(createAdminDto.password, 10);
+  async registerAdmin(createAdminDto: CreateUserDto) {
     const newAdmin = this.userRepository.create({
       ...createAdminDto,
-      password: hashedPassword,
+      user_type: UserType.Admin,
     });
 
     await this.userRepository.save(newAdmin);
 
-    return { message: 'Admin registered successfully', data: newAdmin };
+    const { password, ...rest } = newAdmin;
+
+    return { message: 'Admin registered successfully', data: rest };
   }
+
   async login(payload: LoginDto) {
     const userExist = await this.userRepository.findOne({
       where: { email: payload.email },
@@ -48,7 +48,7 @@ export class UserService {
     }
 
     const { password, ...result } = userExist;
-    return result;
+    return { message: 'Successfully logged in', result };
   }
 
   async accessToken(user: any): Promise<string> {
