@@ -6,6 +6,7 @@ import { ElectionService } from './election.service';
 import { ElectionResponseDto } from './dto/election-response.dto';
 import { AdminGuard } from '../../guards/admin.guard';
 import { AuthGuard } from '../../guards/auth.guard';
+import { Election } from './entities/election.entity';
 
 @ApiTags()
 @Controller('elections')
@@ -32,8 +33,11 @@ export class ElectionController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get an election by ID' })
+  @ApiResponse({ status: 200, description: 'Election found', type: Election })
+  @ApiResponse({ status: 404, description: 'Election not found' })
   findOne(@Param('id') id: string) {
-    return this.electionService.findOne(+id);
+    return this.electionService.findOne(id);
   }
 
   @Patch(':id')
