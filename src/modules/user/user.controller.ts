@@ -11,6 +11,7 @@ export class UserController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.registerAdmin(createUserDto);
   }
+
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     const user = await this.userService.login(loginDto);
