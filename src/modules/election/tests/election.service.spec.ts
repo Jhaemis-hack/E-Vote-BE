@@ -208,7 +208,7 @@ describe('ElectionService', () => {
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: pageSize,
-        relations: ['created_by'],
+        relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
       });
     });
 
@@ -240,7 +240,7 @@ describe('ElectionService', () => {
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: pageSize,
-        relations: ['created_by'],
+        relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
       });
     });
 
@@ -255,7 +255,7 @@ describe('ElectionService', () => {
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: pageSize,
-        relations: ['created_by'],
+        relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
       });
     });
 
