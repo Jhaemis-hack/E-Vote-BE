@@ -23,7 +23,7 @@ export class VoteLinkService {
       throw new NotFoundException(`Election with id ${election_id} not found`);
     }
 
-    const unique_link = `${process.env.APP_URL}/vote/${randomUUID}`;
+    const unique_link = `${process.env.APP_URL}/vote/${randomUUID()}`;
 
     const voteLink = this.voteLinkRepository.create({
       election,

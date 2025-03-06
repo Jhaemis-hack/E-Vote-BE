@@ -8,6 +8,11 @@ import { HttpStatus, NotFoundException } from '@nestjs/common';
 import { CreateVoteLinkDto } from '../dto/create-votelink.dto';
 import { randomUUID } from 'crypto';
 
+// Mock the randomUUID function to return a fixed value
+jest.mock('crypto', () => ({
+  randomUUID: jest.fn(() => '123e4567-e89b-12d3-a456-426614174000'), // A valid UUID
+}));
+
 describe('VoteLinkService', () => {
   let service: VoteLinkService;
   let voteLinkRepository: Repository<VoteLink>;
@@ -40,6 +45,9 @@ describe('VoteLinkService', () => {
     service = module.get<VoteLinkService>(VoteLinkService);
     voteLinkRepository = module.get<Repository<VoteLink>>(getRepositoryToken(VoteLink));
     electionRepository = module.get<Repository<Election>>(getRepositoryToken(Election));
+
+    // Mock the APP_URL environment variable
+    process.env.APP_URL = 'http://localhost:3000';
   });
 
   describe('create', () => {
@@ -53,7 +61,7 @@ describe('VoteLinkService', () => {
         title: '2023 Presidential Election',
       } as Election;
 
-      const unique_link = `${process.env.APP_URL}/vote/${randomUUID()}`;
+      const unique_link = `${process.env.APP_URL}/vote/123e4567-e89b-12d3-a456-426614174000`;
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
       jest.spyOn(voteLinkRepository, 'create').mockReturnValue({
@@ -114,7 +122,7 @@ describe('VoteLinkService', () => {
         title: '2023 Presidential Election',
       } as Election;
 
-      const unique_link = `${process.env.APP_URL}/vote/${randomUUID()}`;
+      const unique_link = `${process.env.APP_URL}/vote/123e4567-e89b-12d3-a456-426614174000`;
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
       jest.spyOn(voteLinkRepository, 'create').mockReturnValue({
@@ -131,7 +139,7 @@ describe('VoteLinkService', () => {
       const result = await service.create(createVoteLinkDto);
 
       expect(result.data.unique_link).toContain(`${process.env.APP_URL}/vote/`);
-      expect(result.data.unique_link).toHaveLength(process.env.APP_URL!.length + 41); // 41 = length of randomUUID()
+      expect(result.data.unique_link).toHaveLength(process.env.APP_URL!.length + 6 + 36); // 6 for "/vote/", 36 for UUID
     });
 
     it('should save the vote link to the database', async () => {
@@ -144,7 +152,7 @@ describe('VoteLinkService', () => {
         title: '2023 Presidential Election',
       } as Election;
 
-      const unique_link = `${process.env.APP_URL}/vote/${randomUUID()}`;
+      const unique_link = `${process.env.APP_URL}/vote/123e4567-e89b-12d3-a456-426614174000`;
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
       jest.spyOn(voteLinkRepository, 'create').mockReturnValue({
