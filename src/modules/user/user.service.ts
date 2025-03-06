@@ -96,8 +96,23 @@ export class UserService {
     });
   }
 
-  findAll() {
-    return 'This action returns all user';
+  async getAllUsers(page: number, limit: number) {
+    const [messages, total] = await this.userRepository.findAndCount({
+      order: { created_at: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    const totalPages = Math.ceil(total / limit);
+    return {
+      status: 'success',
+      message: 'Retrieved users successfully',
+      data: {
+        currentPage: page,
+        totalPages,
+        totalResults: total,
+        messages,
+      },
+    };
   }
 
   findOne(id: number) {
