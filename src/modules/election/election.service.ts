@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateElectionDto } from './dto/create-election.dto';
@@ -99,8 +99,16 @@ export class ElectionService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} election`;
+  async findOne(id: string): Promise<Election> {
+    const election = await this.electionRepository.findOne({
+      where: { id },
+      relations: ['candidates'],
+    });
+    if (!election) {
+      throw new NotFoundException('Election not found');
+    }
+
+    return election;
   }
 
   update(id: number, updateElectionDto: UpdateElectionDto) {
