@@ -2,12 +2,18 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { VoteLinkService } from './votelink.service';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { VoteLinkResponseDto } from './dto/VoteLinkResponse.dto';
 
-@Controller('votelink')
+@ApiTags()
+@Controller('/votelink')
 export class VoteLinkController {
   constructor(private readonly voteLinkService: VoteLinkService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a voter link to invite users to vote' })
+  @ApiResponse({ status: 201, description: 'successfully created a vote link', type: [VoteLinkResponseDto] })
+  @ApiResponse({ status: 404, description: 'Election with id not found' })
   create(@Body() createVoteLinkDto: CreateVoteLinkDto) {
     return this.voteLinkService.create(createVoteLinkDto);
   }
