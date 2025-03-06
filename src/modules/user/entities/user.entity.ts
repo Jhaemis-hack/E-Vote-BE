@@ -1,4 +1,4 @@
-import { Election } from 'src/modules/election/entities/election.entity';
+import { Election } from '../../election/entities/election.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum UserType {

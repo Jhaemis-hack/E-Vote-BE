@@ -1,5 +1,5 @@
-import { Election } from 'src/modules/election/entities/election.entity';
-import { Vote } from 'src/modules/votes/entities/votes.entity';
+import { Election } from '../../election/entities/election.entity';
+import { Vote } from '../../votes/entities/votes.entity';
 
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
