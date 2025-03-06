@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: hng12interns
+    runs-on: evote
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
