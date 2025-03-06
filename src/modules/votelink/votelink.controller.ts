@@ -47,18 +47,38 @@ export class VoteLinkController {
     return regex.test(id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.voteLinkService.findOne(+id);
+  @Get(':linkId')
+  @ApiOperation({ summary: 'Find a specific voting links' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully fetched a specific voting link',
+    type: VoteLinkResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Voting link with id not found' })
+  findOne(@Param('id') electionId: string, @Param('linkId') linkId: string) {
+    return this.voteLinkService.findOne(+electionId, +linkId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() update_vote_link_dto: UpdateVoteLinkDto) {
-    return this.voteLinkService.update(+id, update_vote_link_dto);
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() update_vote_link_dto: UpdateVoteLinkDto) {
+  //   return this.voteLinkService.update(+id, update_vote_link_dto);
+  // }
+
+  @Delete(':linkId')
+  @ApiOperation({ summary: 'Deletes a specific voting link' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully deleted a specific voting link',
+    type: VoteLinkResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Voting link with id not found' })
+  remove(@Param('id') electionId: string, @Param('linkId') linkId: string) {
+    return this.voteLinkService.remove(+electionId, +linkId);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.voteLinkService.remove(+id);
-  }
+  // NACHO: Check voting link status by electionId and linkId
+  // @Get(':linkId/status')
+  // checkVotingLinkStatus(@Param('id') electionId: string, @Param('linkId') linkId: string) {
+  //   return this.voteLinkService.checkVotingLinkStatus(+electionId, +linkId);
+  // }
 }

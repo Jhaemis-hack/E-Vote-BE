@@ -23,14 +23,14 @@ sudo service postgresql start
 
 log_info "Creating PostgreSQL user and database if they do not already exist..."
 sudo -u postgres psql -tc "SELECT 1 FROM pg_roles WHERE rolname='evote'" | grep -q 1 || sudo -u postgres psql -c "CREATE USER evote WITH PASSWORD 'evote';"
-sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='evotedb'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE evotedb OWNER evote;"
+sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='evote_db'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE evote_db OWNER evote;"
 
 log_info "Exporting environment variables for database connection..."
 export DB_HOST=localhost
 export DB_PORT=5432
 export DB_USERNAME=evote
 export DB_PASSWORD=evote
-export DB_NAME=evotedb
+export DB_NAME=evote_db
 
 log_info "Building the project..."
 npm run build
