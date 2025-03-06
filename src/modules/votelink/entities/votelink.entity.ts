@@ -1,11 +1,9 @@
 import { Election } from 'src/modules/election/entities/election.entity';
 import { Column, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 @Entity({ name: 'voter_links' })
-export class VoterLink {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class VoterLink extends AbstractBaseEntity {
   @ManyToOne(() => Election, election => election.voter_links)
   @JoinColumn({ name: 'election_id' })
   election: Election;
@@ -13,9 +11,6 @@ export class VoterLink {
   @Column()
   election_id: string;
 
-  @Column({ nullable: false, unique: true })
+  @Column({ unique: true })
   unique_link: string;
-
-  @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-  created_at: Date;
 }
