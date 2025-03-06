@@ -6,9 +6,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
-
+import { LoginDto } from './dto/login-user.dto';
 describe('UserService - registerAdmin', () => {
   let userService: UserService;
   let userRepository: Repository<User>;
@@ -136,5 +136,68 @@ describe('UserService - registerAdmin', () => {
     await expect(userService.registerAdmin(userDto)).rejects.toThrow(
       new BadRequestException('Password must be at least 8 characters long and include a number and special character'),
     );
+  });
+
+  it('should log in successfully with valid credentials', async () => {
+    const loginDto: LoginDto = {
+      email: 'user@example.com',
+      password: 'CorrectPass1!',
+    };
+
+    const hashedPassword = await bcrypt.hash(loginDto.password, 10);
+
+    const mockUser: Partial<User> = {
+      id: '1',
+      email: loginDto.email,
+      password: hashedPassword,
+      user_type: UserType.User,
+      first_name: 'Test',
+      last_name: 'User',
+    };
+
+    userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+    jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+    jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+
+    const result = await userService.login(loginDto);
+
+    expect(result).toEqual({
+      message: 'Successfully logged in',
+      result: expect.objectContaining({ email: loginDto.email }),
+      token: 'mockedToken',
+    });
+  });
+
+  it('should throw an error if user does not exist', async () => {
+    const loginDto: LoginDto = {
+      email: 'nonexistent@example.com',
+      password: 'WrongPass1!',
+    };
+
+    userRepository.findOne = jest.fn().mockResolvedValue(null);
+
+    await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials.'));
+  });
+
+  it('should throw an error for incorrect password', async () => {
+    const loginDto: LoginDto = {
+      email: 'user@example.com',
+      password: 'WrongPass1!',
+    };
+
+    const hashedPassword = await bcrypt.hash('CorrectPass1!', 10);
+    const mockUser: Partial<User> = {
+      id: '1',
+      email: loginDto.email,
+      password: hashedPassword,
+      user_type: UserType.User,
+      first_name: 'Test',
+      last_name: 'User',
+    };
+
+    userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+    jest.spyOn(bcrypt, 'compare').mockImplementationOnce(false as never);
+
+    await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials'));
   });
 });
