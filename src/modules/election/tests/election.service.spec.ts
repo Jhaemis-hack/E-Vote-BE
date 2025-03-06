@@ -27,7 +27,7 @@ describe('ElectionService', () => {
       created_by_user: {} as User,
       candidates: [] as Candidate[],
       votes: [] as Vote[],
-      voter_links: [] as VoterLink[],
+      voter_links: [] as VoteLink[],
     })),
     save: jest
       .fn()
