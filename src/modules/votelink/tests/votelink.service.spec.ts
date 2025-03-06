@@ -6,6 +6,8 @@ import { NotFoundException, HttpStatus } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Election } from '../../election/entities/election.entity';
 import { CreateVoteLinkDto } from '../dto/create-votelink.dto';
+import { ElectionStatus } from '../../election/entities/election.entity';
+import { User } from '../../user/entities/user.entity';
 import { randomUUID } from 'crypto';
 
 // Mock repositories
@@ -17,6 +19,8 @@ const mock_voter_link_repository = {
   create: jest.fn(),
   save: jest.fn(),
   findAndCount: jest.fn(),
+  findOne: jest.fn(), // Add this line
+  delete: jest.fn(), // Add this line
 };
 
 // Mock the randomUUID function
@@ -200,6 +204,81 @@ describe('VoteLinkService', () => {
 
       expect(mock_election_repository.findOne).toHaveBeenCalledWith({
         where: { id: createVoteLinkDto.election_id },
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a voting link if found', async () => {
+      const electionId = 1;
+      const linkId = 1;
+      const voterLink = {
+        id: '1',
+        election_id: '1',
+        unique_link: 'unique_link_1',
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+        election: {
+          id: '1',
+          created_at: new Date(),
+          updated_at: new Date(),
+          deleted_at: null,
+          title: 'Election 1',
+          description: 'Description for Election 1',
+          start_date: new Date(),
+          end_date: new Date(),
+          status: ElectionStatus.ONGOING,
+          type: 'general',
+          created_by: 'user1',
+          created_by_user: {} as User,
+          candidates: [],
+          votes: [],
+          voter_links: [],
+        },
+      } as VoteLink;
+
+      jest.spyOn(voterLinkRepository, 'findOne').mockResolvedValue(voterLink);
+
+      expect(await vote_link_service.findOne(electionId, linkId)).toEqual(voterLink);
+    });
+
+    it('should throw a NotFoundException if voting link is not found', async () => {
+      const electionId = 1;
+      const linkId = 1;
+
+      jest.spyOn(voterLinkRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(vote_link_service.findOne(electionId, linkId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('remove', () => {
+    it('should remove a voting link if found', async () => {
+      const electionId = 1;
+      const linkId = 1;
+
+      jest.spyOn(voterLinkRepository, 'delete').mockResolvedValue({ affected: 1 } as any);
+
+      await expect(vote_link_service.remove(electionId, linkId)).resolves.toBeUndefined();
+
+      expect(voterLinkRepository.delete).toHaveBeenCalledWith({
+        election_id: electionId.toString(),
+        id: linkId.toString(),
+      });
+    });
+
+    it('should throw a NotFoundException if voting link is not found', async () => {
+      const electionId = 1;
+      const linkId = 1;
+
+      jest.spyOn(voterLinkRepository, 'delete').mockResolvedValue({ affected: 0 } as any);
+
+      await expect(vote_link_service.remove(electionId, linkId)).rejects.toThrow(NotFoundException);
+
+      expect(voterLinkRepository.delete).toHaveBeenCalledWith({
+        election_id: electionId.toString(),
+        id: linkId.toString(),
       });
     });
   });
