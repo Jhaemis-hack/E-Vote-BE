@@ -22,6 +22,7 @@ async function bootstrap() {
   // Log migration status
   logger.log('Database migrations were applied automatically on startup');
 
+  app.setGlobalPrefix('api/v1');
   const config = new DocumentBuilder()
     .setTitle('E-Vote API')
     .setDescription(
@@ -31,7 +32,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api-docs', app, document);
   app.enableCors();
   app.setGlobalPrefix('api/v1');
 

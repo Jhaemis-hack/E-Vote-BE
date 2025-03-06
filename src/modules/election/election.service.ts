@@ -2,16 +2,55 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateElectionDto } from './dto/create-election.dto';
-// import { ElectionResponseDto, ElectionType } from './dto/election-response.dto';
 import { ElectionResponseDto, ElectionType } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election } from './entities/election.entity';
+import { Election, ElectionStatus } from './entities/election.entity';
+import { Candidate } from '../candidate/entities/candidate.entity';
 
 @Injectable()
 export class ElectionService {
-  constructor(@InjectRepository(Election) private electionRepository: Repository<Election>) {}
-  create(createElectionDto: CreateElectionDto) {
-    return createElectionDto;
+  constructor(
+    @InjectRepository(Election) private electionRepository: Repository<Election>,
+    @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
+  ) {}
+
+  async create(createElectionDto: CreateElectionDto, adminId: string): Promise<ElectionResponseDto> {
+    const { title, description, startDate, endDate, electionType, candidates } = createElectionDto;
+
+    // Create a new election instance.
+    const election = this.electionRepository.create({
+      title,
+      description,
+      start_date: startDate,
+      end_date: endDate,
+      status: ElectionStatus.ONGOING,
+      type: electionType,
+      created_by: adminId,
+    });
+
+    const savedElection = await this.electionRepository.save(election);
+
+    // Map candidate names to Candidate entities.
+    const candidateEntities: Candidate[] = candidates.map(name => {
+      const candidate = new Candidate();
+      candidate.name = name;
+      candidate.election = savedElection;
+      return candidate;
+    });
+
+    // Save candidates and attach them to the election.
+    savedElection.candidates = await this.candidateRepository.save(candidateEntities);
+
+    return {
+      election_id: savedElection.id,
+      election_title: savedElection.title,
+      description: savedElection.description,
+      start_date: savedElection.start_date,
+      end_date: savedElection.end_date,
+      election_type: savedElection.type === 'single choice' ? ElectionType.SINGLE_CHOICE : ElectionType.MULTIPLE_CHOICE,
+      created_by: savedElection.created_by,
+      candidates: savedElection.candidates.map(candidate => candidate.name),
+    };
   }
 
   async findAll(
@@ -98,6 +137,7 @@ export class ElectionService {
           end_date: election.end_date,
           election_type: electionType,
           created_by: election.created_by,
+          candidates: election.candidates.map(candidate => candidate.name),
         };
       })
       .filter(election => election !== null);
