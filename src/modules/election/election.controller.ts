@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, UseGuards, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { ElectionResponseDto } from './dto/election-response.dto';
+import { AdminGuard } from '../../guards/admin.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 
 @ApiTags()
 @Controller('elections')
@@ -11,12 +13,12 @@ export class ElectionController {
   constructor(private readonly electionService: ElectionService) {}
 
   @Post()
+  @UseGuards(AuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Create a new election' })
   @ApiResponse({ status: 201, description: 'The election has been successfully created.', type: ElectionResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createElection(@Body() createElectionDto: CreateElectionDto, @Req() req: any): Promise<ElectionResponseDto> {
-    // Assume req.user.id is available via the AuthGuard after token validation.
-    const adminId = req.user?.id;
+    const adminId = req.user.id;
     return this.electionService.create(createElectionDto, adminId);
   }
 
