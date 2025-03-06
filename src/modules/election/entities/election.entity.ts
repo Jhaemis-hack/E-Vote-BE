@@ -1,33 +1,37 @@
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { User } from '../../user/entities/user.entity';
 import { VoterLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
+export enum ElectionStatus {
+  ONGOING = 'ongoing',
+  COMPLETED = 'completed',
+}
 
 @Entity({ name: 'elections' })
-export class Election {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ nullable: false })
+export class Election extends AbstractBaseEntity {
+  @Column()
   title: string;
 
-  @Column({ nullable: false })
+  @Column()
   description: string;
 
-  @Column({ nullable: false })
+  @Column()
   start_date: Date;
 
-  @Column({ nullable: false })
+  @Column()
   end_date: Date;
 
-  @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-  created_at: Date;
+  @Column({
+    type: 'enum',
+    enum: ElectionStatus,
+    default: ElectionStatus.ONGOING, // Set a default if needed
+  })
+  status: ElectionStatus;
 
-  @Column({ nullable: false })
-  status: string;
-
-  @Column({ nullable: false })
+  @Column()
   type: string;
 
   @ManyToOne(() => User, user => user.created_elections)

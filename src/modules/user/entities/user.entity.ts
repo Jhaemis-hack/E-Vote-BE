@@ -1,5 +1,7 @@
+import { AbstractBaseEntity } from '../../../entities/base.entity';
+import * as bcrypt from 'bcryptjs';
 import { Election } from '../../election/entities/election.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 
 export enum UserType {
   Admin = 'admin',
@@ -7,23 +9,20 @@ export enum UserType {
 }
 
 @Entity({ name: 'users' })
-export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ nullable: false })
+export class User extends AbstractBaseEntity {
+  @Column()
   first_name: string;
 
-  @Column({ nullable: false })
+  @Column()
   last_name: string;
 
-  @Column({ nullable: false, unique: true })
+  @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: false })
+  @Column()
   password: string;
 
-  @Column({ nullable: false, default: false })
+  @Column({ default: false })
   verified: boolean;
 
   @Column({
@@ -33,7 +32,12 @@ export class User {
   })
   user_type: UserType;
 
-  // One-to-Many relationship with Elections
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+
   @OneToMany(() => Election, election => election.created_by_user)
   created_elections: Election[];
 }

@@ -1,15 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
-@Controller('user')
+import { LoginDto } from './dto/login-user.dto';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { AdminGuard } from 'src/guards/admin.guard';
+@Controller('auth')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
+  @Post('/signup')
   create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+    return this.userService.registerAdmin(createUserDto);
+  }
+
+  @Post('login')
+  async login(@Body() loginDto: LoginDto) {
+    const { result: user } = await this.userService.login(loginDto);
+    const accessToken = await this.userService.accessToken(user);
+    return { accessToken, user };
   }
 
   @Get()
@@ -28,7 +37,8 @@ export class UserController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @UseGuards(AuthGuard, AdminGuard)
+  deactivateUser(@Param('id') id: string) {
+    return this.userService.deactivateUser(id);
   }
 }

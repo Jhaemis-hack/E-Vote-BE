@@ -1,12 +1,10 @@
+import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { Election } from '../../election/entities/election.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'votes' })
-export class Vote {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Vote extends AbstractBaseEntity {
   @ManyToOne(() => Election, election => election.votes)
   @JoinColumn({ name: 'election_id' })
   election: Election;
@@ -20,7 +18,4 @@ export class Vote {
 
   @Column()
   candidate_id: string;
-
-  @Column({ nullable: false, default: () => 'CURRENT_TIMESTAMP' })
-  created_at: Date;
 }
