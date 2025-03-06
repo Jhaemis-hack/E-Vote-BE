@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, NotFoundException, UseGuards } from '@nestjs/common';
+import { AdminGuard } from 'src/guards/admin.guard';
 import { VoteLinkService } from './votelink.service';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
@@ -14,6 +15,7 @@ export class VoteLinkController {
   }
 
   @Get('/elections/:id/voting-links')
+  @UseGuards(AdminGuard)
   async getVotingLinks(@Param('id') election_id: string, @Query() query: GetVoteLinkDto) {
     if (!this.isValidUUID(election_id)) {
       throw new NotFoundException('Invalid Election ID');
