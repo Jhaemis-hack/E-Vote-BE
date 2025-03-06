@@ -18,6 +18,7 @@ export class VoteLinkResponseDto {
     example: 'https://your-app.com/vote/abc123',
   })
   unique_link: string;
+
   @ApiProperty({ description: 'Timestamp when the voter link was created', example: '2024-02-13T12:00:00.000Z' })
   created_at: Date;
 

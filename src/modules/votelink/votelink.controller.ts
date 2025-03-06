@@ -57,10 +57,10 @@ export class VoteLinkController {
     return this.voteLinkService.findOne(+electionId, +linkId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() update_vote_link_dto: UpdateVoteLinkDto) {
-    return this.voteLinkService.update(+id, update_vote_link_dto);
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() update_vote_link_dto: UpdateVoteLinkDto) {
+  //   return this.voteLinkService.update(+id, update_vote_link_dto);
+  // }
 
   @Delete(':linkId')
   @ApiOperation({ summary: 'Deletes a specific voting link' })

@@ -81,9 +81,9 @@ export class VoteLinkService {
     return voterLink;
   }
 
-  update(id: number, updateVoteLinkDto: UpdateVoteLinkDto) {
-    return `This action updates a #${id} votelink`;
-  }
+  // update(id: number, updateVoteLinkDto: UpdateVoteLinkDto) {
+  //   return `This action updates a #${id} votelink`;
+  // }
 
   async remove(electionId: number, linkId: number): Promise<void> {
     const election_id = electionId.toString();
