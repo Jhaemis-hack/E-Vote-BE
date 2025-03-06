@@ -35,7 +35,7 @@ export class UserService {
   async login(payload: LoginDto) {
     const userExist = await this.userRepository.findOne({
       where: { email: payload.email },
-      select: ['id', 'email', 'password'],
+      select: ['id', 'email', 'password', 'user_type'],
     });
 
     if (!userExist) {
@@ -55,7 +55,7 @@ export class UserService {
     const secretKey = (this.configService.get<string>('JWT_SECRET_KEY') as Secret) || null;
 
     if (!secretKey) throw new NotFoundException('JWT_SECRET_KEY is not defined');
-    return sign({ id: user.id, email: user.email }, secretKey, {
+    return sign({ id: user.id, email: user.email, user_type: user.user_type }, secretKey, {
       expiresIn: '1d',
     });
   }
