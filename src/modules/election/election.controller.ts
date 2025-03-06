@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ElectionService } from './election.service';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
@@ -23,7 +31,10 @@ export class ElectionController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateElectionDto: UpdateElectionDto,
+  ) {
     return this.electionService.update(+id, updateElectionDto);
   }
 
