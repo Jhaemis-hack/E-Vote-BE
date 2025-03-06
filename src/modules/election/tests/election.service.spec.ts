@@ -5,7 +5,7 @@ import { ElectionService } from '../election.service';
 import { Election, ElectionStatus } from '../entities/election.entity';
 import { User } from '../../user/entities/user.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
-import { VoterLink } from '../../votelink/entities/votelink.entity';
+import { VoteLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionResponseDto, ElectionType } from '../dto/election-response.dto';
@@ -138,7 +138,7 @@ describe('ElectionService', () => {
           status: ElectionStatus.ONGOING,
           candidates: [] as Candidate[],
           votes: [] as Vote[],
-          voter_links: [] as VoterLink[],
+          voter_links: [] as VoteLink[],
         },
         {
           id: '550e8400-e29b-41d4-a716-446655440001',
@@ -155,7 +155,7 @@ describe('ElectionService', () => {
           created_at: new Date(),
           candidates: [] as Candidate[],
           votes: [] as Vote[],
-          voter_links: [] as VoterLink[],
+          voter_links: [] as VoteLink[],
         },
       ];
 

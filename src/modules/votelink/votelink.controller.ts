@@ -4,14 +4,23 @@ import { VoteLinkService } from './votelink.service';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
 import { GetVoteLinkDto } from './dto/get-votelink.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { VoteLinkResponseDto } from './dto/VoteLinkResponse.dto';
 
-@Controller('votelink')
+
+@ApiTags()
+@Controller('/votelink')
 export class VoteLinkController {
   constructor(private readonly vote_link_service: VoteLinkService) {}
 
   @Post()
   create(@Body() create_vote_link_dto: CreateVoteLinkDto) {
     return this.vote_link_service.create(create_vote_link_dto);
+  @ApiOperation({ summary: 'Create a voter link to invite users to vote' })
+  @ApiResponse({ status: 201, description: 'successfully created a vote link', type: [VoteLinkResponseDto] })
+  @ApiResponse({ status: 404, description: 'Election with id not found' })
+  create(@Body() createVoteLinkDto: CreateVoteLinkDto) {
+    return this.voteLinkService.create(createVoteLinkDto);
   }
 
   @Get('/elections/:id/voting-links')

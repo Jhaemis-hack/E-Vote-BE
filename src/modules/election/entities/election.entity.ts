@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { User } from '../../user/entities/user.entity';
-import { VoterLink } from '../../votelink/entities/votelink.entity';
+import { VoteLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 
 export enum ElectionStatus {
@@ -47,6 +47,6 @@ export class Election extends AbstractBaseEntity {
   @OneToMany(() => Vote, vote => vote.election)
   votes: Vote[];
 
-  @OneToMany(() => VoterLink, voterLink => voterLink.election)
-  voter_links: VoterLink[];
+  @OneToMany(() => VoteLink, voteLink => voteLink.election)
+  voter_links: VoteLink[];
 }

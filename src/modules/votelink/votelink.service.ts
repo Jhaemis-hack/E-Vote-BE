@@ -1,4 +1,3 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VoterLink } from './entities/votelink.entity';
@@ -7,6 +6,9 @@ import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
 import { GetVoteLinkDto } from './dto/get-votelink.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+
 
 @Injectable()
 export class VoteLinkService {
@@ -20,6 +22,35 @@ export class VoteLinkService {
 
   create(create_vote_link_dto: CreateVoteLinkDto) {
     return 'This action adds a new votelink';
+    @InjectRepository(VoteLink) private voteLinkRepository: Repository<VoteLink>,
+    @InjectRepository(Election) private electionRespository: Repository<Election>,
+  ) {}
+  async create(createVoteLinkDto: CreateVoteLinkDto) {
+    const { election_id } = createVoteLinkDto;
+
+    const election = await this.electionRespository.findOne({ where: { id: election_id } });
+
+    if (!election) {
+      throw new NotFoundException(`Election with id ${election_id} not found`);
+    }
+
+    const unique_link = `${process.env.APP_URL}/vote/${randomUUID()}`;
+
+    const voteLink = this.voteLinkRepository.create({
+      election,
+      election_id,
+      unique_link,
+    });
+
+    await this.voteLinkRepository.save(voteLink);
+
+    return {
+      status_code: HttpStatus.CREATED,
+      message: 'Successfully created a votelink',
+      data: {
+        unique_link,
+      },
+    };
   }
 
   async findAll(election_id: string, query: GetVoteLinkDto) {
