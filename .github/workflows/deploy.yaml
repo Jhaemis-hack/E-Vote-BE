@@ -6,10 +6,31 @@ on:
 
 jobs:
   deploy:
-    runs-on: hng12interns
+    runs-on: evote
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        node-version: "20"
+    
+    - name: Install Application Dependencies
+      run: npm install
+
+    - name: Create Environment File
+      run: echo ${{ secrets.DEV_ENV }} | base64 --decode > env.txt
+
+    - name: Build Application
+      run: npm run build
+           cp package.json env.txt dev-ecosystem-config.json dist
+    
+    - name: Archive Production Artifact
+      run: | 
+        tar -czf evote.tar.gz dist
+
+    - name: Copy Production Artifact to Server
+      run: |
+        scp -i ${{ secrets.SERVER_SSH_KEY }} -o StrictHostKeyChecking=no evote.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/evote
+        rm -rf evote.tar.gz
       
     - name: Deploy To Server via SSH
       uses: appleboy/ssh-action@master
@@ -18,8 +39,14 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
-            cd E-Vote-BE
-            git pull
+            cd evote
+            tar -xzf /tmp/evote/evote.tar.gz -C .
+            rm -rf /tmp/evote/evote.tar.gz
+            mv dist/package.json .
+            mv dist/env.txt .env
+            mv dist/dev-ecosystem-config.json .
             npm install
-            echo "run install db script"
-            ./db_setup.sh
+            npm run migration:generate
+            npm run migration:run
+            npm run start:prod
+            # pm2 restart dev-ecosystem-config.json || pm2 start dev-ecosystem-config.json
