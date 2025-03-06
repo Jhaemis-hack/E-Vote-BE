@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, UseGuards, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
@@ -12,6 +12,7 @@ import { AuthGuard } from '../../guards/auth.guard';
 export class ElectionController {
   constructor(private readonly electionService: ElectionService) {}
 
+  @ApiBearerAuth()
   @Post()
   @UseGuards(AuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Create a new election' })

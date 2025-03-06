@@ -1,12 +1,12 @@
+import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
-import { VoteLink } from './entities/votelink.entity';
 import { Election } from '../election/entities/election.entity';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
-import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
 import { GetVoteLinkDto } from './dto/get-votelink.dto';
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
+import { VoteLink } from './entities/votelink.entity';
 
 @Injectable()
 export class VoteLinkService {
