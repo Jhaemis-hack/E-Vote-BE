@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: hng12interns
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
