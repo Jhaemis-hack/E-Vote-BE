@@ -19,6 +19,8 @@ const mock_voter_link_repository = {
   create: jest.fn(),
   save: jest.fn(),
   findAndCount: jest.fn(),
+  findOne: jest.fn(), // Add this line
+  delete: jest.fn(), // Add this line
 };
 
 // Mock the randomUUID function
