@@ -7,7 +7,6 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
-import { sign, Secret } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -54,8 +53,8 @@ export class UserService {
 
     await this.userRepository.save(newAdmin);
 
-    const token = await this.accessToken(newAdmin);
-
+    const credentials = { email: newAdmin.email, sub: newAdmin.id, user_type: newAdmin.user_type };
+    const token = this.jwtService.sign(credentials);
     return {
       message: 'Admin registered successfully',
       data: { email: newAdmin.email, user_type: newAdmin.user_type },
@@ -66,28 +65,21 @@ export class UserService {
   async login(payload: LoginDto) {
     const userExist = await this.userRepository.findOne({
       where: { email: payload.email },
-      select: ['id', 'email', 'password', 'user_type'],
     });
 
     if (!userExist) {
       throw new BadRequestException('Bad credentials.');
     }
 
-    const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
+    const isPasswordValid = bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
       throw new BadRequestException('Bad credentials');
     }
 
     const { password, ...result } = userExist;
-    return { message: 'Successfully logged in', result };
-  }
-
-  async accessToken(user: any): Promise<string> {
-    const secretKey = this.configService.get<string>('JWT_SECRET_KEY') as Secret;
-    if (!secretKey) throw new NotFoundException('JWT_SECRET_KEY is not defined');
-    return sign({ id: user.id, email: user.email, user_type: user.user_type }, secretKey, {
-      expiresIn: '1d',
-    });
+    const credentials = { email: userExist.email, sub: userExist.id, user_type: userExist.user_type };
+    const token = this.jwtService.sign(credentials);
+    return { message: 'Successfully logged in', result, token };
   }
 
   async getAllUsers(page: number, limit: number) {
