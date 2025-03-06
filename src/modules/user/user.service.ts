@@ -44,13 +44,9 @@ export class UserService {
       );
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create the admin user
     const newAdmin = this.userRepository.create({
       email,
-      password: hashedPassword,
+      password,
       user_type,
       last_name,
       first_name,
@@ -58,14 +54,12 @@ export class UserService {
 
     await this.userRepository.save(newAdmin);
 
-    // Generate JWT for immediate login
-    const payload = { email: newAdmin.email, sub: newAdmin.id, role: newAdmin.user_type };
-    const token = this.jwtService.sign(payload);
+    const token = await this.accessToken(newAdmin);
 
     return {
       message: 'Admin registered successfully',
       data: { email: newAdmin.email, user_type: newAdmin.user_type },
-      token, // Admin can log in immediately
+      token,
     };
   }
 
