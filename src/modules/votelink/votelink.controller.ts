@@ -30,12 +30,12 @@ export class VoteLinkController {
 
   @Delete(':linkId')
   remove(@Param('id') electionId: string, @Param('linkId') linkId: string) {
-    return this.voteLinkService.remove(+electionId);
+    return this.voteLinkService.remove(+electionId, +linkId);
   }
 
   // NACHO: Check voting link status by electionId and linkId
-  @Get(':linkId/status')
-  checkVotingLinkStatus(@Param('id') electionId: string, @Param('linkId') linkId: string) {
-    return this.voteLinkService.checkVotingLinkStatus(+electionId, +linkId);
-  }
+  // @Get(':linkId/status')
+  // checkVotingLinkStatus(@Param('id') electionId: string, @Param('linkId') linkId: string) {
+  //   return this.voteLinkService.checkVotingLinkStatus(+electionId, +linkId);
+  // }
 }
