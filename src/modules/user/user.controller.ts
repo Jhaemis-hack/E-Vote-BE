@@ -1,4 +1,3 @@
-
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpStatus } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -31,7 +30,6 @@ export class UserController {
     return { message, token, user };
   }
 
-
   @Get('users')
   @UseGuards(AuthGuard, AdminGuard)
   @ApiBearerAuth()
@@ -44,12 +42,6 @@ export class UserController {
   })
   async getUsers(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     return this.userService.getAllUsers(page, limit);
-    
-  @Get()
-  @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({ status: 200, description: 'Return all users.', type: [User] })
-  findAll() {
-    return this.userService.findAll();
   }
 
   @Get(':id')
