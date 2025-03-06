@@ -4,6 +4,7 @@ import { User, UserType } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -12,6 +13,7 @@ describe('UserService - registerAdmin', () => {
   let userService: UserService;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
+  let configService: ConfigService;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -24,16 +26,24 @@ describe('UserService - registerAdmin', () => {
       sign: jest.fn(),
     };
 
+    const mockConfigService = {
+      get: jest.fn().mockReturnValue('mocked-secret-key'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: mockUserRepository, // ✅ Use `useValue` to provide a mock object
+          useValue: mockUserRepository, // ✅ Provide a mock repository
         },
         {
           provide: JwtService,
           useValue: mockJwtService, // ✅ Mock JWT service
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService, // ✅ Mock ConfigService
         },
       ],
     }).compile();
@@ -41,6 +51,7 @@ describe('UserService - registerAdmin', () => {
     userService = module.get<UserService>(UserService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
+    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('✅ should register an admin successfully', async () => {
