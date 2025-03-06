@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
@@ -6,7 +6,6 @@ import { UserType } from './entities/user.entity';
 import { LoginDto } from './dto/login-user.dto';
 import { sign, Secret } from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
-import { NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -72,7 +71,16 @@ export class UserService {
     return `This action updates a #${id} user`;
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} user`;
+  }
+
+  async deactivateUser(id: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    await this.userRepository.softRemove(user);
+    return { message: `User with ID ${id} has been deactivated` };
   }
 }
