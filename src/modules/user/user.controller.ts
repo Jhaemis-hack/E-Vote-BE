@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpStatus } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { AdminGuard } from 'src/guards/admin.guard';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+@ApiTags()
 @Controller('auth')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -21,7 +23,16 @@ export class UserController {
     return { accessToken, user };
   }
 
-  @Get()
+  @Get('users')
+  @UseGuards(AuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of users per page' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Successfully retrieved messages',
+  })
   async getUsers(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     return this.userService.getAllUsers(page, limit);
   }

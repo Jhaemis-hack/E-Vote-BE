@@ -95,6 +95,7 @@ export class UserService {
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
+      select: ['id', 'email', 'first_name', 'last_name', 'user_type', 'created_at'],
     });
     const totalPages = Math.ceil(total / limit);
     return {
