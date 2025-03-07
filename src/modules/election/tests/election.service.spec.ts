@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ElectionService } from '../election.service';
-import { Election, ElectionStatus } from '../entities/election.entity';
+import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { User } from '../../user/entities/user.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { VoteLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
-import { ElectionResponseDto, ElectionType } from '../dto/election-response.dto';
+import { ElectionResponseDto } from '../dto/election-response.dto';
 import { DeepPartial } from 'typeorm';
 import { ForbiddenException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
@@ -71,7 +71,7 @@ describe('ElectionService', () => {
         description: 'Election to choose the next president of the country',
         startDate: new Date('2025-03-01T00:00:00.000Z'),
         endDate: new Date('2025-03-31T23:59:59.999Z'),
-        electionType: ElectionType.SINGLE_CHOICE,
+        electionType: ElectionType.SINGLECHOICE,
         status: ElectionStatus.ONGOING,
         candidates: ['Candidate A', 'Candidate B'],
       };
@@ -84,7 +84,7 @@ describe('ElectionService', () => {
         description: createElectionDto.description,
         start_date: createElectionDto.startDate,
         end_date: createElectionDto.endDate,
-        election_type: ElectionType.SINGLE_CHOICE,
+        election_type: ElectionType.SINGLECHOICE,
         created_by: 'admin123',
         candidates: createElectionDto.candidates,
       });
@@ -109,7 +109,7 @@ describe('ElectionService', () => {
         description: 'Election to choose the next president of the country',
         startDate: new Date('2025-03-01T00:00:00.000Z'),
         endDate: new Date('2025-03-31T23:59:59.999Z'),
-        electionType: ElectionType.SINGLE_CHOICE,
+        electionType: ElectionType.SINGLECHOICE,
         status: ElectionStatus.ONGOING,
         candidates: ['Candidate A', 'Candidate B'],
       };
@@ -133,7 +133,7 @@ describe('ElectionService', () => {
           description: 'Election to choose the next president of the country',
           start_date: new Date('2023-10-01T00:00:00.000Z'),
           end_date: new Date('2023-10-31T23:59:59.000Z'),
-          type: 'single choice',
+          type: ElectionType.SINGLECHOICE,
           created_at: new Date(),
           created_by: userId,
           created_by_user: user,
@@ -150,7 +150,7 @@ describe('ElectionService', () => {
           description: 'Election to choose members of parliament',
           start_date: new Date('2023-11-01T00:00:00.000Z'),
           end_date: new Date('2023-11-30T23:59:59.000Z'),
-          type: 'multiple choice',
+          type: ElectionType.MULTICHOICE,
           created_by: userId,
           deleted_at: null,
           status: ElectionStatus.ONGOING,
@@ -296,7 +296,6 @@ describe('ElectionService', () => {
         status: 'ongoing',
         type: 'single choice',
         created_by: 'admin123',
-        candidates: [candidate],
       };
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(expectedElection as Election);

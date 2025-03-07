@@ -8,11 +8,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateElectionDto } from './dto/create-election.dto';
-import { ElectionResponseDto, ElectionType } from './dto/election-response.dto';
-import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionStatus } from './entities/election.entity';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
+import { CreateElectionDto } from './dto/create-election.dto';
+import { ElectionResponseDto } from './dto/election-response.dto';
+import { UpdateElectionDto } from './dto/update-election.dto';
+import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 
 @Injectable()
 export class ElectionService {
@@ -23,7 +24,7 @@ export class ElectionService {
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
   ) {}
 
-  async create(createElectionDto: CreateElectionDto, adminId: string): Promise<ElectionResponseDto> {
+  async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
     const { title, description, startDate, endDate, electionType, candidates } = createElectionDto;
     // Create a new election instance.
     const election = this.electionRepository.create({
@@ -50,14 +51,18 @@ export class ElectionService {
     savedElection.candidates = await this.candidateRepository.save(candidateEntities);
 
     return {
-      election_id: savedElection.id,
-      election_title: savedElection.title,
-      description: savedElection.description,
-      start_date: savedElection.start_date,
-      end_date: savedElection.end_date,
-      election_type: savedElection.type === 'single choice' ? ElectionType.SINGLE_CHOICE : ElectionType.MULTIPLE_CHOICE,
-      created_by: savedElection.created_by,
-      candidates: savedElection.candidates.map(candidate => candidate.name),
+      status_code: HttpStatus.CREATED,
+      message: SYS_MSG.ELECTION_CREATED,
+      data: {
+        election_id: savedElection.id,
+        election_title: savedElection.title,
+        description: savedElection.description,
+        start_date: savedElection.start_date,
+        end_date: savedElection.end_date,
+        election_type: savedElection.type === 'singlechoice' ? ElectionType.SINGLECHOICE : ElectionType.MULTICHOICE,
+        created_by: savedElection.created_by,
+        candidates: savedElection.candidates.map(candidate => candidate.name),
+      },
     };
   }
 
@@ -91,7 +96,7 @@ export class ElectionService {
 
     return {
       status_code: HttpStatus.OK,
-      message: 'Successfully fetched elections',
+      message: SYS_MSG.FETCH_ELECTIONS,
       data: {
         currentPage: page,
         totalPages,
@@ -172,13 +177,13 @@ export class ElectionService {
         }
 
         let electionType: ElectionType;
-        if (election.type === 'single choice') {
-          electionType = ElectionType.SINGLE_CHOICE;
-        } else if (election.type === 'multiple choice') {
-          electionType = ElectionType.MULTIPLE_CHOICE;
+        if (election.type === 'singlechoice') {
+          electionType = ElectionType.SINGLECHOICE;
+        } else if (election.type === 'multichoice') {
+          electionType = ElectionType.MULTICHOICE;
         } else {
           console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-          electionType = ElectionType.SINGLE_CHOICE;
+          electionType = ElectionType.SINGLECHOICE;
         }
 
         return {

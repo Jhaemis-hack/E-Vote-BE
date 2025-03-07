@@ -1,13 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
-import { User, UserType } from './entities/user.entity';
-import * as bcrypt from 'bcryptjs';
-import { JwtService } from '@nestjs/jwt';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { LoginDto } from './dto/login-user.dto';
+import { BadRequestException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcryptjs';
+import { Repository } from 'typeorm';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { CreateUserDto } from './dto/create-user.dto';
+import { LoginDto } from './dto/login-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -18,12 +19,7 @@ export class UserService {
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
-    const { email, password, user_type, first_name, last_name } = createAdminDto;
-
-    // Ensure only admins can register
-    if (user_type !== UserType.Admin) {
-      throw new BadRequestException('Only admins can be registered here.');
-    }
+    const { email, password } = createAdminDto;
 
     // Validate email format
     if (!email.match(/^\S+@\S+\.\S+$/)) {
@@ -46,19 +42,16 @@ export class UserService {
     const newAdmin = this.userRepository.create({
       email,
       password,
-      user_type,
-      last_name,
-      first_name,
     });
 
     await this.userRepository.save(newAdmin);
 
-    const credentials = { email: newAdmin.email, sub: newAdmin.id, user_type: newAdmin.user_type };
+    const credentials = { email: newAdmin.email, sub: newAdmin.id };
     const token = this.jwtService.sign(credentials);
     return {
-      message: 'Admin registered successfully',
-      data: { email: newAdmin.email, user_type: newAdmin.user_type },
-      token,
+      status_code: HttpStatus.CREATED,
+      message: SYS_MSG.SIGNUP_MESSAGE,
+      data: { id: newAdmin.id, email: newAdmin.email, token },
     };
   }
 
@@ -71,15 +64,19 @@ export class UserService {
       throw new BadRequestException('Bad credentials.');
     }
 
-    const isPasswordValid = bcrypt.compare(payload.password, userExist.password);
+    const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
       throw new BadRequestException('Bad credentials');
     }
 
-    const { password, ...result } = userExist;
-    const credentials = { email: userExist.email, sub: userExist.id, user_type: userExist.user_type };
+    const { password, ...admin } = userExist;
+    const credentials = { email: userExist.email, sub: userExist.id };
     const token = this.jwtService.sign(credentials);
-    return { message: 'Successfully logged in', result, token };
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.LOGIN_MESSAGE,
+      data: { id: admin.id, email: admin.email, token },
+    };
   }
 
   async getAllUsers(page: number, limit: number) {
@@ -87,7 +84,7 @@ export class UserService {
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
-      select: ['id', 'email', 'first_name', 'last_name', 'user_type', 'created_at'],
+      select: ['id', 'email', 'created_at'],
     });
     const totalPages = Math.ceil(total / limit);
     return {

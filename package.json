@@ -25,7 +25,7 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/migrations/migration.config.ts",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "husky install",
-    "hello": "im here"
+    "reset:db": "npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:drop -d src/migrations/migration.config.ts && npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js schema:sync -d src/migrations/migration.config.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

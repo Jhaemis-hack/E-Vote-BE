@@ -1,14 +1,22 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../user.service';
-import { User, UserType } from '../entities/user.entity';
-import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { JwtService } from '@nestjs/jwt';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { CreateUserDto } from '../dto/create-user.dto';
+import { Repository } from 'typeorm';
+// import { CreateUserDto } from '../dto/create-user.dto';
 import { LoginDto } from '../dto/login-user.dto';
+import { User } from '../entities/user.entity';
+import { UserService } from '../user.service';
+import { randomUUID } from 'crypto';
+import * as SYS_MSG from '../../../shared/constants/systemMessages';
+
+interface CreateUserDto {
+  id?: string;
+  email: string;
+  password: string;
+}
 
 describe('UserService - registerAdmin', () => {
   let userService: UserService;
@@ -57,11 +65,9 @@ describe('UserService - registerAdmin', () => {
 
   it('✅ should register an admin successfully', async () => {
     const adminDto: CreateUserDto = {
+      id: randomUUID(),
       email: 'admin@example.com',
       password: 'StrongPass1!',
-      user_type: UserType.Admin,
-      first_name: 'John',
-      last_name: 'Doe',
     };
 
     userRepository.findOne = jest.fn().mockResolvedValue(null); // ✅ Ensure findOne does not return a user
@@ -77,33 +83,20 @@ describe('UserService - registerAdmin', () => {
     const result = await userService.registerAdmin(adminDto);
 
     expect(result).toEqual({
-      message: 'Admin registered successfully',
-      data: { email: adminDto.email, user_type: adminDto.user_type },
-      token: 'mockedToken',
+      status_code: HttpStatus.CREATED,
+      message: SYS_MSG.SIGNUP_MESSAGE,
+      data: {
+        id: adminDto.id,
+        email: adminDto.email,
+        token: 'mockedToken',
+      },
     });
-  });
-
-  it('❌ should throw an error if user_type is not admin', async () => {
-    const userDto: CreateUserDto = {
-      email: 'user@example.com',
-      password: 'StrongPass1!',
-      user_type: UserType.User,
-      first_name: 'Jane',
-      last_name: 'Doe',
-    };
-
-    await expect(userService.registerAdmin(userDto)).rejects.toThrow(
-      new BadRequestException('Only admins can be registered here.'),
-    );
   });
 
   it('❌ should throw an error for an invalid email format', async () => {
     const userDto: CreateUserDto = {
       email: 'invalid-email',
       password: 'StrongPass1!',
-      user_type: UserType.Admin,
-      first_name: 'Jane',
-      last_name: 'Doe',
     };
 
     await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Invalid email format'));
@@ -113,9 +106,6 @@ describe('UserService - registerAdmin', () => {
     const userDto: CreateUserDto = {
       email: 'admin@example.com',
       password: 'StrongPass1!',
-      user_type: UserType.Admin,
-      first_name: 'John',
-      last_name: 'Doe',
     };
 
     userRepository.findOne = jest.fn().mockResolvedValue(userDto as User); // ✅ Simulate email already in use
@@ -127,9 +117,6 @@ describe('UserService - registerAdmin', () => {
     const userDto: CreateUserDto = {
       email: 'admin@example.com',
       password: 'weakpass',
-      user_type: UserType.Admin,
-      first_name: 'John',
-      last_name: 'Doe',
     };
 
     userRepository.findOne = jest.fn().mockResolvedValue(null); // ✅ Ensure findOne does not return a user
@@ -148,12 +135,9 @@ describe('UserService - registerAdmin', () => {
     const hashedPassword = await bcrypt.hash(loginDto.password, 10);
 
     const mockUser: Partial<User> = {
-      id: '1',
+      id: randomUUID(),
       email: loginDto.email,
       password: hashedPassword,
-      user_type: UserType.User,
-      first_name: 'Test',
-      last_name: 'User',
     };
 
     userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
@@ -163,9 +147,13 @@ describe('UserService - registerAdmin', () => {
     const result = await userService.login(loginDto);
 
     expect(result).toEqual({
-      message: 'Successfully logged in',
-      result: expect.objectContaining({ email: loginDto.email }),
-      token: 'mockedToken',
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.LOGIN_MESSAGE,
+      data: {
+        id: mockUser.id,
+        email: loginDto.email,
+        token: 'mockedToken',
+      },
     });
   });
 
@@ -191,9 +179,6 @@ describe('UserService - registerAdmin', () => {
       id: '1',
       email: loginDto.email,
       password: hashedPassword,
-      user_type: UserType.User,
-      first_name: 'Test',
-      last_name: 'User',
     };
 
     userRepository.findOne = jest.fn().mockResolvedValue(mockUser);

@@ -3,6 +3,8 @@ import { VoteService } from '../votes.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vote } from '../entities/votes.entity';
+import * as SYS_MSG from '../../../shared/constants/systemMessages';
+import { HttpStatus } from '@nestjs/common';
 
 describe('VoteService', () => {
   let service: VoteService;
@@ -43,8 +45,8 @@ describe('VoteService', () => {
       expect(voteRepository.create).toHaveBeenCalledWith(createVoteDto);
       expect(voteRepository.save).toHaveBeenCalledWith(vote);
       expect(result).toEqual({
-        status: 'success',
-        message: 'vote created successfully',
+        status: HttpStatus.CREATED,
+        message: SYS_MSG.VOTE_CREATION_MESSAGE,
         data: vote,
       });
     });

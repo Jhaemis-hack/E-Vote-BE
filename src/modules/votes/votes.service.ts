@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-votes.dto';
 import { UpdateVoteDto } from './dto/update-votes.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vote } from './entities/votes.entity';
 import { Repository } from 'typeorm';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @Injectable()
 export class VoteService {
@@ -16,8 +17,8 @@ export class VoteService {
     const newVote = this.voteRepository.create(createUserDto);
     const savedVote = await this.voteRepository.save(newVote);
     return {
-      status: 'success',
-      message: 'vote created successfully',
+      status: HttpStatus.CREATED,
+      message: SYS_MSG.VOTE_CREATION_MESSAGE,
       data: savedVote,
     };
   }

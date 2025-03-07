@@ -1,7 +1,7 @@
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { Election } from '../../election/entities/election.entity';
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne } from 'typeorm';
 
 @Entity({ name: 'votes' })
 export class Vote extends AbstractBaseEntity {
