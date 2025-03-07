@@ -28,6 +28,14 @@ export class CreateElectionDto {
   @IsAfterDate('startDate', { message: 'End date must be after start date' })
   endDate: Date;
 
+  @ApiProperty({ example: '09:00:00' })
+  @IsNotEmpty()
+  start_time: string;
+
+  @ApiProperty({ example: '10:00:00' })
+  @IsNotEmpty()
+  end_time: string;
+
   @ApiProperty({
     description: 'Status of the election',
     enum: ElectionStatus,
