@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsDate, IsEnum, IsNotEmpty, IsString, ValidateIf, Matches } from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsNotEmpty, IsString, Matches, ArrayMinSize } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 import { ElectionStatus, ElectionType } from '../entities/election.entity';
@@ -54,8 +54,8 @@ export class CreateElectionDto {
 
   @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
   @IsArray()
-  @IsString({ each: true })
-  @ValidateIf(candidates => candidates.length > 0)
-  @IsNotEmpty({ message: 'Candidates array cannot be empty' })
+  @ArrayMinSize(2, { message: 'Candidates array must contain at least two candidates' })
+  @IsString({ each: true, message: 'Each candidate must be a string' })
+  @IsNotEmpty({ each: true, message: 'Each candidate must not be empty' })
   candidates: string[];
 }
