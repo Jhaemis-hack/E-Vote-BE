@@ -9,6 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
@@ -22,6 +23,7 @@ export class ElectionService {
   constructor(
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
+    @InjectRepository(Vote) private voteRepository: Repository<Vote>,
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
@@ -112,16 +114,55 @@ export class ElectionService {
     };
   }
 
-  async findOne(id: string): Promise<Election> {
-    const election = await this.electionRepository.findOne({
-      where: { id },
-      relations: ['candidates'],
-    });
-    if (!election) {
-      throw new NotFoundException('Election not found');
-    }
+  async findOne(electionId: string): Promise<{
+    status_code: number;
+    message: string;
+    data: {
+      id: string;
+      title: string;
+      description: string;
+      start_date: Date;
+      end_date: Date;
+      election_type: ElectionType;
+      created_by: string;
+      total_voters: number;
+      votes: { candidate: string; vote_count: number }[];
+    };
+  }> {
+    const [election, candidates, votes] = await Promise.all([
+      this.electionRepository.findOne({ where: { id: electionId } }),
+      this.candidateRepository.find({ where: { election_id: electionId } }),
+      this.voteRepository.find({ where: { election_id: electionId } }),
+    ]);
 
-    return election;
+    if (!election) {
+      throw new NotFoundException(`Election not found`);
+    }
+    const votearray = votes.map(v => v.candidate_id).flat();
+    const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
+    const voteCounts = votearray.reduce((acc, id) => {
+      acc.set(id, (acc.get(id) || 0) + 1);
+      return acc;
+    }, new Map<string, number>());
+    const result = Array.from(voteCounts.entries()).map(([id, count]) => ({
+      candidate: candidateMap.get(id) || 'Unknown',
+      vote_count: count,
+    }));
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_ELECTION,
+      data: {
+        id: election.id,
+        title: election.title,
+        description: election.description,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        election_type: election.type,
+        created_by: election.created_by,
+        total_voters: votearray.length,
+        votes: result,
+      },
+    };
   }
 
   update(id: number, updateElectionDto: UpdateElectionDto) {

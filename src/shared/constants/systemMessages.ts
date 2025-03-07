@@ -3,3 +3,4 @@ export const LOGIN_MESSAGE = 'Login successful';
 export const SIGNUP_MESSAGE = 'Signup successful';
 export const ELECTION_CREATED = 'Election creation successful';
 export const FETCH_ELECTIONS = 'Elections fetched successfully';
+export const FETCH_ELECTION = 'Election fetched successfully';
