@@ -99,24 +99,35 @@ export class UserService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async getUserById(
+    id: string,
+  ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+    }
+
+    const { password, hashPassword, ...userData } = user;
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_USER,
+      data: userData,
+    };
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} user`;
-  }
-
-  async deactivateUser(id: string): Promise<{ message: string }> {
+  async deactivateUser(id: string): Promise<{ status_code: number; message: string; data?: any }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
     await this.userRepository.softRemove(user);
-    return { message: `User with ID ${id} has been deactivated` };
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.DELETE_USER,
+    };
   }
 }
