@@ -104,13 +104,13 @@ export class UserService {
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`);
+      throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
     const { password, hashPassword, ...userData } = user;
     return {
       status_code: HttpStatus.OK,
-      message: `User with id ${id} retrieved successfully.`,
+      message: SYS_MSG.FETCH_USER,
       data: userData,
     };
   }
@@ -122,12 +122,12 @@ export class UserService {
   async deactivateUser(id: string): Promise<{ status_code: number; message: string; data?: any }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
     await this.userRepository.softRemove(user);
     return {
       status_code: HttpStatus.OK,
-      message: `User with ID ${id} has been deactivated`,
+      message: SYS_MSG.DELETE_USER,
     };
   }
 }
