@@ -8,12 +8,12 @@ import { AdminGuard } from 'src/guards/admin.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 
-@ApiTags('auth')
+@ApiTags('Auth')
 @Controller('auth')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('/signup')
+  @Post('signup')
   @ApiOperation({ summary: 'Register a new admin user' })
   @ApiResponse({ status: 201, description: 'The admin user has been successfully created.', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
