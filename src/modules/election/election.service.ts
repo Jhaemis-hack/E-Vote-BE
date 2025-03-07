@@ -25,7 +25,8 @@ export class ElectionService {
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, startDate, endDate, electionType, candidates } = createElectionDto;
+    const { title, description, startDate, endDate, electionType, candidates, start_time, end_time } =
+      createElectionDto;
     // Create a new election instance.
     const election = this.electionRepository.create({
       title,
@@ -34,10 +35,14 @@ export class ElectionService {
       end_date: endDate,
       status: ElectionStatus.ONGOING,
       type: electionType,
+      start_time: start_time,
+      end_time: end_time,
       created_by: adminId,
     });
 
     const savedElection = await this.electionRepository.save(election);
+    console.log('Election created successfully:', savedElection);
+    console.log('Election', election);
 
     // Map candidate names to Candidate entities.
     const candidateEntities: Candidate[] = candidates.map(name => {
@@ -59,6 +64,8 @@ export class ElectionService {
         description: savedElection.description,
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
+        start_time: savedElection.start_time,
+        end_time: savedElection.end_time,
         election_type: savedElection.type === 'singlechoice' ? ElectionType.SINGLECHOICE : ElectionType.MULTICHOICE,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
