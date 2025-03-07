@@ -4,7 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { VoteLink } from '../entities/votelink.entity';
 import { NotFoundException, HttpStatus } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Election } from '../../election/entities/election.entity';
+import { Election, ElectionType } from '../../election/entities/election.entity';
 import { CreateVoteLinkDto } from '../dto/create-votelink.dto';
 import { ElectionStatus } from '../../election/entities/election.entity';
 import { User } from '../../user/entities/user.entity';
@@ -229,7 +229,7 @@ describe('VoteLinkService', () => {
           start_date: new Date(),
           end_date: new Date(),
           status: ElectionStatus.ONGOING,
-          type: 'general',
+          type: ElectionType.SINGLECHOICE,
           created_by: 'user1',
           created_by_user: {} as User,
           candidates: [],

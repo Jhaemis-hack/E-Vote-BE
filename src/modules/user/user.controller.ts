@@ -1,10 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  HttpStatus,
+  HttpCode,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from 'src/guards/auth.guard';
-import { AdminGuard } from 'src/guards/admin.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 
@@ -14,6 +25,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('/signup')
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new admin user' })
   @ApiResponse({ status: 201, description: 'The admin user has been successfully created.', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
@@ -22,16 +34,16 @@ export class UserController {
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login an existing user' })
   @ApiResponse({ status: 200, description: 'The user has been successfully logged in.', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async login(@Body() loginDto: LoginDto) {
-    const { result: user, message, token } = await this.userService.login(loginDto);
-    return { message, token, user };
+    return this.userService.login(loginDto);
   }
 
   @Get('users')
-  @UseGuards(AuthGuard, AdminGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
@@ -61,7 +73,7 @@ export class UserController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard, AdminGuard)
+  @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate a user by ID' })
   @ApiResponse({ status: 200, description: 'The user has been successfully deactivated.' })
