@@ -43,23 +43,23 @@ jobs:
     - name: Clean Package 
       run: rm -rf evote.tar.gz  
 
-    # - name: Deploy To Server via SSH
-    #   uses: appleboy/ssh-action@master
-    #   with:
-    #     host: ${{ secrets.SERVER_HOST }}
-    #     username: ${{ secrets.SERVER_USER }}
-    #     key: ${{ secrets.SERVER_SSH_KEY }}
-    #     script: |
-    #         set -e
-    #         mkdir e-vote
-    #         tar -xzf /tmp/evote/evote.tar.gz -C e-vote
-    #         cd e-vote
-    #         rm -rf /tmp/evote/evote.tar.gz
-    #         mv dist/package.json dist/dev-ecosystem-config.json dist/.husky .
-    #         mv dist/tsconfig*.json dist/db_setup.sh dist/.git .
-    #         mv dist/env.txt .env
-    #         ./db_setup.sh
-    #         npm install
-    #         npm run migration:generate
-    #         npm run migration:run
-    #         pm2 restart dev-ecosystem-config.json
+    - name: Deploy To Server via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+            set -e
+            mkdir e-vote
+            tar -xzf /tmp/evote/evote.tar.gz -C e-vote
+            cd e-vote
+            rm -rf /tmp/evote/evote.tar.gz
+            mv dist/package.json dist/dev-ecosystem-config.json dist/.husky .
+            mv dist/tsconfig*.json dist/db_setup.sh dist/.git .
+            mv dist/env.txt .env
+            ./db_setup.sh
+            npm install
+            npm run migration:generate
+            npm run migration:run
+            pm2 restart dev-ecosystem-config.json
