@@ -17,7 +17,6 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { ElectionResponseDto } from './dto/election-response.dto';
-import { AdminGuard } from '../../guards/admin.guard';
 import { AuthGuard } from '../../guards/auth.guard';
 import { Election } from './entities/election.entity';
 import { isUUID } from 'class-validator';
@@ -30,7 +29,7 @@ export class ElectionController {
 
   @ApiBearerAuth()
   @Post()
-  @UseGuards(AuthGuard, AdminGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Create a new election' })
   @ApiResponse({ status: 201, description: 'The election has been successfully created.', type: ElectionResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -61,7 +60,7 @@ export class ElectionController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard, AdminGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete Inactive Election' })
   @ApiResponse({ status: 200, description: 'Election deleted successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })

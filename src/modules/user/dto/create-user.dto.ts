@@ -1,23 +1,23 @@
 import { IsEmail, IsEnum, IsNotEmpty, MinLength, IsString, IsStrongPassword } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserType } from '../entities/user.entity';
 
 export class CreateUserDto {
-  @ApiProperty({
-    description: 'The first name of the user',
-    example: 'John',
-  })
-  @IsNotEmpty()
-  @IsString()
-  first_name: string;
+  //TODO:
+  // @ApiProperty({
+  //   description: 'The first name of the user',
+  //   example: 'John',
+  // })
+  // @IsNotEmpty()
+  // @IsString()
+  // first_name: string;
 
-  @ApiProperty({
-    description: 'The last name of the user',
-    example: 'Doe',
-  })
-  @IsNotEmpty()
-  @IsString()
-  last_name: string;
+  // @ApiProperty({
+  //   description: 'The last name of the user',
+  //   example: 'Doe',
+  // })
+  // @IsNotEmpty()
+  // @IsString()
+  // last_name: string;
 
   @ApiProperty({
     description: 'The email address of the user',
@@ -41,14 +41,4 @@ export class CreateUserDto {
     },
   )
   password: string;
-
-  @ApiProperty({
-    description: 'The type of user',
-    example: UserType.Admin,
-    enum: UserType,
-    enumName: 'UserType',
-  })
-  @IsNotEmpty()
-  @IsEnum(UserType)
-  user_type: UserType;
 }

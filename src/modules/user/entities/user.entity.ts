@@ -3,34 +3,19 @@ import * as bcrypt from 'bcryptjs';
 import { Election } from '../../election/entities/election.entity';
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 
-export enum UserType {
-  Admin = 'admin',
-  User = 'user',
-}
-
-@Entity({ name: 'users' })
+@Entity({ name: 'admin' })
 export class User extends AbstractBaseEntity {
-  @Column()
-  first_name: string;
-
-  @Column()
-  last_name: string;
+  //TODO:
+  // @Column()
+  // first_name: string;
+  // @Column()
+  // last_name: string;
 
   @Column({ unique: true })
   email: string;
 
   @Column()
   password: string;
-
-  @Column({ default: false })
-  verified: boolean;
-
-  @Column({
-    type: 'enum',
-    enum: UserType,
-    default: UserType.User,
-  })
-  user_type: UserType;
 
   @BeforeInsert()
   @BeforeUpdate()
