@@ -11,6 +11,8 @@ import {
   HttpStatus,
   HttpCode,
   ParseUUIDPipe,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -30,7 +32,7 @@ export class UserController {
   @ApiOperation({ summary: 'Register a new admin user' })
   @ApiResponse({ status: 201, description: 'The admin user has been successfully created.', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) createUserDto: CreateUserDto) {
     return this.userService.registerAdmin(createUserDto);
   }
 
@@ -39,7 +41,7 @@ export class UserController {
   @ApiOperation({ summary: 'Login an existing user' })
   @ApiResponse({ status: 200, description: 'The user has been successfully logged in.', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) loginDto: LoginDto) {
     return this.userService.login(loginDto);
   }
 
