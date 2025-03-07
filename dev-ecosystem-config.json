@@ -1,0 +1,11 @@
+{
+    "apps": [
+      {
+        "name": "e-vote-dev",
+        "script": "npm run start:prod",
+        "log_file": "~/.pm2/logs/e-vote-dev-out.log",
+        "combine_logs": true,
+        "log_date_format": "YYYY-MM-DD HH:mm:ss Z"
+      }
+    ]
+  }

@@ -27,7 +27,7 @@ export class Election extends AbstractBaseEntity {
   @Column({
     type: 'enum',
     enum: ElectionStatus,
-    default: ElectionStatus.ONGOING, // Set a default if needed
+    default: ElectionStatus.ONGOING,
   })
   status: ElectionStatus;
 

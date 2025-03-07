@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { Repository } from 'typeorm';
+import { Repository, DeleteResult } from 'typeorm';
 import { Election } from '../election/entities/election.entity';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { GetVoteLinkDto } from './dto/get-votelink.dto';
@@ -71,15 +71,33 @@ export class VoteLinkService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} votelink`;
+  async findOne(electionId: number, linkId: number): Promise<VoteLink> {
+    const election_id = electionId.toString();
+    const link_id = linkId.toString();
+    const voterLink = await this.voterLinkRepository.findOne({ where: { election_id, id: link_id } });
+    if (!voterLink) {
+      throw new NotFoundException(`Voting link with ID ${linkId} not found for election ID ${electionId}`);
+    }
+    return voterLink;
   }
 
-  update(id: number, updateVoteLinkDto: UpdateVoteLinkDto) {
-    return `This action updates a #${id} votelink`;
+  // update(id: number, updateVoteLinkDto: UpdateVoteLinkDto) {
+  //   return `This action updates a #${id} votelink`;
+  // }
+
+  async remove(electionId: number, linkId: number): Promise<void> {
+    const election_id = electionId.toString();
+    const link_id = linkId.toString();
+    const result: DeleteResult = await this.voterLinkRepository.delete({ election_id, id: link_id });
+    if (result.affected === 0) {
+      throw new NotFoundException(`Voting link with ID ${linkId} not found for election ID ${electionId}`);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} votelink`;
-  }
+  // async checkVotingLinkStatus(electionId: number, linkId: number): Promise<any> {
+  //   const votingLink = await this.findOne(electionId, linkId);
+  //   if (!votingLink) {
+  //     throw new NotFoundException(`Voting link with ID ${linkId} not found for election ID ${electionId}`);
+  //   }
+  // }
 }

@@ -82,8 +82,24 @@ export class UserService {
     return { message: 'Successfully logged in', result, token };
   }
 
-  findAll() {
-    return 'This action returns all user';
+  async getAllUsers(page: number, limit: number) {
+    const [messages, total] = await this.userRepository.findAndCount({
+      order: { created_at: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: ['id', 'email', 'first_name', 'last_name', 'user_type', 'created_at'],
+    });
+    const totalPages = Math.ceil(total / limit);
+    return {
+      status: 'success',
+      message: 'Retrieved users successfully',
+      data: {
+        currentPage: page,
+        totalPages,
+        totalResults: total,
+        messages,
+      },
+    };
   }
 
   findOne(id: number) {
