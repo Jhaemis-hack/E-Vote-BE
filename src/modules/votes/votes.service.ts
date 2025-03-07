@@ -1,11 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-votes.dto';
 import { UpdateVoteDto } from './dto/update-votes.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Vote } from './entities/votes.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class VoteService {
-  create(createUserDto: CreateVoteDto) {
-    return 'This action adds a new vote';
+  constructor(
+    @InjectRepository(Vote)
+    private readonly voteRepository: Repository<Vote>,
+  ) {}
+
+  async createVote(createUserDto: CreateVoteDto) {
+    const newVote = this.voteRepository.create(createUserDto);
+    const savedVote = await this.voteRepository.save(newVote);
+    return {
+      status: 'success',
+      message: 'vote created successfully',
+      data: savedVote,
+    };
   }
 
   findAll() {

@@ -9,6 +9,7 @@ import { ElectionModule } from './modules/election/election.module';
 // import * as Joi from 'joi';
 import { join } from 'path';
 import dataSource from './migrations/migration.config';
+import { VoteModule } from './modules/votes/votes.module';
 // import dataSource from './migrations/migration.config';
 
 @Module({
@@ -34,6 +35,7 @@ import dataSource from './migrations/migration.config';
     UserModule,
     VoteLinkModule,
     ElectionModule,
+    VoteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

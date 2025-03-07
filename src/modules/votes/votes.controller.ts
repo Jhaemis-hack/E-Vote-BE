@@ -2,14 +2,15 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 
 import { UpdateVoteDto } from './dto/update-votes.dto';
 import { VoteService } from './votes.service';
+import { CreateVoteDto } from './dto/create-votes.dto';
 
 @Controller('vote')
 export class VoteController {
   constructor(private readonly voteService: VoteService) {}
 
   @Post()
-  create(@Body() updateVoteDto: UpdateVoteDto) {
-    return this.voteService.create(updateVoteDto);
+  async createVote(@Body() createVoteDto: CreateVoteDto) {
+    return this.voteService.createVote(createVoteDto);
   }
 
   @Get()
