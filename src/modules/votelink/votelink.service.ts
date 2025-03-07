@@ -7,6 +7,7 @@ import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { GetVoteLinkDto } from './dto/get-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
 import { VoteLink } from './entities/votelink.entity';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @Injectable()
 export class VoteLinkService {
@@ -39,7 +40,7 @@ export class VoteLinkService {
 
     return {
       status_code: HttpStatus.CREATED,
-      message: 'Successfully created a votelink',
+      message: SYS_MSG.VOTELINK_CREATED,
       data: {
         unique_link,
       },

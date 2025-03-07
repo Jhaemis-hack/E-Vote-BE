@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, NotFoundException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  NotFoundException,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { VoteLinkService } from './votelink.service';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
@@ -13,6 +26,7 @@ export class VoteLinkController {
   constructor(private readonly voteLinkService: VoteLinkService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Create a voter link to invite users to vote' })
   @ApiResponse({

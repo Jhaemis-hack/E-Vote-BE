@@ -29,6 +29,7 @@ export class Election extends AbstractBaseEntity {
   @Column()
   end_date: Date;
 
+  @Column()
   @Column({
     type: 'enum',
     enum: ElectionStatus,
