@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpStatus,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -116,7 +117,7 @@ export class UserService {
     if (!currentUser) {
       throw new UnauthorizedException({
         message: 'Unauthorized request',
-        status_code: 401,
+        status_code: HttpStatus.UNAUTHORIZED,
       });
     }
 
@@ -124,7 +125,10 @@ export class UserService {
     console.log('Cleaned user ID:', cleanId);
 
     if (!cleanId.match(/^[0-9a-fA-F-]{36}$/)) {
-      throw new BadRequestException('Invalid user ID format');
+      throw new BadRequestException({
+        message: 'Invalid user ID format',
+        status_code: HttpStatus.BAD_REQUEST,
+      });
     }
 
     console.log('Updating user with ID:', id);
@@ -134,14 +138,14 @@ export class UserService {
     if (!user) {
       throw new NotFoundException({
         message: 'User not found',
-        status_code: 404,
+        status_code: HttpStatus.NOT_FOUND,
       });
     }
 
     if (updateUserDto.user_type && currentUser.user_type !== 'admin') {
       throw new ForbiddenException({
         message: 'Forbidden: Only admins can modify this field',
-        status_code: 403,
+        status_code: HttpStatus.FORBIDDEN,
       });
     }
 
@@ -149,8 +153,8 @@ export class UserService {
       if (updateUserDto.password.length < 8) {
         throw new BadRequestException({
           message: 'verification failed',
-          errors: { password: 'password must be more than 8 characters' },
-          status: 400,
+          data: { password: 'password must be more than 8 characters' },
+          status_code: HttpStatus.BAD_REQUEST,
         });
       }
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
@@ -161,15 +165,15 @@ export class UserService {
     if (updateUserDto.email && !/\S+@\S+\.\S+/.test(updateUserDto.email)) {
       throw new BadRequestException({
         message: 'Validation failed',
-        errors: { email: 'Invalid email format' },
-        status_code: 400,
+        data: { email: 'Invalid email format' },
+        status_code: HttpStatus.BAD_REQUEST,
       });
     }
 
     Object.assign(user, updateUserDto);
     await this.userRepository.save(user);
 
-    return { message: 'User updated successfully', data: user };
+    return { status_code: HttpStatus.OK, message: 'User updated successfully', data: user };
   }
 
   remove(id: string) {
