@@ -51,9 +51,10 @@ jobs:
             tar -xzf /tmp/evote/evote.tar.gz -C e-vote
             cd e-vote
             rm -rf /tmp/evote/evote.tar.gz
-            mv dist/package.json dist/dev-ecosystem-config.json .
+            mv dist/package.json dist/dev-ecosystem-config.json dist/.husky .
+            mv dist/tsconfig*.json dist/db_setup.sh dist/.git .
             mv dist/env.txt .env
-            .dist/db_setup.sh
+            ./db_setup.sh
             npm install
             npm run migration:generate
             npm run migration:run
