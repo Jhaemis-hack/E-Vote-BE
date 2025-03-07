@@ -8,7 +8,6 @@ import { Candidate } from '../../candidate/entities/candidate.entity';
 import { VoteLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
-import { ElectionResponseDto } from '../dto/election-response.dto';
 import { DeepPartial } from 'typeorm';
 import { ForbiddenException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
@@ -79,6 +78,8 @@ describe('ElectionService', () => {
         description: 'Election to choose the next president of the country',
         startDate: new Date('2025-03-01T00:00:00.000Z'),
         endDate: new Date('2025-03-31T23:59:59.999Z'),
+        start_time: '09:00:00',
+        end_time: '10:00:00',
         electionType: ElectionType.SINGLECHOICE,
         status: ElectionStatus.ONGOING,
         candidates: ['Candidate A', 'Candidate B'],
@@ -87,14 +88,20 @@ describe('ElectionService', () => {
       const result = await service.create(createElectionDto, 'admin123');
 
       expect(result).toEqual({
-        election_id: '550e8400-e29b-41d4-a716-446655440000',
-        election_title: createElectionDto.title,
-        description: createElectionDto.description,
-        start_date: createElectionDto.startDate,
-        end_date: createElectionDto.endDate,
-        election_type: ElectionType.SINGLECHOICE,
-        created_by: 'admin123',
-        candidates: createElectionDto.candidates,
+        status_code: 201,
+        message: 'Election creation successful',
+        data: {
+          election_id: '550e8400-e29b-41d4-a716-446655440000',
+          election_title: createElectionDto.title,
+          description: createElectionDto.description,
+          start_date: createElectionDto.startDate,
+          end_date: createElectionDto.endDate,
+          start_time: createElectionDto.start_time,
+          end_time: createElectionDto.end_time,
+          election_type: ElectionType.SINGLECHOICE,
+          created_by: 'admin123',
+          candidates: createElectionDto.candidates,
+        },
       });
 
       expect(electionRepository.create).toHaveBeenCalledWith({
@@ -102,6 +109,8 @@ describe('ElectionService', () => {
         description: createElectionDto.description,
         start_date: createElectionDto.startDate,
         end_date: createElectionDto.endDate,
+        start_time: createElectionDto.start_time,
+        end_time: createElectionDto.end_time,
         status: ElectionStatus.ONGOING,
         type: createElectionDto.electionType,
         created_by: 'admin123',
@@ -117,6 +126,8 @@ describe('ElectionService', () => {
         description: 'Election to choose the next president of the country',
         startDate: new Date('2025-03-01T00:00:00.000Z'),
         endDate: new Date('2025-03-31T23:59:59.999Z'),
+        start_time: '09:00:00',
+        end_time: '10:00:00',
         electionType: ElectionType.SINGLECHOICE,
         status: ElectionStatus.ONGOING,
         candidates: ['Candidate A', 'Candidate B'],
@@ -141,6 +152,8 @@ describe('ElectionService', () => {
           description: 'Election to choose the next president of the country',
           start_date: new Date('2023-10-01T00:00:00.000Z'),
           end_date: new Date('2023-10-31T23:59:59.000Z'),
+          start_time: '09:00:00',
+          end_time: '10:00:00',
           type: ElectionType.SINGLECHOICE,
           created_at: new Date(),
           created_by: userId,
@@ -158,6 +171,8 @@ describe('ElectionService', () => {
           description: 'Election to choose members of parliament',
           start_date: new Date('2023-11-01T00:00:00.000Z'),
           end_date: new Date('2023-11-30T23:59:59.000Z'),
+          start_time: '09:00:00',
+          end_time: '10:00:00',
           type: ElectionType.MULTICHOICE,
           created_by: userId,
           deleted_at: null,
@@ -181,7 +196,7 @@ describe('ElectionService', () => {
 
       expect(result).toEqual({
         status_code: 200,
-        message: 'Successfully fetched elections',
+        message: 'Elections fetched successfully',
         data: {
           currentPage: page,
           totalPages: 1,
@@ -193,7 +208,9 @@ describe('ElectionService', () => {
               description: 'Election to choose the next president of the country',
               start_date: new Date('2023-10-01T00:00:00.000Z'),
               end_date: new Date('2023-10-31T23:59:59.000Z'),
-              election_type: 'single choice',
+              start_time: '09:00:00',
+              end_time: '10:00:00',
+              election_type: ElectionType.SINGLECHOICE,
               created_by: userId,
               candidates: [],
             },
@@ -203,7 +220,9 @@ describe('ElectionService', () => {
               description: 'Election to choose members of parliament',
               start_date: new Date('2023-11-01T00:00:00.000Z'),
               end_date: new Date('2023-11-30T23:59:59.000Z'),
-              election_type: 'multiple choice',
+              start_time: '09:00:00',
+              end_time: '10:00:00',
+              election_type: ElectionType.MULTICHOICE,
               created_by: userId,
               candidates: [],
             },
@@ -234,7 +253,7 @@ describe('ElectionService', () => {
 
       expect(result).toEqual({
         status_code: 200,
-        message: 'Successfully fetched elections',
+        message: 'Elections fetched successfully',
         data: {
           currentPage: page,
           totalPages: 0,
@@ -285,12 +304,16 @@ describe('ElectionService', () => {
       const electionId = '123';
       const mockElection = {
         id: electionId,
-        title: 'Presidential Election',
-        description: 'Election for president',
-        start_date: new Date('2024-01-01'),
-        end_date: new Date('2024-01-02'),
-        type: ElectionType.SINGLECHOICE,
-        created_by: 'user123',
+        created_at: new Date('2025-03-06T13:35:13.731Z'),
+        updated_at: new Date('2025-03-06T13:35:13.731Z'),
+        deleted_at: null,
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president of the country',
+        start_date: new Date('2025-03-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        status: 'ongoing',
+        type: 'singlechoice',
+        created_by: 'admin123',
       };
 
       const mockCandidates = [
