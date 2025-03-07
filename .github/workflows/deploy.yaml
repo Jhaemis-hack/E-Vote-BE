@@ -22,7 +22,7 @@ jobs:
     - name: Build Application
       run: |
         npm run build
-        cp package.json db_setup.sh .git env.txt dev-ecosystem-config.json .husky .tsconfig*.json dist
+        cp -r package.json db_setup.sh .git env.txt dev-ecosystem-config.json .husky tsconfig*.json dist
     
     - name: Archive Production Artifact
       run: | 
