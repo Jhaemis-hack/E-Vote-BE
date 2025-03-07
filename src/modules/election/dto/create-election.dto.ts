@@ -2,8 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsDate, IsEnum, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
-import { ElectionType } from '../dto/election-response.dto';
-import { ElectionStatus } from '../entities/election.entity';
+import { ElectionStatus, ElectionType } from '../entities/election.entity';
 
 export class CreateElectionDto {
   @ApiProperty({ example: 'Presidential Election 2025' })
@@ -38,7 +37,7 @@ export class CreateElectionDto {
   @IsEnum(ElectionStatus)
   status: ElectionStatus;
 
-  @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLE_CHOICE })
+  @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
   @IsNotEmpty()
   @IsEnum(ElectionType)
   electionType: ElectionType;

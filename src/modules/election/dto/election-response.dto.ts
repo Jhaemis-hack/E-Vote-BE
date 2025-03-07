@@ -1,9 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-export enum ElectionType {
-  SINGLE_CHOICE = 'single choice',
-  MULTIPLE_CHOICE = 'multiple choice',
-}
+import { ElectionType } from '../entities/election.entity';
 
 export class ElectionResponseDto {
   @ApiProperty({ description: 'The ID of the election', example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -27,7 +23,7 @@ export class ElectionResponseDto {
   @ApiProperty({
     description: 'The type of the election',
     enum: ElectionType, // Use the enum here
-    example: ElectionType.SINGLE_CHOICE, // Provide an example
+    example: ElectionType.SINGLECHOICE, // Provide an example
   })
   election_type: ElectionType;
 

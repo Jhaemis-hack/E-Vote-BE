@@ -1,5 +1,4 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, NotFoundException, UseGuards } from '@nestjs/common';
-import { AdminGuard } from 'src/guards/admin.guard';
 import { VoteLinkService } from './votelink.service';
 import { CreateVoteLinkDto } from './dto/create-votelink.dto';
 import { UpdateVoteLinkDto } from './dto/update-votelink.dto';
@@ -14,7 +13,7 @@ export class VoteLinkController {
   constructor(private readonly voteLinkService: VoteLinkService) {}
 
   @Post()
-  @UseGuards(AuthGuard, AdminGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Create a voter link to invite users to vote' })
   @ApiResponse({
     status: 201,
@@ -27,7 +26,7 @@ export class VoteLinkController {
   }
 
   @Get('/elections/:id/voting-links')
-  @UseGuards(AuthGuard, AdminGuard)
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get voting links for an election' })
   @ApiResponse({
     status: 200,
