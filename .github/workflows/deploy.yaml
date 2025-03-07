@@ -51,7 +51,6 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
             set -e
-            mkdir e-vote
             tar -xzf /tmp/evote/evote.tar.gz -C e-vote
             cd e-vote
             rm -rf /tmp/evote/evote.tar.gz
