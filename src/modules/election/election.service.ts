@@ -1,4 +1,11 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateElectionDto } from './dto/create-election.dto';
@@ -9,6 +16,8 @@ import { Candidate } from '../candidate/entities/candidate.entity';
 
 @Injectable()
 export class ElectionService {
+  private readonly logger = new Logger(ElectionService.name);
+
   constructor(
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
@@ -16,7 +25,6 @@ export class ElectionService {
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<ElectionResponseDto> {
     const { title, description, startDate, endDate, electionType, candidates } = createElectionDto;
-
     // Create a new election instance.
     const election = this.electionRepository.create({
       title,
@@ -115,8 +123,44 @@ export class ElectionService {
     return updateElectionDto;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} election`;
+  async remove(id: string) {
+    const election = await this.electionRepository.findOne({
+      where: { id },
+      relations: ['candidates'],
+    });
+
+    if (!election) {
+      throw new NotFoundException({
+        status: 'Not found',
+        message: 'Invalid Election Id',
+        status_code: 404,
+      });
+    }
+
+    if (election.status === ElectionStatus.ONGOING) {
+      throw new ForbiddenException({
+        status: 'Forbidden',
+        message: 'Cannot delete an active election',
+        status_code: 403,
+      });
+    }
+
+    try {
+      // Step 1: Delete candidates linked to this election
+      await this.candidateRepository.delete({ election: { id } });
+
+      // Step 2: Now delete the election
+      await this.electionRepository.delete({ id });
+
+      return {
+        status: 'success',
+        status_code: 200,
+        message: `Election with id ${id} deleted successfully`,
+      };
+    } catch (error) {
+      this.logger.error(`Error deleting election with id ${id}: ${error.message}`, error.stack);
+      throw new InternalServerErrorException(`Internal error occurred: ${error.message}`);
+    }
   }
 
   private mapElections(result: Election[]): ElectionResponseDto[] {
