@@ -2,7 +2,7 @@ name: Deploy To Server
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ features/devops-test ]
 
 jobs:
   deploy:
@@ -18,7 +18,7 @@ jobs:
 
     - name: Create Environment File
       run: |
-        printf "%s" "${{ secrets.DEV_ENV }}" > .env.txt
+        printf "%s" "${{ secrets.DEV_ENV }}" > env.txt
         cat env.txt
 
 
