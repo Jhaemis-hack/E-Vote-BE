@@ -10,6 +10,7 @@ import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionResponseDto, ElectionType } from '../dto/election-response.dto';
 import { DeepPartial } from 'typeorm';
+import { ForbiddenException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -33,6 +34,7 @@ describe('ElectionService', () => {
       .fn()
       .mockImplementation((entity: DeepPartial<Election>) => Promise.resolve(Object.assign(new Election(), entity))),
     findOne: jest.fn().mockResolvedValue(null),
+    delete: jest.fn(),
   });
 
   const mockCandidateRepository = () => ({
@@ -41,6 +43,7 @@ describe('ElectionService', () => {
       .mockImplementation((entities: DeepPartial<Candidate>[]) =>
         Promise.resolve(entities.map(entity => Object.assign(new Candidate(), entity))),
       ),
+    delete: jest.fn().mockResolvedValue({ affected: 1 }),
   });
 
   beforeEach(async () => {
@@ -311,6 +314,73 @@ describe('ElectionService', () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
       await expect(service.findOne(electionId)).rejects.toThrow('Election not found');
+    });
+  });
+
+  describe('remove', () => {
+    const electionId = '550e8400-e29b-41d4-a716-446655440000';
+
+    it('should throw NotFoundException if election does not exist', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(service.remove(electionId)).rejects.toThrow(NotFoundException);
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { id: electionId },
+        relations: ['candidates'],
+      });
+    });
+
+    it('should throw ForbiddenException if election is ongoing', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        id: electionId,
+        status: ElectionStatus.ONGOING,
+      } as Election);
+
+      await expect(service.remove(electionId)).rejects.toThrow(ForbiddenException);
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { id: electionId },
+        relations: ['candidates'],
+      });
+    });
+
+    it('should delete election if it exists and is not ongoing', async () => {
+      const completedElection = {
+        id: electionId,
+        status: ElectionStatus.COMPLETED,
+      };
+
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(completedElection as Election);
+      jest.spyOn(electionRepository, 'delete').mockResolvedValue({ affected: 1 } as any);
+
+      const result = await service.remove(electionId);
+
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { id: electionId },
+        relations: ['candidates'],
+      });
+      expect(electionRepository.delete).toHaveBeenCalledWith({ id: electionId });
+
+      expect(result).toEqual({
+        status: 'success',
+        status_code: 200,
+        message: `Election with id ${electionId} deleted successfully`,
+      });
+    });
+
+    it('should throw InternalServerErrorException if deletion fails', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        id: electionId,
+        status: ElectionStatus.COMPLETED,
+      } as Election);
+
+      jest.spyOn(electionRepository, 'delete').mockRejectedValue(new Error('Delete error'));
+
+      await expect(service.remove(electionId)).rejects.toThrow(InternalServerErrorException);
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { id: electionId },
+        relations: ['candidates'],
+      });
+      expect(electionRepository.delete).toHaveBeenCalledWith({ id: electionId });
     });
   });
 });

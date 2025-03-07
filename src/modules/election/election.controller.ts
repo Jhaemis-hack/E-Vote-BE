@@ -1,4 +1,17 @@
-import { Body, Controller, Delete, UseGuards, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  UseGuards,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
@@ -7,6 +20,8 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { AdminGuard } from '../../guards/admin.guard';
 import { AuthGuard } from '../../guards/auth.guard';
 import { Election } from './entities/election.entity';
+import { isUUID } from 'class-validator';
+import { request } from 'http';
 
 @ApiTags()
 @Controller('elections')
@@ -20,7 +35,7 @@ export class ElectionController {
   @ApiResponse({ status: 201, description: 'The election has been successfully created.', type: ElectionResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request' })
   async createElection(@Body() createElectionDto: CreateElectionDto, @Req() req: any): Promise<ElectionResponseDto> {
-    const adminId = req.user.id;
+    const adminId = req.user.sub;
     return this.electionService.create(createElectionDto, adminId);
   }
 
@@ -46,7 +61,17 @@ export class ElectionController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.electionService.remove(+id);
+  @UseGuards(AuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Delete Inactive Election' })
+  @ApiResponse({ status: 200, description: 'Election deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  remove(@Param('id') id: string, @Req() req: any) {
+    if (!isUUID(id)) {
+      throw new HttpException('Bad Request', HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    return this.electionService.remove(id);
   }
 }
