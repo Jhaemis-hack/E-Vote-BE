@@ -10,6 +10,7 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -56,12 +57,14 @@ export class UserController {
     return this.userService.getAllUsers(page, limit);
   }
 
-  @Get(':id')
+  @Get('users/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a user by ID' })
   @ApiResponse({ status: 200, description: 'Return the user with the given ID.', type: User })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  getUserById(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.userService.getUserById(id);
   }
 
   @Patch(':id')

@@ -99,8 +99,20 @@ export class UserService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async getUserById(
+    id: string,
+  ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    const { password, hashPassword, ...userData } = user;
+    return {
+      status_code: HttpStatus.OK,
+      message: `User with id ${id} retrieved successfully.`,
+      data: userData,
+    };
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
