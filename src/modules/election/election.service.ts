@@ -200,6 +200,8 @@ export class ElectionService {
           start_date: election.start_date,
           end_date: election.end_date,
           election_type: electionType,
+          start_time: election.start_time,
+          end_time: election.end_time,
           created_by: election.created_by,
           candidates: election.candidates.map(candidate => candidate.name),
         };
