@@ -9,12 +9,14 @@ import { ElectionModule } from './modules/election/election.module';
 // import * as Joi from 'joi';
 import { join } from 'path';
 import dataSource from './migrations/migration.config';
+import authConfig from './config/auth.config';
 import { VoteModule } from './modules/votes/votes.module';
 // import dataSource from './migrations/migration.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
+      load: [authConfig],
       /*
        * By default, the package looks for a env file in the root directory of the application.
        * We don't use ".env" file because it is prioritize as the same level as real environment variables.
