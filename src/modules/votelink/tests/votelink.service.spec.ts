@@ -228,6 +228,8 @@ describe('VoteLinkService', () => {
           description: 'Description for Election 1',
           start_date: new Date(),
           end_date: new Date(),
+          start_time: '09:00:00',
+          end_time: '10:00:00',
           status: ElectionStatus.ONGOING,
           type: ElectionType.SINGLECHOICE,
           created_by: 'user1',

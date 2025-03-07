@@ -29,7 +29,12 @@ export class Election extends AbstractBaseEntity {
   @Column()
   end_date: Date;
 
-  @Column()
+  @Column({ type: 'time', default: '09:00:00' })
+  start_time: string;
+
+  @Column({ type: 'time', default: '10:00:00' })
+  end_time: string;
+
   @Column({
     type: 'enum',
     enum: ElectionStatus,
