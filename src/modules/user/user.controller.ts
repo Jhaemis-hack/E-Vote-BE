@@ -75,13 +75,13 @@ export class UserController {
     return this.userService.update(+id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete('users/:id')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate a user by ID' })
   @ApiResponse({ status: 200, description: 'The user has been successfully deactivated.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  deactivateUser(@Param('id') id: string) {
+  deactivateUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.deactivateUser(id);
   }
 }

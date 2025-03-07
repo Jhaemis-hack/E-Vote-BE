@@ -119,16 +119,15 @@ export class UserService {
     return `This action updates a #${id} user`;
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} user`;
-  }
-
-  async deactivateUser(id: string): Promise<{ message: string }> {
+  async deactivateUser(id: string): Promise<{ status_code: number; message: string; data?: any }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     await this.userRepository.softRemove(user);
-    return { message: `User with ID ${id} has been deactivated` };
+    return {
+      status_code: HttpStatus.OK,
+      message: `User with ID ${id} has been deactivated`,
+    };
   }
 }
