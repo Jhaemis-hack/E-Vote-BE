@@ -17,7 +17,10 @@ jobs:
       run: npm install
 
     - name: Create Environment File
-      run: echo ${{ secrets.DEV_ENV }} | base64 --decode > env.txt
+      run: |
+        echo ${{ secrets.DEV_ENV }} | base64 --decode > env.txt
+        cat env.txt
+
 
     - name: Build Application
       run: |
