@@ -134,7 +134,7 @@ describe('UserService - registerAdmin', () => {
 
     const hashedPassword = await bcrypt.hash(loginDto.password, 10);
 
-    const mockUser: User<Partial> = {
+    const mockUser: Partial<User> = {
       id: randomUUID(),
       email: loginDto.email,
       password: hashedPassword,
@@ -150,7 +150,8 @@ describe('UserService - registerAdmin', () => {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
       data: {
-        result: expect.objectContaining({ email: loginDto.email }),
+        id: mockUser.id,
+        email: loginDto.email,
         token: 'mockedToken',
       },
     });
