@@ -8,7 +8,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { VoteLinkResponseDto } from './dto/VoteLinkResponse.dto';
 import { AuthGuard } from 'src/guards/auth.guard';
 
-@ApiTags('votelink') // Add a tag name for Swagger grouping
+@ApiTags('Votelink') // Add a tag name for Swagger grouping
 @Controller('/votelink')
 export class VoteLinkController {
   constructor(private readonly voteLinkService: VoteLinkService) {}
