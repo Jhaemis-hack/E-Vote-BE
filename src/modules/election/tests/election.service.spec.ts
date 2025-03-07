@@ -8,7 +8,6 @@ import { Candidate } from '../../candidate/entities/candidate.entity';
 import { VoteLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
-import { ElectionResponseDto } from '../dto/election-response.dto';
 import { DeepPartial } from 'typeorm';
 import { ForbiddenException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 
@@ -81,14 +80,20 @@ describe('ElectionService', () => {
       const result = await service.create(createElectionDto, 'admin123');
 
       expect(result).toEqual({
-        election_id: '550e8400-e29b-41d4-a716-446655440000',
-        election_title: createElectionDto.title,
-        description: createElectionDto.description,
-        start_date: createElectionDto.startDate,
-        end_date: createElectionDto.endDate,
-        election_type: ElectionType.SINGLECHOICE,
-        created_by: 'admin123',
-        candidates: createElectionDto.candidates,
+        status_code: 201,
+        message: 'Election creation successful',
+        data: {
+          election_id: '550e8400-e29b-41d4-a716-446655440000',
+          election_title: createElectionDto.title,
+          description: createElectionDto.description,
+          start_date: createElectionDto.startDate,
+          end_date: createElectionDto.endDate,
+          start_time: createElectionDto.start_time,
+          end_time: createElectionDto.end_time,
+          election_type: ElectionType.SINGLECHOICE,
+          created_by: 'admin123',
+          candidates: createElectionDto.candidates,
+        },
       });
 
       expect(electionRepository.create).toHaveBeenCalledWith({
@@ -96,6 +101,8 @@ describe('ElectionService', () => {
         description: createElectionDto.description,
         start_date: createElectionDto.startDate,
         end_date: createElectionDto.endDate,
+        start_time: createElectionDto.start_time,
+        end_time: createElectionDto.end_time,
         status: ElectionStatus.ONGOING,
         type: createElectionDto.electionType,
         created_by: 'admin123',
@@ -181,7 +188,7 @@ describe('ElectionService', () => {
 
       expect(result).toEqual({
         status_code: 200,
-        message: 'Successfully fetched elections',
+        message: 'Elections fetched successfully',
         data: {
           currentPage: page,
           totalPages: 1,
@@ -195,7 +202,7 @@ describe('ElectionService', () => {
               end_date: new Date('2023-10-31T23:59:59.000Z'),
               start_time: '09:00:00',
               end_time: '10:00:00',
-              election_type: 'single choice',
+              election_type: ElectionType.SINGLECHOICE,
               created_by: userId,
               candidates: [],
             },
@@ -207,7 +214,7 @@ describe('ElectionService', () => {
               end_date: new Date('2023-11-30T23:59:59.000Z'),
               start_time: '09:00:00',
               end_time: '10:00:00',
-              election_type: 'multiple choice',
+              election_type: ElectionType.MULTICHOICE,
               created_by: userId,
               candidates: [],
             },
@@ -238,7 +245,7 @@ describe('ElectionService', () => {
 
       expect(result).toEqual({
         status_code: 200,
-        message: 'Successfully fetched elections',
+        message: 'Elections fetched successfully',
         data: {
           currentPage: page,
           totalPages: 0,
@@ -306,7 +313,7 @@ describe('ElectionService', () => {
         start_date: new Date('2025-03-01T00:00:00.000Z'),
         end_date: new Date('2025-03-31T23:59:59.999Z'),
         status: 'ongoing',
-        type: 'single choice',
+        type: 'singlechoice',
         created_by: 'admin123',
       };
 
