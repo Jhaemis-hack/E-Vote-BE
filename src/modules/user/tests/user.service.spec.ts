@@ -1,14 +1,22 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from '../dto/create-user.dto';
+// import { CreateUserDto } from '../dto/create-user.dto';
 import { LoginDto } from '../dto/login-user.dto';
 import { User } from '../entities/user.entity';
 import { UserService } from '../user.service';
+import { randomUUID } from 'crypto';
+import * as SYS_MSG from '../../../shared/constants/systemMessages';
+
+interface CreateUserDto {
+  id?: string;
+  email: string;
+  password: string;
+}
 
 describe('UserService - registerAdmin', () => {
   let userService: UserService;
@@ -57,6 +65,7 @@ describe('UserService - registerAdmin', () => {
 
   it('✅ should register an admin successfully', async () => {
     const adminDto: CreateUserDto = {
+      id: randomUUID(),
       email: 'admin@example.com',
       password: 'StrongPass1!',
     };
@@ -74,8 +83,10 @@ describe('UserService - registerAdmin', () => {
     const result = await userService.registerAdmin(adminDto);
 
     expect(result).toEqual({
-      message: 'Admin registered successfully',
+      status_code: HttpStatus.CREATED,
+      message: SYS_MSG.SIGNUP_MESSAGE,
       data: {
+        id: adminDto.id,
         email: adminDto.email,
         token: 'mockedToken',
       },
@@ -123,8 +134,8 @@ describe('UserService - registerAdmin', () => {
 
     const hashedPassword = await bcrypt.hash(loginDto.password, 10);
 
-    const mockUser: Partial<User> = {
-      id: '1',
+    const mockUser: User<Partial> = {
+      id: randomUUID(),
       email: loginDto.email,
       password: hashedPassword,
     };
@@ -136,9 +147,12 @@ describe('UserService - registerAdmin', () => {
     const result = await userService.login(loginDto);
 
     expect(result).toEqual({
-      message: 'Successfully logged in',
-      result: expect.objectContaining({ email: loginDto.email }),
-      token: 'mockedToken',
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.LOGIN_MESSAGE,
+      data: {
+        result: expect.objectContaining({ email: loginDto.email }),
+        token: 'mockedToken',
+      },
     });
   });
 
