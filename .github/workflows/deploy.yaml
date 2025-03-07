@@ -18,7 +18,7 @@ jobs:
 
     - name: Create Environment File
       run: |
-        echo ${{ secrets.DEV_ENV }} | base64 --decode > env.txt
+        printf "%s" "${{ secrets.DEV_ENV }}" > .env.txt
         cat env.txt
 
 
