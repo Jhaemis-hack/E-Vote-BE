@@ -165,9 +165,13 @@ export class ElectionService {
       await this.electionRepository.delete({ id });
 
       return {
-        status: 'success',
-        status_code: 200,
-        message: `Election with id ${id} deleted successfully`,
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.DELETE_ELECTIONS,
+        data: {
+          election_id: election.id,
+          election_title: election.title,
+          description: election.description,
+        },
       };
     } catch (error) {
       this.logger.error(`Error deleting election with id ${id}: ${error.message}`, error.stack);
