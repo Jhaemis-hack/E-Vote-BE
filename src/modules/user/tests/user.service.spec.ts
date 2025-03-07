@@ -1,11 +1,10 @@
-import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { BadRequestException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
-// import { CreateUserDto } from '../dto/create-user.dto';
 import { LoginDto } from '../dto/login-user.dto';
 import { User } from '../entities/user.entity';
 import { UserService } from '../user.service';
@@ -18,7 +17,7 @@ interface CreateUserDto {
   password: string;
 }
 
-describe('UserService - registerAdmin', () => {
+describe('UserService', () => {
   let userService: UserService;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
@@ -29,6 +28,7 @@ describe('UserService - registerAdmin', () => {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
+      softRemove: jest.fn(),
     };
 
     const mockJwtService = {
@@ -44,15 +44,15 @@ describe('UserService - registerAdmin', () => {
         UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: mockUserRepository, // ✅ Provide a mock repository
+          useValue: mockUserRepository, // Provide a mock repository
         },
         {
           provide: JwtService,
-          useValue: mockJwtService, // ✅ Mock JWT service
+          useValue: mockJwtService, // Mock JWT service
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService, // ✅ Mock ConfigService
+          useValue: mockConfigService, // Mock ConfigService
         },
       ],
     }).compile();
@@ -63,127 +63,189 @@ describe('UserService - registerAdmin', () => {
     configService = module.get<ConfigService>(ConfigService);
   });
 
-  it('✅ should register an admin successfully', async () => {
-    const adminDto: CreateUserDto = {
-      id: randomUUID(),
-      email: 'admin@example.com',
-      password: 'StrongPass1!',
-    };
+  describe('registerAdmin', () => {
+    it('✅ should register an admin successfully', async () => {
+      const adminDto: CreateUserDto = {
+        id: randomUUID(),
+        email: 'admin@example.com',
+        password: 'StrongPass1!',
+      };
 
-    userRepository.findOne = jest.fn().mockResolvedValue(null); // ✅ Ensure findOne does not return a user
-    const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
-      ReturnType<(key: string) => Promise<string>>,
-      Parameters<(key: string) => Promise<string>>
-    >;
-    hashSpy.mockResolvedValueOnce('hashedPassword');
-    userRepository.create = jest.fn().mockReturnValue(adminDto as User);
-    userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
-    jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+      userRepository.findOne = jest.fn().mockResolvedValue(null); // Ensure findOne does not return a user
+      const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
+        ReturnType<(key: string) => Promise<string>>,
+        Parameters<(key: string) => Promise<string>>
+      >;
+      hashSpy.mockResolvedValueOnce('hashedPassword');
+      userRepository.create = jest.fn().mockReturnValue(adminDto as User);
+      userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
+      jwtService.sign = jest.fn().mockReturnValue('mockedToken');
 
-    const result = await userService.registerAdmin(adminDto);
+      const result = await userService.registerAdmin(adminDto);
 
-    expect(result).toEqual({
-      status_code: HttpStatus.CREATED,
-      message: SYS_MSG.SIGNUP_MESSAGE,
-      data: {
-        id: adminDto.id,
-        email: adminDto.email,
-        token: 'mockedToken',
-      },
+      expect(result).toEqual({
+        status_code: HttpStatus.CREATED,
+        message: SYS_MSG.SIGNUP_MESSAGE,
+        data: {
+          id: adminDto.id,
+          email: adminDto.email,
+          token: 'mockedToken',
+        },
+      });
+    });
+
+    it('❌ should throw an error for an invalid email format', async () => {
+      const userDto: CreateUserDto = {
+        email: 'invalid-email',
+        password: 'StrongPass1!',
+      };
+
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Invalid email format'));
+    });
+
+    it('❌ should throw an error if email is already in use', async () => {
+      const userDto: CreateUserDto = {
+        email: 'admin@example.com',
+        password: 'StrongPass1!',
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(userDto as User); // Simulate email already in use
+
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Email already in use'));
+    });
+
+    it('❌ should throw an error for a weak password', async () => {
+      const userDto: CreateUserDto = {
+        email: 'admin@example.com',
+        password: 'weakpass',
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(null); // Ensure findOne does not return a user
+
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(
+        new BadRequestException(
+          'Password must be at least 8 characters long and include a number and special character',
+        ),
+      );
     });
   });
 
-  it('❌ should throw an error for an invalid email format', async () => {
-    const userDto: CreateUserDto = {
-      email: 'invalid-email',
-      password: 'StrongPass1!',
-    };
+  describe('login', () => {
+    it('should log in successfully with valid credentials', async () => {
+      const loginDto: LoginDto = {
+        email: 'user@example.com',
+        password: 'CorrectPass1!',
+      };
 
-    await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Invalid email format'));
-  });
+      const hashedPassword = await bcrypt.hash(loginDto.password, 10);
 
-  it('❌ should throw an error if email is already in use', async () => {
-    const userDto: CreateUserDto = {
-      email: 'admin@example.com',
-      password: 'StrongPass1!',
-    };
-
-    userRepository.findOne = jest.fn().mockResolvedValue(userDto as User); // ✅ Simulate email already in use
-
-    await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Email already in use'));
-  });
-
-  it('❌ should throw an error for a weak password', async () => {
-    const userDto: CreateUserDto = {
-      email: 'admin@example.com',
-      password: 'weakpass',
-    };
-
-    userRepository.findOne = jest.fn().mockResolvedValue(null); // ✅ Ensure findOne does not return a user
-
-    await expect(userService.registerAdmin(userDto)).rejects.toThrow(
-      new BadRequestException('Password must be at least 8 characters long and include a number and special character'),
-    );
-  });
-
-  it('should log in successfully with valid credentials', async () => {
-    const loginDto: LoginDto = {
-      email: 'user@example.com',
-      password: 'CorrectPass1!',
-    };
-
-    const hashedPassword = await bcrypt.hash(loginDto.password, 10);
-
-    const mockUser: Partial<User> = {
-      id: randomUUID(),
-      email: loginDto.email,
-      password: hashedPassword,
-    };
-
-    userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-    jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
-    jwtService.sign = jest.fn().mockReturnValue('mockedToken');
-
-    const result = await userService.login(loginDto);
-
-    expect(result).toEqual({
-      status_code: HttpStatus.OK,
-      message: SYS_MSG.LOGIN_MESSAGE,
-      data: {
-        id: mockUser.id,
+      const mockUser: Partial<User> = {
+        id: randomUUID(),
         email: loginDto.email,
-        token: 'mockedToken',
-      },
+        password: hashedPassword,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+      jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+
+      const result = await userService.login(loginDto);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.LOGIN_MESSAGE,
+        data: {
+          id: mockUser.id,
+          email: loginDto.email,
+          token: 'mockedToken',
+        },
+      });
+    });
+
+    it('should throw an error if user does not exist', async () => {
+      const loginDto: LoginDto = {
+        email: 'nonexistent@example.com',
+        password: 'WrongPass1!',
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
+
+      await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials.'));
+    });
+
+    it('should throw an error for incorrect password', async () => {
+      const loginDto: LoginDto = {
+        email: 'user@example.com',
+        password: 'WrongPass1!',
+      };
+
+      const hashedPassword = await bcrypt.hash('CorrectPass1!', 10);
+      const mockUser: Partial<User> = {
+        id: '1',
+        email: loginDto.email,
+        password: hashedPassword,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => false);
+
+      await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials'));
     });
   });
 
-  it('should throw an error if user does not exist', async () => {
-    const loginDto: LoginDto = {
-      email: 'nonexistent@example.com',
-      password: 'WrongPass1!',
-    };
+  describe('getUserById', () => {
+    it('should return the user details when a valid ID is provided', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockUser = {
+        id: userId,
+        email: 'test@example.com',
+        password: 'hashedPassword',
+        hashPassword: 'hashedPassword',
+        created_at: new Date(),
+      };
 
-    userRepository.findOne = jest.fn().mockResolvedValue(null);
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
 
-    await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials.'));
+      const result = await userService.getUserById(userId);
+      expect(result.status_code).toEqual(HttpStatus.OK);
+      expect(result.data).toEqual(
+        expect.objectContaining({
+          id: userId,
+          email: 'test@example.com',
+        }),
+      );
+      expect(result.data).not.toHaveProperty('password');
+      expect(result.data).not.toHaveProperty('hashPassword');
+    });
+
+    it('should throw a NotFoundException when the user does not exist', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.getUserById('non-existent-uuid')).rejects.toThrow(NotFoundException);
+    });
   });
 
-  it('should throw an error for incorrect password', async () => {
-    const loginDto: LoginDto = {
-      email: 'user@example.com',
-      password: 'WrongPass1!',
-    };
+  describe('deactivateUser', () => {
+    it('should deactivate (soft remove) the user successfully', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockUser = {
+        id: userId,
+        email: 'test@example.com',
+        created_at: new Date(),
+      };
 
-    const hashedPassword = await bcrypt.hash('CorrectPass1!', 10);
-    const mockUser: Partial<User> = {
-      id: '1',
-      email: loginDto.email,
-      password: hashedPassword,
-    };
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+      jest.spyOn(userRepository, 'softRemove').mockResolvedValue(mockUser as any);
 
-    userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-    jest.spyOn(bcrypt, 'compare').mockImplementationOnce(false as never);
+      const result = await userService.deactivateUser(userId);
+      expect(result.status_code).toEqual(HttpStatus.OK);
+      expect(result.message).toEqual(SYS_MSG.DELETE_USER);
+    });
 
-    await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials'));
+    it('should throw a NotFoundException when trying to deactivate a non-existent user', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.deactivateUser('non-existent-uuid')).rejects.toThrow(NotFoundException);
+    });
   });
 });

@@ -10,6 +10,7 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  ParseUUIDPipe,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -58,12 +59,14 @@ export class UserController {
     return this.userService.getAllUsers(page, limit);
   }
 
-  @Get(':id')
+  @Get('users/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a user by ID' })
   @ApiResponse({ status: 200, description: 'Return the user with the given ID.', type: User })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  getUserById(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.userService.getUserById(id);
   }
 
   @Patch(':id')
@@ -74,13 +77,13 @@ export class UserController {
     return this.userService.update(+id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete('users/:id')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate a user by ID' })
   @ApiResponse({ status: 200, description: 'The user has been successfully deactivated.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  deactivateUser(@Param('id') id: string) {
+  deactivateUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.deactivateUser(id);
   }
 }
