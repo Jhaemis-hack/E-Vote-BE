@@ -53,6 +53,7 @@ export class UserController {
   }
 
   @Patch(':id')
+  @UseGuards(AuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiResponse({ status: 200, description: 'The user has been successfully updated.', type: User })
   @ApiResponse({ status: 404, description: 'User not found.' })

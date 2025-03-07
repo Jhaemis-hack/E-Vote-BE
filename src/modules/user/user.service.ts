@@ -120,7 +120,16 @@ export class UserService {
       });
     }
 
-    const user = await this.userRepository.findOne({ where: { id } });
+    const cleanId = id.replace(/^users:/, ''); // Remove 'users:' prefix
+    console.log('Cleaned user ID:', cleanId);
+
+    if (!cleanId.match(/^[0-9a-fA-F-]{36}$/)) {
+      throw new BadRequestException('Invalid user ID format');
+    }
+
+    console.log('Updating user with ID:', id);
+
+    const user = await this.userRepository.findOne({ where: { id: cleanId } });
 
     if (!user) {
       throw new NotFoundException({
@@ -129,7 +138,7 @@ export class UserService {
       });
     }
 
-    if (updateUserDto.user_type && currentUser.User_type !== 'admin') {
+    if (updateUserDto.user_type && currentUser.user_type !== 'admin') {
       throw new ForbiddenException({
         message: 'Forbidden: Only admins can modify this field',
         status_code: 403,
@@ -137,7 +146,7 @@ export class UserService {
     }
 
     if (updateUserDto.password) {
-      if (updateUserDto.password.length > 8) {
+      if (updateUserDto.password.length < 8) {
         throw new BadRequestException({
           message: 'verification failed',
           errors: { password: 'password must be more than 8 characters' },
@@ -145,6 +154,8 @@ export class UserService {
         });
       }
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    } else {
+      delete updateUserDto.password;
     }
 
     if (updateUserDto.email && !/\S+@\S+\.\S+/.test(updateUserDto.email)) {
