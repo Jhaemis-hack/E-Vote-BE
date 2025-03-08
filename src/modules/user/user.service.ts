@@ -113,7 +113,7 @@ export class UserService {
   async update(id: string, updateUserDto: UpdateUserDto, currentUser: any) {
     if (!currentUser) {
       throw new UnauthorizedException({
-        message: 'Unauthorized request',
+        message: SYS_MSG.UNAUTHORIZED_USER,
         status_code: HttpStatus.UNAUTHORIZED,
       });
     }
@@ -121,14 +121,14 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException({
-        message: 'User not found',
+        message: SYS_MSG.USER_NOT_FOUND,
         status_code: HttpStatus.NOT_FOUND,
       });
     }
 
     if (currentUser.user_type !== 'admin' && user.id !== currentUser.id) {
       throw new UnauthorizedException({
-        message: 'You do not have permission to update this user',
+        message: SYS_MSG.UNAUTHORIZED_USER,
         status_code: HttpStatus.FORBIDDEN,
       });
     }
@@ -147,11 +147,9 @@ export class UserService {
     Object.assign(user, updateUserDto);
     await this.userRepository.save(user);
 
-    console.log(`User ${user.id} updated successfully`);
-
     return {
       status_code: HttpStatus.OK,
-      message: 'User updated successfully',
+      message: SYS_MSG.UPDATE_MESSAGE,
       data: user,
     };
   }
