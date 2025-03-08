@@ -58,7 +58,7 @@ export class ElectionController {
   @ApiBearerAuth()
   @Get(':id')
   @UseGuards(AuthGuard)
-  @ApiOperation({ summary: 'Get an election by ID' })
+  @ApiOperation({ summary: 'Retrieve election details by ID, including candidates and their respective vote counts.' })
   @ApiResponse({ status: 200, description: 'Election found', type: SingleElectionResponseDto })
   @ApiResponse({ status: 404, description: 'Election not found', type: ElectionNotFound })
   findOne(@Param('id') id: string) {
