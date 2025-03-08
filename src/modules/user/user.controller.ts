@@ -10,6 +10,9 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  ParseUUIDPipe,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -29,7 +32,7 @@ export class UserController {
   @ApiOperation({ summary: 'Register a new admin user' })
   @ApiResponse({ status: 201, description: 'The admin user has been successfully created.', type: User })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) createUserDto: CreateUserDto) {
     return this.userService.registerAdmin(createUserDto);
   }
 
@@ -38,7 +41,7 @@ export class UserController {
   @ApiOperation({ summary: 'Login an existing user' })
   @ApiResponse({ status: 200, description: 'The user has been successfully logged in.', type: User })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) loginDto: LoginDto) {
     return this.userService.login(loginDto);
   }
 
@@ -56,12 +59,14 @@ export class UserController {
     return this.userService.getAllUsers(page, limit);
   }
 
-  @Get(':id')
+  @Get('users/:id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a user by ID' })
   @ApiResponse({ status: 200, description: 'Return the user with the given ID.', type: User })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  getUserById(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.userService.getUserById(id);
   }
 
   @Patch(':id')
@@ -72,13 +77,13 @@ export class UserController {
     return this.userService.update(+id, updateUserDto);
   }
 
-  @Delete(':id')
+  @Delete('users/:id')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate a user by ID' })
   @ApiResponse({ status: 200, description: 'The user has been successfully deactivated.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  deactivateUser(@Param('id') id: string) {
+  deactivateUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.deactivateUser(id);
   }
 }

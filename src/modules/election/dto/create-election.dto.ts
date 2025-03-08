@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsDate, IsEnum, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
+import { IsArray, IsDate, IsEnum, IsNotEmpty, IsString, Matches, ArrayMinSize } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 import { ElectionStatus, ElectionType } from '../entities/election.entity';
@@ -30,10 +30,12 @@ export class CreateElectionDto {
 
   @ApiProperty({ example: '09:00:00' })
   @IsNotEmpty()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'start_time must be in the format HH:MM:SS' })
   start_time: string;
 
   @ApiProperty({ example: '10:00:00' })
   @IsNotEmpty()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'end_time must be in the format HH:MM:SS' })
   end_time: string;
 
   @ApiProperty({
@@ -52,8 +54,8 @@ export class CreateElectionDto {
 
   @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
   @IsArray()
-  @IsString({ each: true })
-  @ValidateIf(candidates => candidates.length > 0)
-  @IsNotEmpty({ message: 'Candidates array cannot be empty' })
+  @ArrayMinSize(2, { message: 'Candidates array must contain at least two candidates' })
+  @IsString({ each: true, message: 'Each candidate must be a string' })
+  @IsNotEmpty({ each: true, message: 'Each candidate must not be empty' })
   candidates: string[];
 }

@@ -143,17 +143,21 @@ export class ElectionService {
 
     if (!election) {
       throw new NotFoundException({
-        status: 'Not found',
-        message: 'Invalid Election Id',
-        status_code: 404,
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
       });
     }
 
     if (election.status === ElectionStatus.ONGOING) {
       throw new ForbiddenException({
-        status: 'Forbidden',
-        message: 'Cannot delete an active election',
-        status_code: 403,
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.ERROR_DELETING_ELECTION,
+        data: {
+          election_id: election.id,
+          election_title: election.title,
+          description: election.description,
+          status: election.status,
+        },
       });
     }
 
@@ -166,7 +170,7 @@ export class ElectionService {
 
       return {
         status_code: HttpStatus.OK,
-        message: SYS_MSG.DELETE_ELECTIONS,
+        message: SYS_MSG.DELETE_ELECTION,
         data: {
           election_id: election.id,
           election_title: election.title,
@@ -204,6 +208,8 @@ export class ElectionService {
           start_date: election.start_date,
           end_date: election.end_date,
           election_type: electionType,
+          start_time: election.start_time,
+          end_time: election.end_time,
           created_by: election.created_by,
           candidates: election.candidates.map(candidate => candidate.name),
         };
