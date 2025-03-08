@@ -371,8 +371,8 @@ describe('ElectionService', () => {
             end_date: new Date('2025-03-31T23:59:59.999Z'),
             end_time: '10:00:00',
             candidates: [
-              { candidate: 'Candidate A', vote_count: 2 },
-              { candidate: 'Candidate B', vote_count: 1 },
+              { id: 'c1', candidate: 'Candidate A', vote_count: 2 },
+              { id: 'c2', candidate: 'Candidate B', vote_count: 1 },
             ],
           },
         },
