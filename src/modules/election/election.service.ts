@@ -1,5 +1,6 @@
 import {
   ForbiddenException,
+  HttpException,
   HttpStatus,
   Injectable,
   InternalServerErrorException,
@@ -7,6 +8,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
+import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
@@ -35,14 +38,13 @@ export class ElectionService {
       end_date: endDate,
       status: ElectionStatus.ONGOING,
       type: electionType,
+      vote_link: randomUUID(),
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
     });
 
     const savedElection = await this.electionRepository.save(election);
-    console.log('Election created successfully:', savedElection);
-    console.log('Election', election);
 
     // Map candidate names to Candidate entities.
     const candidateEntities: Candidate[] = candidates.map(name => {
@@ -65,7 +67,9 @@ export class ElectionService {
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
         start_time: savedElection.start_time,
+        status: savedElection.status,
         end_time: savedElection.end_time,
+        vote_link: savedElection.vote_link,
         election_type: savedElection.type === 'singlechoice' ? ElectionType.SINGLECHOICE : ElectionType.MULTICHOICE,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
@@ -95,7 +99,7 @@ export class ElectionService {
     const [result, total] = await this.electionRepository.findAndCount({
       skip,
       take: pageSize,
-      relations: ['created_by_user', 'candidates', 'votes', 'voter_links'],
+      relations: ['created_by_user', 'candidates', 'votes'],
     });
 
     const data = this.mapElections(result);
@@ -119,23 +123,18 @@ export class ElectionService {
     };
   }
 
-  async findOne(id: string): Promise<Election> {
-    const election = await this.electionRepository.findOne({
-      where: { id },
-      relations: ['candidates'],
-    });
-    if (!election) {
-      throw new NotFoundException('Election not found');
+  async findOne(id: string) {
+    if (!isUUID(id)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    return election;
-  }
-
-  update(id: number, updateElectionDto: UpdateElectionDto) {
-    return updateElectionDto;
-  }
-
-  async remove(id: string) {
     const election = await this.electionRepository.findOne({
       where: { id },
       relations: ['candidates'],
@@ -143,17 +142,54 @@ export class ElectionService {
 
     if (!election) {
       throw new NotFoundException({
-        status: 'Not found',
-        message: 'Invalid Election Id',
-        status_code: 404,
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_ELECTION,
+      data: {
+        election,
+      },
+    };
+  }
+
+  update(id: number, updateElectionDto: UpdateElectionDto) {
+    return updateElectionDto;
+  }
+
+  async remove(id: string) {
+    if (!isUUID(id)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const election = await this.electionRepository.findOne({
+      where: { id },
+      relations: ['candidates'],
+    });
+
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
       });
     }
 
     if (election.status === ElectionStatus.ONGOING) {
       throw new ForbiddenException({
-        status: 'Forbidden',
-        message: 'Cannot delete an active election',
-        status_code: 403,
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.ELECTION_ACTIVE_CANNOT_DELETE,
+        data: null,
       });
     }
 
@@ -165,14 +201,57 @@ export class ElectionService {
       await this.electionRepository.delete({ id });
 
       return {
-        status: 'success',
-        status_code: 200,
-        message: `Election with id ${id} deleted successfully`,
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.ELECTION_DELETED,
+        data: null,
       };
     } catch (error) {
       this.logger.error(`Error deleting election with id ${id}: ${error.message}`, error.stack);
       throw new InternalServerErrorException(`Internal error occurred: ${error.message}`);
     }
+  }
+
+  async getElectionByVoterLink(vote_link: string) {
+    if (!isUUID(vote_link)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const election = await this.electionRepository.findOne({
+      where: { vote_link: vote_link },
+      relations: ['candidates'],
+    });
+
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    if (election?.status === ElectionStatus.COMPLETED) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
+          data: null,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK,
+      data: election,
+    };
   }
 
   private mapElections(result: Election[]): ElectionResponseDto[] {
@@ -199,7 +278,11 @@ export class ElectionService {
           description: election.description,
           start_date: election.start_date,
           end_date: election.end_date,
+          vote_link: election.vote_link,
           election_type: electionType,
+          start_time: election.start_time,
+          status: election.status,
+          end_time: election.end_time,
           created_by: election.created_by,
           candidates: election.candidates.map(candidate => candidate.name),
         };

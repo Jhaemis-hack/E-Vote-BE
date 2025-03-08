@@ -11,6 +11,7 @@ import {
   Req,
   HttpException,
   HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateElectionDto } from './dto/create-election.dto';
@@ -20,7 +21,8 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { AuthGuard } from '../../guards/auth.guard';
 import { Election } from './entities/election.entity';
 import { isUUID } from 'class-validator';
-import { request } from 'http';
+
+import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @ApiTags()
 @Controller('elections')
@@ -38,15 +40,17 @@ export class ElectionController {
     return this.electionService.create(createElectionDto, adminId);
   }
 
+  @ApiBearerAuth()
   @Get()
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get all elections' })
   @ApiResponse({ status: 200, description: 'All ', type: [ElectionResponseDto] })
   async findAll(@Query('page') page: number = 1, @Query('pageSize') pageSize: number = 10): Promise<any> {
-    const result = await this.electionService.findAll(page, pageSize);
-    return result;
+    return this.electionService.findAll(page, pageSize);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get an election by ID' })
   @ApiResponse({ status: 200, description: 'Election found', type: Election })
   @ApiResponse({ status: 404, description: 'Election not found' })
@@ -72,5 +76,16 @@ export class ElectionController {
     }
 
     return this.electionService.remove(id);
+  }
+
+  @Get('vote/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get an election from voter link' })
+  @ApiResponse({ status: 200, description: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK })
+  @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
+  @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
+  @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
+  getElectionByVoterLink(@Param('id') id: string) {
+    return this.electionService.getElectionByVoterLink(id);
   }
 }

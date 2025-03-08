@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { VoteLinkModule } from './modules/votelink/votelink.module';
 import { UserModule } from './modules/user/user.module';
 import { ElectionModule } from './modules/election/election.module';
 // import * as Joi from 'joi';
@@ -35,7 +34,6 @@ import { VoteModule } from './modules/votes/votes.module';
       dataSourceFactory: async () => dataSource,
     }),
     UserModule,
-    VoteLinkModule,
     ElectionModule,
     VoteModule,
   ],
