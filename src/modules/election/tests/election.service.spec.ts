@@ -15,6 +15,7 @@ import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
+import { Response } from 'express';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -561,6 +562,89 @@ describe('ElectionService', () => {
         where: { vote_link: validVoteLink },
         relations: ['candidates'],
       });
+    });
+  });
+
+  describe('getElectionResults', () => {
+    const electionId = '550e8400-e29b-41d4-a716-446655440000';
+    const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+    const mockElection = {
+      id: electionId,
+      title: '2025 Presidential Election',
+      created_by: adminId,
+      type: ElectionType.SINGLECHOICE,
+      candidates: [
+        { id: 'candidate-1', name: 'Candidate A' },
+        { id: 'candidate-2', name: 'Candidate B' },
+      ],
+      votes: [{ candidate_id: ['candidate-1'] }, { candidate_id: ['candidate-1'] }, { candidate_id: ['candidate-2'] }],
+    } as Election;
+
+    it('should throw HttpException if electionId is invalid', async () => {
+      await expect(service.getElectionResults('invalid-id', adminId)).rejects.toThrow(
+        new HttpException(
+          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
+
+    it('should throw HttpException if adminId is invalid', async () => {
+      await expect(service.getElectionResults(electionId, 'invalid-admin')).rejects.toThrow(
+        new HttpException(
+          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
+
+    it('should throw NotFoundException if election does not exist', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+      await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
+        new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.ELECTION_NOT_FOUND,
+          data: null,
+        }),
+      );
+    });
+
+    it('should throw ForbiddenException if adminId does not match election creator', async () => {
+      const differentAdminId = 'different-admin-id';
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        ...mockElection,
+        created_by: differentAdminId,
+      } as Election);
+      await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
+        new ForbiddenException({
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.UNAUTHORIZED_ACCESS,
+          data: null,
+        }),
+      );
+    });
+  });
+
+  describe('getElectionResultsForDownload', () => {
+    const electionId = '550e8400-e29b-41d4-a716-446655440000';
+    const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+
+    it('should generate CSV data with correct format', async () => {
+      const mockResults = {
+        data: {
+          results: [
+            { name: 'Candidate A', votes: 2 },
+            { name: 'Candidate B', votes: 1 },
+          ],
+        },
+      };
+
+      jest.spyOn(service, 'getElectionResults').mockResolvedValue(mockResults as any);
+
+      const result = await service.getElectionResultsForDownload(electionId, adminId);
+
+      expect(result.csvData).toBe('Candidate Name,Votes\n' + '"Candidate A",2\n' + '"Candidate B",1');
+      expect(result.filename).toBe(`election-${electionId}-results.csv`);
     });
   });
 });

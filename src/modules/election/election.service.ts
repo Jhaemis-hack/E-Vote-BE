@@ -18,6 +18,12 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+import { ElectionResultsDto } from './dto/results.dto';
+
+interface ElectionResultsDownload {
+  filename: string;
+  csvData: string;
+}
 
 @Injectable()
 export class ElectionService {
@@ -394,5 +400,90 @@ export class ElectionService {
           name: candidate.name,
         })) || [],
     };
+  }
+
+  async getElectionResults(electionId: string, adminId: string): Promise<ElectionResultsDto> {
+    if (!isUUID(electionId)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!isUUID(adminId)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const election = await this.electionRepository.findOne({
+      where: { id: electionId },
+      relations: ['candidates', 'votes'],
+    });
+
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    if (election.created_by !== adminId) {
+      throw new ForbiddenException({
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.UNAUTHORIZED_ACCESS,
+        data: null,
+      });
+    }
+
+    const voteCounts = new Map<string, number>();
+    election.candidates.forEach(candidate => {
+      voteCounts.set(candidate.id, 0);
+    });
+
+    election.votes.forEach(vote => {
+      vote.candidate_id.forEach(candidateId => {
+        if (voteCounts.has(candidateId)) {
+          voteCounts.set(candidateId, (voteCounts.get(candidateId) || 0) + 1);
+        }
+      });
+    });
+
+    const results = election.candidates.map(candidate => ({
+      candidate_id: candidate.id,
+      name: candidate.name,
+      votes: voteCounts.get(candidate.id) || 0,
+    }));
+
+    return {
+      status_code: HttpStatus.OK,
+      message: 'Election results retrieved successfully',
+      data: {
+        election_id: election.id,
+        election_title: election.title,
+        total_votes: election.votes.length,
+        results: results,
+      },
+    };
+  }
+
+  async getElectionResultsForDownload(
+    electionId: string,
+    adminId: string,
+  ): Promise<{ filename: string; csvData: string }> {
+    const results = await this.getElectionResults(electionId, adminId);
+
+    const csvData = this.convertResultsToCsv(results.data.results);
+    const filename = `election-${electionId}-results.csv`;
+
+    return { filename, csvData };
+  }
+
+  private convertResultsToCsv(results: Array<{ name: string; votes: number }>): string {
+    const header = 'Candidate Name,Votes\n';
+    const rows = results.map(r => `"${r.name.replace(/"/g, '""')}",${r.votes}`).join('\n');
+    return header + rows;
   }
 }

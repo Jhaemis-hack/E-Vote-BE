@@ -13,6 +13,8 @@ import {
   ParseUUIDPipe,
   UsePipes,
   ValidationPipe,
+  BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +23,7 @@ import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -69,12 +72,23 @@ export class UserController {
     return this.userService.getUserById(id);
   }
 
-  @Patch(':id')
+  @Patch('/user/:id')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiResponse({ status: 200, description: 'The user has been successfully updated.', type: User })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Req() req: any) {
+    if (!id.match(/^[0-9a-fA-F-]{36}$/)) {
+      throw new BadRequestException({
+        message: SYS_MSG.INCORRECT_UUID,
+        status_code: HttpStatus.BAD_REQUEST,
+      });
+    }
+
+    const currentUser = req.user;
+    console.log('currentUser', currentUser);
+    return this.userService.update(id, updateUserDto, currentUser);
   }
 
   @Delete('users/:id')
