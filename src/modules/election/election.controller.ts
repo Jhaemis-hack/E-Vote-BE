@@ -55,6 +55,7 @@ export class ElectionController {
     return this.electionService.findAll(page, pageSize, adminId);
   }
 
+  @ApiBearerAuth()
   @Get(':id')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get an election by ID' })

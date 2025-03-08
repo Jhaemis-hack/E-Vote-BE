@@ -18,6 +18,12 @@ export class ElectionDto {
   @ApiProperty({ description: 'The description of the election', example: 'Election to determine the next president' })
   description: string;
 
+  @ApiProperty({ description: 'The status of the election', example: 'onGoing' })
+  status: string;
+
+  @ApiProperty({ description: 'The total casted votes in the election', example: '5' })
+  votes_casted: string;
+
   @ApiProperty({
     description: 'The start date of the election',
     example: '2025-02-15T07:00:00.000Z',
