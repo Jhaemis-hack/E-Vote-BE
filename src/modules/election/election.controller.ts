@@ -8,12 +8,14 @@ import {
   HttpStatus,
   Param,
   Patch,
+  Put,
   Post,
   Query,
   Req,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
 import { isUUID } from 'class-validator';
 import { AuthGuard } from '../../guards/auth.guard';
 import { CreateElectionDto } from './dto/create-election.dto';
@@ -21,6 +23,8 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
+import { ElectionStatus } from './entities/election.entity';
+import { ElectionType } from './entities/election.entity';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
@@ -65,9 +69,48 @@ export class ElectionController {
     return this.electionService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto) {
-    return this.electionService.update(+id, updateElectionDto);
+  @Put(':id')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Update an election' })
+  @ApiParam({ name: 'id', description: 'Election ID', type: String })
+  @ApiBody({
+    type: UpdateElectionDto,
+    examples: {
+      example1: {
+        summary: 'Example request body',
+        value: {
+          title: 'Updated Election Title',
+          description: 'This is an updated description.',
+          start_date: '2025-06-01T00:00:00Z',
+          end_date: '2025-06-02T00:00:00Z',
+          start_time: '09:00:00',
+          end_time: '10:00:00',
+          status: ElectionStatus.ONGOING,
+          electionType: ElectionType.MULTICHOICE,
+          candidates: ['Candidate A', 'Candidate B'],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: HttpStatus.OK, description: SYS_MSG.ELECTION_UPDATED })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: SYS_MSG.BAD_REQUEST })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: SYS_MSG.ELECTION_NOT_FOUND })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: SYS_MSG.INTERNAL_SERVER_ERROR })
+  async update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto) {
+    try {
+      const updatedElection = await this.electionService.update(id, updateElectionDto);
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.ELECTION_UPDATED,
+        data: updatedElection,
+      };
+    } catch (error) {
+      throw new NotFoundException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.BAD_REQUEST,
+        data: null,
+      });
+    }
   }
 
   @Delete(':id')
