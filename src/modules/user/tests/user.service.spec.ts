@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -139,7 +139,6 @@ describe('UserService', () => {
       };
 
       const hashedPassword = await bcrypt.hash(loginDto.password, 10);
-
       const mockUser: Partial<User> = {
         id: randomUUID(),
         email: loginDto.email,
@@ -154,7 +153,7 @@ describe('UserService', () => {
 
       expect(result).toEqual({
         status_code: HttpStatus.OK,
-        message: SYS_MSG.LOGIN_MESSAGE,
+        message: SYS_MSG.LOGIN_MESSAGE, // e.g. "You have successfully logged in."
         data: {
           id: mockUser.id,
           email: loginDto.email,
@@ -169,9 +168,10 @@ describe('UserService', () => {
         password: 'WrongPass1!',
       };
 
+      // Simulate user not found
       userRepository.findOne = jest.fn().mockResolvedValue(null);
 
-      await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials.'));
+      await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND));
     });
 
     it('should throw an error for incorrect password', async () => {
@@ -180,6 +180,7 @@ describe('UserService', () => {
         password: 'WrongPass1!',
       };
 
+      // The actual password was "CorrectPass1!"
       const hashedPassword = await bcrypt.hash('CorrectPass1!', 10);
       const mockUser: Partial<User> = {
         id: '1',
@@ -190,7 +191,7 @@ describe('UserService', () => {
       userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => false);
 
-      await expect(userService.login(loginDto)).rejects.toThrow(new BadRequestException('Bad credentials'));
+      await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD));
     });
   });
 
