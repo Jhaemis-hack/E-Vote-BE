@@ -155,7 +155,7 @@ export class ElectionService {
         start_time: string;
         end_date: Date;
         end_time: string;
-        candidates: { candidate: string; vote_count: number }[];
+        candidates: { id: string; candidate: string; vote_count: number }[];
       };
     };
   }> {
@@ -189,6 +189,7 @@ export class ElectionService {
     const totalVotesCast = Array.from(voteCounts.values()).reduce((sum, count) => sum + count, 0);
 
     const result = candidates.map(candidate => ({
+      id: candidate.id,
       candidate: candidate.name,
       vote_count: voteCounts.get(candidate.id) || 0,
     }));
