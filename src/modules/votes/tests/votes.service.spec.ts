@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Vote } from '../entities/votes.entity';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { Election, ElectionStatus } from 'src/modules/election/entities/election.entity';
+import { Election, ElectionStatus } from '../../election/entities/election.entity';
 
 describe('VoteService', () => {
   let service: VoteService;
@@ -33,6 +33,10 @@ describe('VoteService', () => {
     service = module.get<VoteService>(VoteService);
     voteRepository = module.get<Repository<Vote>>(getRepositoryToken(Vote));
     electionRepository = module.get<Repository<Election>>(getRepositoryToken(Election));
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('create vote', () => {
@@ -83,7 +87,7 @@ describe('VoteService', () => {
       election.status = ElectionStatus.ONGOING;
       election.candidates = [
         {
-          id: '7284fdbc-a1b9-45ad-a556-72edae14526d',
+          id: '7384fdbc-a1b9-45ad-a556-72edae14526d',
           name: 'Candidate A',
           election_id: '7284fdbc-a1b9-55ad-a586-72edae14526d',
           votes: [],
@@ -113,17 +117,38 @@ describe('VoteService', () => {
       vote.created_at = new Date();
       vote.updated_at = new Date();
 
+      const election = new Election();
+      election.id = '7284fdbc-a1b9-55ad-a586-72edae14526d';
+      election.vote_link = validVoteLink;
+      election.status = ElectionStatus.ONGOING;
+      election.candidates = [
+        {
+          id: '7284fdbc-a1b9-45ad-a586-72edae14526d',
+          name: 'Candidate A',
+          election_id: '7284fdbc-a1b9-55ad-a586-72edae14526d',
+          votes: [],
+          created_at: new Date(),
+          updated_at: new Date(),
+          deleted_at: null,
+          election: new Election(),
+        },
+      ];
+
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
       jest.spyOn(voteRepository, 'create').mockReturnValue(vote);
       jest.spyOn(voteRepository, 'save').mockResolvedValue(vote);
 
       const result = await service.createVote(validVoteLink, createVoteDto);
 
-      expect(voteRepository.create).toHaveBeenCalledWith(createVoteDto);
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { vote_link: validVoteLink },
+        relations: ['candidates'],
+      });
+      expect(voteRepository.create).toHaveBeenCalledWith({ ...createVoteDto, election_id: election.id });
       expect(voteRepository.save).toHaveBeenCalledWith(vote);
       expect(result).toEqual({
-        status: HttpStatus.CREATED,
-        message: SYS_MSG.VOTELINK_CREATED,
-        data: vote,
+        status: HttpStatus.OK,
+        message: SYS_MSG.VOTE_CREATION_MESSAGE,
       });
     });
   });

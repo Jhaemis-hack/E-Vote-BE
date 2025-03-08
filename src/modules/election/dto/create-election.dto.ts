@@ -20,14 +20,14 @@ export class CreateElectionDto {
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  startDate: Date;
+  start_date: Date;
 
   @ApiProperty({ example: '2025-06-02T00:00:00Z' })
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  @IsAfterDate('startDate', { message: 'End date must be after start date' })
-  endDate: Date;
+  @IsAfterDate('start_date', { message: 'End date must be after start date' })
+  end_date: Date;
 
   @ApiProperty({ example: '09:00:00' })
   @IsNotEmpty()

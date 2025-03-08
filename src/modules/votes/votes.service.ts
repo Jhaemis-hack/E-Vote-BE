@@ -61,7 +61,6 @@ export class VoteService {
     return {
       status: HttpStatus.OK,
       message: SYS_MSG.VOTE_CREATION_MESSAGE,
-      data: saved_vote,
     };
   }
 
