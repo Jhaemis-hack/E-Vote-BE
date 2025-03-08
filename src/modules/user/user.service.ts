@@ -169,7 +169,7 @@ export class UserService {
   private validatePassword(password: string) {
     if (password.length < 8) {
       throw new BadRequestException({
-        message: 'Validation failed',
+        message: SYS_MSG.VALIDATON_ERROR,
         data: { password: 'Password must be at least 8 characters long' },
         status_code: HttpStatus.BAD_REQUEST,
       });

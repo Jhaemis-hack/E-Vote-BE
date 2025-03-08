@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -10,6 +10,7 @@ import { User } from '../entities/user.entity';
 import { UserService } from '../user.service';
 import { randomUUID } from 'crypto';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
+import { UpdateUserDto } from '../dto/update-user.dto';
 
 interface CreateUserDto {
   id?: string;
@@ -246,6 +247,145 @@ describe('UserService', () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
 
       await expect(userService.deactivateUser('non-existent-uuid')).rejects.toThrow(NotFoundException);
+    });
+  });
+  describe('update', () => {
+    it('✅ should update a user successfully', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+      const currentUser = {
+        id: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+      jest.spyOn(userRepository, 'save').mockResolvedValue({ ...mockUser, ...updateUserDto } as any);
+
+      const result = await userService.update(userId, updateUserDto, currentUser);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.USER_UPDATED,
+        data: { ...mockUser, ...updateUserDto },
+      });
+    });
+
+    it('❌ should throw UnauthorizedException if currentUser is not provided', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+
+      await expect(userService.update(userId, updateUserDto, null)).rejects.toThrow(
+        new UnauthorizedException({
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          status_code: HttpStatus.UNAUTHORIZED,
+        }),
+      );
+    });
+
+    it('❌ should throw NotFoundException if user does not exist', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+      const currentUser = {
+        id: userId,
+        user_type: 'admin',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new NotFoundException({
+          message: SYS_MSG.USER_NOT_FOUND,
+          status_code: HttpStatus.NOT_FOUND,
+        }),
+      );
+    });
+
+    it('❌ should throw UnauthorizedException if a non-admin tries to update another user', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+      const currentUser = {
+        id: 'another-user-id',
+        user_type: 'user',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new UnauthorizedException({
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          status_code: HttpStatus.FORBIDDEN,
+        }),
+      );
+    });
+
+    it('❌ should throw BadRequestException for an invalid password', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        password: 'short',
+      };
+      const currentUser = {
+        id: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          message: 'Validation failed',
+          data: { password: 'Password must be at least 8 characters long' },
+          status_code: HttpStatus.BAD_REQUEST,
+        }),
+      );
+    });
+
+    it('❌ should throw BadRequestException for an invalid email', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'invalid-email',
+      };
+      const currentUser = {
+        id: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          message: 'Validation failed',
+          data: { email: 'Invalid email format' },
+          status_code: HttpStatus.BAD_REQUEST,
+        }),
+      );
     });
   });
 });

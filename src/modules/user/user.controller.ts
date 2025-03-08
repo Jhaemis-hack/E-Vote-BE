@@ -23,6 +23,7 @@ import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -80,7 +81,7 @@ export class UserController {
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Req() req: any) {
     if (!id.match(/^[0-9a-fA-F-]{36}$/)) {
       throw new BadRequestException({
-        message: 'Invalid user ID format',
+        message: SYS_MSG.INCORRECT_UUID,
         status_code: HttpStatus.BAD_REQUEST,
       });
     }
