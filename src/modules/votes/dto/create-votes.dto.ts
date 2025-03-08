@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 export class CreateVoteDto {
   @ApiProperty({
@@ -7,5 +7,7 @@ export class CreateVoteDto {
   })
   @IsNotEmpty()
   @IsArray()
+  @ArrayNotEmpty()
+  @IsUUID('4', { each: true })
   candidate_id: string[];
 }

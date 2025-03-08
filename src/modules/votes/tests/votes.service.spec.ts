@@ -111,7 +111,7 @@ describe('VoteService', () => {
     });
     it('should create a new vote', async () => {
       const vote = new Vote();
-      vote.id = 'vote-id';
+      vote.id = '7204fdbc-a1b9-55ad-a586-72edae14526d';
       vote.election_id = '7284fdbc-a1b9-55ad-a586-72edae14526d';
       vote.candidate_id = ['7284fdbc-a1b9-45ad-a586-72edae14526d'];
       vote.created_at = new Date();
@@ -147,8 +147,13 @@ describe('VoteService', () => {
       expect(voteRepository.create).toHaveBeenCalledWith({ ...createVoteDto, election_id: election.id });
       expect(voteRepository.save).toHaveBeenCalledWith(vote);
       expect(result).toEqual({
-        status: HttpStatus.OK,
+        status_code: HttpStatus.OK,
         message: SYS_MSG.VOTE_CREATION_MESSAGE,
+        data: {
+          vote_id: vote.id,
+          election_id: vote.election_id,
+          candidate_id: vote.candidate_id,
+        },
       });
     });
   });

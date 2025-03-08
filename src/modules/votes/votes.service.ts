@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateVoteDto } from './dto/create-votes.dto';
-import { UpdateVoteDto } from './dto/update-votes.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vote } from './entities/votes.entity';
 import { Repository } from 'typeorm';
@@ -59,24 +58,13 @@ export class VoteService {
     const new_vote = this.voteRepository.create({ ...createVoteDto, election_id: election.id });
     const saved_vote = await this.voteRepository.save(new_vote);
     return {
-      status: HttpStatus.OK,
+      status_code: HttpStatus.OK,
       message: SYS_MSG.VOTE_CREATION_MESSAGE,
+      data: {
+        vote_id: saved_vote.id,
+        election_id: saved_vote.election_id,
+        candidate_id: saved_vote.candidate_id,
+      },
     };
-  }
-
-  findAll() {
-    return `This action returns all vote`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} vote`;
-  }
-
-  update(id: number, UpdateVoteDto: UpdateVoteDto) {
-    return `This action updates a #${id} vote`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} vote`;
   }
 }
