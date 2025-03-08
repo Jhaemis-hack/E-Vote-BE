@@ -170,9 +170,7 @@ describe('UserService', () => {
       // Simulate user not found
       userRepository.findOne = jest.fn().mockResolvedValue(null);
 
-      await expect(userService.login(loginDto)).rejects.toThrow(
-        new UnauthorizedException(SYS_MSG.INVALID_LOGIN_CREDENTIALS),
-      );
+      await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND));
     });
 
     it('should throw an error for incorrect password', async () => {
@@ -192,9 +190,7 @@ describe('UserService', () => {
       userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => false);
 
-      await expect(userService.login(loginDto)).rejects.toThrow(
-        new UnauthorizedException(SYS_MSG.INVALID_LOGIN_CREDENTIALS),
-      );
+      await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD));
     });
   });
 

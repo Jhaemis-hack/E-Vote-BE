@@ -1,7 +1,13 @@
 export const UNAUTHENTICATED_MESSAGE = 'Not an authenticated user';
 export const LOGIN_MESSAGE = 'Login successful';
 export const SIGNUP_MESSAGE = 'Signup successful';
-export const INVALID_LOGIN_CREDENTIALS = 'Email or password is incorrect';
+
+export const EMAIL_NOT_FOUND = 'User with this email not found';
+export const INCORRECT_PASSWORD = 'Incorrect password';
+export const INVALID_EMAIL_FORMAT = 'Invalid email format';
+export const EMAIL_IN_USE = 'Email already in use';
+export const INVALID_PASSWORD_FORMAT =
+  'Password must be at least 8 characters long and include a number and special character';
 export const INCORRECT_UUID = 'Not a valid uuid';
 
 export const FETCH_USER = 'User fetched successfully';
