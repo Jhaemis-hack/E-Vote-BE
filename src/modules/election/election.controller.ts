@@ -83,14 +83,14 @@ export class ElectionController {
     return this.electionService.remove(id);
   }
 
-  @Get('vote/vote-link')
+  @Get('vote/:voteLink')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get an election from vote link' })
   @ApiResponse({ status: 200, description: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK })
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
-  getElectionByVoterLink(@Param('id') id: string) {
-    return this.electionService.getElectionByVoterLink(id);
+  getElectionByVoterLink(@Param('voteLink') voteLink: string) {
+    return this.electionService.getElectionByVoterLink(voteLink);
   }
 }

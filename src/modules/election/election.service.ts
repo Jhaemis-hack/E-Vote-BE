@@ -292,19 +292,13 @@ export class ElectionService {
       return {
         election_id: election.id,
         election_title: election.title,
-        description: election.description,
         start_date: election.start_date,
         end_date: election.end_date,
-        vote_link: election.vote_link,
         election_type: electionType,
         start_time: election.start_time,
         status: election.status,
         end_time: election.end_time,
         created_by: election.created_by,
-        candidates: election.candidates.map(candidate => ({
-          candidate_id: candidate.id,
-          name: candidate.name,
-        })),
       };
     });
   }
