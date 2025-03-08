@@ -20,6 +20,9 @@ export class ElectionResponseDto {
   @ApiProperty({ description: 'The end date of the election', example: '2023-10-31T23:59:59.000Z' })
   end_date: Date;
 
+  @ApiProperty({ description: 'This uuid is used to acesss this election by a voter.' })
+  vote_link: string;
+
   @ApiProperty({
     description: 'The type of the election',
     enum: ElectionType, // Use the enum here
