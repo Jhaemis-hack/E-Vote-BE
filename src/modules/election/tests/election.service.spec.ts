@@ -364,6 +364,8 @@ describe('ElectionService', () => {
             id: electionId,
             title: '2025 Presidential Election',
             description: 'Election to choose the next president of the country',
+            status: 'ongoing',
+            votes_casted: 3,
             start_date: new Date('2025-03-01T00:00:00.000Z'),
             start_time: '09:00:00',
             end_date: new Date('2025-03-31T23:59:59.999Z'),
