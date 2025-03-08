@@ -27,3 +27,5 @@ export const EEROR_DELETING_ELECTION = 'Error occured while deleting election';
 export const UNAUTHORIZED_USER = 'Authorization is required to access this route.';
 export const VOTE_CREATION_MESSAGE = 'Thank you for voting! Your vote has been recorded.';
 export const CANDIDATE_NOT_FOUND = 'Candidate not found';
+export const UNAUTHORIZED_ACCESS =
+  'Unauthorized access to election results. Only the election creator can view results.';
