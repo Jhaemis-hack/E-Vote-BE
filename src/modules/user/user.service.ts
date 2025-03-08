@@ -16,6 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import { exist, string } from 'joi';
 
 @Injectable()
 export class UserService {

@@ -23,6 +23,7 @@ import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -54,11 +55,12 @@ export class ElectionController {
     return this.electionService.findAll(page, pageSize, adminId);
   }
 
+  @ApiBearerAuth()
   @Get(':id')
   @UseGuards(AuthGuard)
-  @ApiOperation({ summary: 'Get an election by ID' })
-  @ApiResponse({ status: 200, description: 'Election found', type: Election })
-  @ApiResponse({ status: 404, description: 'Election not found' })
+  @ApiOperation({ summary: 'Retrieve election details by ID, including candidates and their respective vote counts.' })
+  @ApiResponse({ status: 200, description: 'Election found', type: SingleElectionResponseDto })
+  @ApiResponse({ status: 404, description: 'Election not found', type: ElectionNotFound })
   findOne(@Param('id') id: string) {
     return this.electionService.findOne(id);
   }
@@ -83,14 +85,14 @@ export class ElectionController {
     return this.electionService.remove(id);
   }
 
-  @Get('vote/vote-link')
+  @Get('vote/:voteLink')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get an election from vote link' })
   @ApiResponse({ status: 200, description: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK })
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
-  getElectionByVoterLink(@Param('id') id: string) {
-    return this.electionService.getElectionByVoterLink(id);
+  getElectionByVoterLink(@Param('voteLink') voteLink: string) {
+    return this.electionService.getElectionByVoterLink(voteLink);
   }
 }

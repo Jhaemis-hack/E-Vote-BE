@@ -12,6 +12,7 @@ import { IsUUID, isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
@@ -25,6 +26,7 @@ export class ElectionService {
   constructor(
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
+    @InjectRepository(Vote) private voteRepository: Repository<Vote>,
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
@@ -139,22 +141,29 @@ export class ElectionService {
     };
   }
 
-  async findOne(id: string) {
-    if (!isUUID(id)) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const election = await this.electionRepository.findOne({
-      where: { id },
-      relations: ['candidates'],
-    });
+  async findOne(electionId: string): Promise<{
+    status_code: number;
+    message: string;
+    data: {
+      election: {
+        id: string;
+        title: string;
+        description: string;
+        status: string;
+        votes_casted: number;
+        start_date: Date;
+        start_time: string;
+        end_date: Date;
+        end_time: string;
+        candidates: { id: string; candidate: string; vote_count: number }[];
+      };
+    };
+  }> {
+    const [election, candidates, votes] = await Promise.all([
+      this.electionRepository.findOne({ where: { id: electionId } }),
+      this.candidateRepository.find({ where: { election_id: electionId } }),
+      this.voteRepository.find({ where: { election_id: electionId } }),
+    ]);
 
     if (!election) {
       throw new NotFoundException({
@@ -164,11 +173,43 @@ export class ElectionService {
       });
     }
 
+    const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
+
+    const voteCounts = new Map<string, number>();
+    votes.forEach(vote => {
+      if (Array.isArray(vote.candidate_id)) {
+        vote.candidate_id.forEach(id => {
+          voteCounts.set(id, (voteCounts.get(id) || 0) + 1);
+        });
+      } else {
+        voteCounts.set(vote.candidate_id, (voteCounts.get(vote.candidate_id) || 0) + 1);
+      }
+    });
+
+    const totalVotesCast = Array.from(voteCounts.values()).reduce((sum, count) => sum + count, 0);
+
+    const result = candidates.map(candidate => ({
+      id: candidate.id,
+      candidate: candidate.name,
+      vote_count: voteCounts.get(candidate.id) || 0,
+    }));
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_ELECTION,
       data: {
-        election,
+        election: {
+          id: election.id,
+          title: election.title,
+          description: election.description,
+          status: election.status,
+          votes_casted: totalVotesCast,
+          start_date: election.start_date,
+          start_time: election.start_time,
+          end_date: election.end_date,
+          end_time: election.end_time,
+          candidates: result,
+        },
       },
     };
   }
@@ -292,19 +333,13 @@ export class ElectionService {
       return {
         election_id: election.id,
         election_title: election.title,
-        description: election.description,
         start_date: election.start_date,
         end_date: election.end_date,
-        vote_link: election.vote_link,
         election_type: electionType,
         start_time: election.start_time,
         status: election.status,
         end_time: election.end_time,
         created_by: election.created_by,
-        candidates: election.candidates.map(candidate => ({
-          candidate_id: candidate.id,
-          name: candidate.name,
-        })),
       };
     });
   }
