@@ -333,19 +333,17 @@ describe('ElectionService', () => {
       voteRepository.find = jest.fn().mockResolvedValue(mockVotes);
 
       const result = await service.findOne(electionId);
-
       expect(result).toEqual({
         status_code: 200,
-        message: 'Election fetched successfully', // Ensure SYS_MSG.FETCH_ELECTION is defined
+        message: 'Election fetched successfully',
         data: {
           id: electionId,
-          title: 'Presidential Election',
-          description: 'Election for president',
-          start_date: new Date('2024-01-01'),
-          end_date: new Date('2024-01-02'),
+          title: '2025 Presidential Election',
+          description: 'Election to choose the next president of the country',
+          start_date: new Date('2025-03-01T00:00:00.000Z'),
+          end_date: new Date('2025-03-31T23:59:59.999Z'),
           election_type: ElectionType.SINGLECHOICE,
-          created_by: 'user123',
-          total_voters: 3,
+          created_by: 'admin123',
           votes: [
             { candidate: 'Candidate A', vote_count: 2 },
             { candidate: 'Candidate B', vote_count: 1 },

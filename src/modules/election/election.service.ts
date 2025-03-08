@@ -132,7 +132,6 @@ export class ElectionService {
       end_date: Date;
       election_type: ElectionType;
       created_by: string;
-      total_voters: number;
       votes: { candidate: string; vote_count: number }[];
     };
   }> {
@@ -166,7 +165,6 @@ export class ElectionService {
         end_date: election.end_date,
         election_type: election.type,
         created_by: election.created_by,
-        total_voters: votearray.length,
         votes: result,
       },
     };
