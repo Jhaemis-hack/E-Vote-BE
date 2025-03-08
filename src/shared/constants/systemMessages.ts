@@ -13,9 +13,7 @@ export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
 export const INCORRECT_UUID = 'Not a valid uuid';
-
 export const VOTELINK_CREATED = 'Vote link creation successful';
-
 export const ELECTION_CREATED = 'Election creation successful';
 export const FETCH_ELECTIONS = 'Elections fetched successfully';
 export const FETCH_ELECTION = 'Election fetched successfully';
