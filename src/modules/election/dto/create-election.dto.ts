@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsDate, IsEnum, IsNotEmpty, IsString, Matches, ArrayMinSize, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
-import { ElectionStatus, ElectionType } from '../entities/election.entity';
+import { ElectionType } from '../entities/election.entity';
 import { Column } from 'typeorm';
 
 export class CreateElectionDto {
@@ -44,14 +44,14 @@ export class CreateElectionDto {
   // @IsNotEmpty()
   // vote_link:string
 
-  @ApiProperty({
-    description: 'Status of the election',
-    enum: ElectionStatus,
-    default: ElectionStatus.ONGOING,
-    example: ElectionStatus.ONGOING,
-  })
-  @IsEnum(ElectionStatus)
-  status: ElectionStatus;
+  // @ApiProperty({
+  //   description: 'Status of the election',
+  //   enum: ElectionStatus,
+  //   default: ElectionStatus.ONGOING,
+  //   example: ElectionStatus.ONGOING,
+  // })
+  // @IsEnum(ElectionStatus)
+  // status?: ElectionStatus;
 
   @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
   @IsNotEmpty()
