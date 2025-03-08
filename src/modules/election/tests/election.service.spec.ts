@@ -368,7 +368,7 @@ describe('ElectionService', () => {
             start_time: '09:00:00',
             end_date: new Date('2025-03-31T23:59:59.999Z'),
             end_time: '10:00:00',
-            created_by: 'admin123',
+            created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
             candidates: [
               { candidate: 'Candidate A', vote_count: 2 },
               { candidate: 'Candidate B', vote_count: 1 },
@@ -376,10 +376,6 @@ describe('ElectionService', () => {
           },
         },
       });
-      // expect(electionRepository.findOne).toHaveBeenCalledWith({
-      //   where: { id: electionId },
-      //   relations: ['candidates'],
-      // });
     });
 
     it('should throw NotFoundException if election does not exist', async () => {
