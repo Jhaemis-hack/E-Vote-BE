@@ -151,7 +151,7 @@ export class UserService {
 
     if (updateUserDto.password) {
       this.validatePassword(updateUserDto.password);
-      user.password = await bcrypt.hash(updateUserDto.password, 10);
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
     if (updateUserDto.email) {
@@ -165,7 +165,9 @@ export class UserService {
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.USER_UPDATED,
-      data: user,
+      data: {
+        user_id: user.id,
+      },
     };
   }
 

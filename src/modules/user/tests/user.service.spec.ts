@@ -262,7 +262,7 @@ describe('UserService', () => {
       const mockUser = {
         id: userId,
         email: 'old@example.com',
-        password: 'hashedPassword',
+        // password: 'hashedPassword',
       };
 
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
@@ -273,7 +273,7 @@ describe('UserService', () => {
       expect(result).toEqual({
         status_code: HttpStatus.OK,
         message: SYS_MSG.USER_UPDATED,
-        data: { ...mockUser, ...updateUserDto },
+        data: { user_id: mockUser.id },
       });
     });
 
