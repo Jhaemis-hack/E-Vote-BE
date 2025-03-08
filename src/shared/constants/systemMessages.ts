@@ -13,7 +13,6 @@ export const INCORRECT_UUID = 'Not a valid uuid';
 export const FETCH_USER = 'User fetched successfully';
 export const DELETE_USER = 'User deleted successfully';
 export const USER_NOT_FOUND = 'User not found';
-export const UNAUTHORIZED_USER = 'Not an authorized user';
 export const USER_UPDATED = 'User updated successfully';
 export const VALIDATON_ERROR = 'Validation error';
 
