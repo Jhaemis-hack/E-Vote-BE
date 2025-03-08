@@ -355,7 +355,7 @@ describe('UserService', () => {
 
       await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
         new BadRequestException({
-          message: 'Validation failed',
+          message: SYS_MSG.VALIDATON_ERROR,
           data: { password: 'Password must be at least 8 characters long' },
           status_code: HttpStatus.BAD_REQUEST,
         }),
@@ -381,7 +381,7 @@ describe('UserService', () => {
 
       await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
         new BadRequestException({
-          message: 'Validation failed',
+          message: SYS_MSG.VALIDATON_ERROR,
           data: { email: 'Invalid email format' },
           status_code: HttpStatus.BAD_REQUEST,
         }),

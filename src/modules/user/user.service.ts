@@ -180,7 +180,7 @@ export class UserService {
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
       throw new BadRequestException({
-        message: 'Validation failed',
+        message: SYS_MSG.VALIDATON_ERROR,
         data: { email: 'Invalid email format' },
         status_code: HttpStatus.BAD_REQUEST,
       });
