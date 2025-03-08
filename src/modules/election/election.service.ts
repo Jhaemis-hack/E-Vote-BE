@@ -87,7 +87,7 @@ export class ElectionService {
       currentPage: number;
       totalPages: number;
       totalResults: number;
-      elections: ElectionResponseDto[];
+      elections;
       meta: any;
     };
   }> {
@@ -214,39 +214,41 @@ export class ElectionService {
     };
   }
 
-  private mapElections(result: Election[]): ElectionResponseDto[] {
-    return result
-      .map(election => {
-        if (!election.created_by) {
-          console.warn(`Admin for election with ID ${election.id} not found.`);
-          return null;
-        }
+  private mapElections(result: Election[]) {
+    return result.map(election => {
+      if (!election.created_by) {
+        console.warn(`Admin for election with ID ${election.id} not found.`);
+        return null;
+      }
 
-        let electionType: ElectionType;
-        if (election.type === 'singlechoice') {
-          electionType = ElectionType.SINGLECHOICE;
-        } else if (election.type === 'multichoice') {
-          electionType = ElectionType.MULTICHOICE;
-        } else {
-          console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-          electionType = ElectionType.SINGLECHOICE;
-        }
+      let electionType: ElectionType;
+      if (election.type === 'singlechoice') {
+        electionType = ElectionType.SINGLECHOICE;
+      } else if (election.type === 'multichoice') {
+        electionType = ElectionType.MULTICHOICE;
+      } else {
+        console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+        electionType = ElectionType.SINGLECHOICE;
+      }
 
-        return {
-          election_id: election.id,
-          election_title: election.title,
-          description: election.description,
-          start_date: election.start_date,
-          end_date: election.end_date,
-          vote_link: election.vote_link,
-          election_type: electionType,
-          start_time: election.start_time,
-          status: election.status,
-          end_time: election.end_time,
-          created_by: election.created_by,
-          candidates: election.candidates.map(candidate => candidate.name),
-        };
-      })
-      .filter(election => election !== null);
+      return {
+        election_id: election.id,
+        election_title: election.title,
+        description: election.description,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        vote_link: election.vote_link,
+        election_type: electionType,
+        start_time: election.start_time,
+        status: election.status,
+        end_time: election.end_time,
+        created_by: election.created_by,
+        candidates: election.candidates.map(candidate => ({
+          candidate_id: candidate.id,
+          name: candidate.name,
+          election_id: candidate.election_id,
+        })),
+      };
+    });
   }
 }
