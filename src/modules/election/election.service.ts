@@ -20,6 +20,11 @@ import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionType } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
 
+interface ElectionResultsDownload {
+  filename: string;
+  csvData: string;
+}
+
 @Injectable()
 export class ElectionService {
   private readonly logger = new Logger(ElectionService.name);
@@ -443,5 +448,23 @@ export class ElectionService {
         results: results,
       },
     };
+  }
+
+  async getElectionResultsForDownload(
+    electionId: string,
+    adminId: string,
+  ): Promise<{ filename: string; csvData: string }> {
+    const results = await this.getElectionResults(electionId, adminId);
+
+    const csvData = this.convertResultsToCsv(results.data.results);
+    const filename = `election-${electionId}-results.csv`;
+
+    return { filename, csvData };
+  }
+
+  private convertResultsToCsv(results: Array<{ name: string; votes: number }>): string {
+    const header = 'Candidate Name,Votes\n';
+    const rows = results.map(r => `"${r.name.replace(/"/g, '""')}",${r.votes}`).join('\n');
+    return header + rows;
   }
 }
