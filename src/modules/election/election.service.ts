@@ -123,23 +123,18 @@ export class ElectionService {
     };
   }
 
-  async findOne(id: string): Promise<Election> {
-    const election = await this.electionRepository.findOne({
-      where: { id },
-      relations: ['candidates'],
-    });
-    if (!election) {
-      throw new NotFoundException('Election not found');
+  async findOne(id: string) {
+    if (!isUUID(id)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    return election;
-  }
-
-  update(id: number, updateElectionDto: UpdateElectionDto) {
-    return updateElectionDto;
-  }
-
-  async remove(id: string) {
     const election = await this.electionRepository.findOne({
       where: { id },
       relations: ['candidates'],
@@ -147,17 +142,54 @@ export class ElectionService {
 
     if (!election) {
       throw new NotFoundException({
-        status: 'Not found',
-        message: 'Invalid Election Id',
-        status_code: 404,
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_ELECTION,
+      data: {
+        election,
+      },
+    };
+  }
+
+  update(id: number, updateElectionDto: UpdateElectionDto) {
+    return updateElectionDto;
+  }
+
+  async remove(id: string) {
+    if (!isUUID(id)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const election = await this.electionRepository.findOne({
+      where: { id },
+      relations: ['candidates'],
+    });
+
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
       });
     }
 
     if (election.status === ElectionStatus.ONGOING) {
       throw new ForbiddenException({
-        status: 'Forbidden',
-        message: 'Cannot delete an active election',
-        status_code: 403,
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.ELECTION_ACTIVE_CANNOT_DELETE,
+        data: null,
       });
     }
 
@@ -169,9 +201,9 @@ export class ElectionService {
       await this.electionRepository.delete({ id });
 
       return {
-        status: 'success',
-        status_code: 200,
-        message: `Election with id ${id} deleted successfully`,
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.ELECTION_DELETED,
+        data: null,
       };
     } catch (error) {
       this.logger.error(`Error deleting election with id ${id}: ${error.message}`, error.stack);
@@ -182,7 +214,11 @@ export class ElectionService {
   async getElectionByVoterLink(vote_link: string) {
     if (!isUUID(vote_link)) {
       throw new HttpException(
-        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -202,7 +238,11 @@ export class ElectionService {
 
     if (election?.status === ElectionStatus.COMPLETED) {
       throw new HttpException(
-        { status_code: HttpStatus.FORBIDDEN, message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED, data: null },
+        {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
+          data: null,
+        },
         HttpStatus.FORBIDDEN,
       );
     }
