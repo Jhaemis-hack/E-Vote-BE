@@ -174,7 +174,7 @@ describe('VoteLinkService', () => {
 
       expect(result).toEqual({
         status_code: HttpStatus.CREATED,
-        message: 'Successfully created a votelink',
+        message: 'mesage successful',
         data: {
           unique_link,
         },

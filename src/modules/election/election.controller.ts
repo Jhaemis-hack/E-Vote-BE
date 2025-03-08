@@ -39,6 +39,7 @@ export class ElectionController {
   }
 
   @Get()
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get all elections' })
   @ApiResponse({ status: 200, description: 'All ', type: [ElectionResponseDto] })
   async findAll(@Query('page') page: number = 1, @Query('pageSize') pageSize: number = 10): Promise<any> {
@@ -47,6 +48,7 @@ export class ElectionController {
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get an election by ID' })
   @ApiResponse({ status: 200, description: 'Election found', type: Election })
   @ApiResponse({ status: 404, description: 'Election not found' })
