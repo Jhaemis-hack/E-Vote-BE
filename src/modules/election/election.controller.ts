@@ -2,25 +2,25 @@ import {
   Body,
   Controller,
   Delete,
-  UseGuards,
   Get,
+  HttpCode,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
   Query,
   Req,
-  HttpException,
-  HttpStatus,
-  HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { isUUID } from 'class-validator';
+import { AuthGuard } from '../../guards/auth.guard';
 import { CreateElectionDto } from './dto/create-election.dto';
+import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
-import { ElectionResponseDto } from './dto/election-response.dto';
-import { AuthGuard } from '../../guards/auth.guard';
 import { Election } from './entities/election.entity';
-import { isUUID } from 'class-validator';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { SingleElectionResponseDto } from './dto/single-election.dto';
@@ -46,8 +46,13 @@ export class ElectionController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get all elections' })
   @ApiResponse({ status: 200, description: 'All ', type: [ElectionResponseDto] })
-  async findAll(@Query('page') page: number = 1, @Query('pageSize') pageSize: number = 10): Promise<any> {
-    return this.electionService.findAll(page, pageSize);
+  async findAll(
+    @Query('page') page: number = 1,
+    @Query('pageSize') pageSize: number = 10,
+    @Req() req: any,
+  ): Promise<any> {
+    const adminId = req.user.sub;
+    return this.electionService.findAll(page, pageSize, adminId);
   }
 
   @Get(':id')
@@ -78,9 +83,9 @@ export class ElectionController {
     return this.electionService.remove(id);
   }
 
-  @Get('vote/:id')
+  @Get('vote/vote-link')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get an election from voter link' })
+  @ApiOperation({ summary: 'Get an election from vote link' })
   @ApiResponse({ status: 200, description: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK })
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })

@@ -91,7 +91,7 @@ describe('ElectionService', () => {
         candidates: ['Candidate A', 'Candidate B'],
       };
 
-      const result = await service.create(createElectionDto, 'admin123');
+      const result = await service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e');
 
       expect(result).toEqual({
         status_code: 201,
@@ -107,7 +107,7 @@ describe('ElectionService', () => {
           status: createElectionDto.status,
           end_time: createElectionDto.end_time,
           election_type: ElectionType.SINGLECHOICE,
-          created_by: 'admin123',
+          created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
           candidates: createElectionDto.candidates,
         },
       });
@@ -122,7 +122,7 @@ describe('ElectionService', () => {
         end_time: createElectionDto.end_time,
         status: ElectionStatus.ONGOING,
         type: createElectionDto.electionType,
-        created_by: 'admin123',
+        created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
       });
 
       expect(electionRepository.save).toHaveBeenCalled();
@@ -147,7 +147,9 @@ describe('ElectionService', () => {
         throw new Error('Error creating election');
       });
 
-      await expect(service.create(createElectionDto, 'admin123')).rejects.toThrow('Error creating election');
+      await expect(service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e')).rejects.toThrow(
+        'Error creating election',
+      );
     });
   });
 
@@ -202,7 +204,7 @@ describe('ElectionService', () => {
 
       jest.spyOn(electionRepository, 'findAndCount').mockResolvedValue([elections, total]);
 
-      const result = await service.findAll(page, pageSize);
+      const result = await service.findAll(page, pageSize, 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf');
 
       expect(result).toEqual({
         status_code: 200,
@@ -251,6 +253,7 @@ describe('ElectionService', () => {
       });
 
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
+        where: { created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf' },
         skip: 0,
         take: pageSize,
         relations: ['created_by_user', 'candidates', 'votes'],
@@ -263,7 +266,7 @@ describe('ElectionService', () => {
 
       jest.spyOn(electionRepository, 'findAndCount').mockResolvedValue([[], 0]);
 
-      const result = await service.findAll(page, pageSize);
+      const result = await service.findAll(page, pageSize, 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf');
 
       expect(result).toEqual({
         status_code: 200,
@@ -286,6 +289,7 @@ describe('ElectionService', () => {
         skip: 0,
         take: pageSize,
         relations: ['created_by_user', 'candidates', 'votes'],
+        where: { created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf' },
       });
     });
 
@@ -295,12 +299,15 @@ describe('ElectionService', () => {
 
       jest.spyOn(electionRepository, 'findAndCount').mockRejectedValue(new Error('Database connection failed'));
 
-      await expect(service.findAll(page, pageSize)).rejects.toThrow('Database connection failed');
+      await expect(service.findAll(page, pageSize, 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf')).rejects.toThrow(
+        'Database connection failed',
+      );
 
       expect(electionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: pageSize,
         relations: ['created_by_user', 'candidates', 'votes'],
+        where: { created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf' },
       });
     });
 
@@ -308,7 +315,7 @@ describe('ElectionService', () => {
       const page = 0;
       const pageSize = -10;
 
-      await expect(service.findAll(page, pageSize)).rejects.toThrow(
+      await expect(service.findAll(page, pageSize, 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf')).rejects.toThrow(
         'Invalid pagination parameters. Page and pageSize must be greater than 0.',
       );
     });
@@ -329,7 +336,7 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         status: 'ongoing',
         type: 'singlechoice',
-        created_by: 'admin123',
+        created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
       };
 
       const mockCandidates = [
@@ -454,7 +461,7 @@ describe('ElectionService', () => {
       expect(electionRepository.delete).toHaveBeenCalledWith({ id: electionId });
     });
   });
-  describe('Get Election By VoterLink', () => {
+  describe('Get Election By Vote Link', () => {
     const validVoteLink = '7284fdbc-a1b9-45ad-a586-72edae14526d';
     const invalidVoteLink = 'invalid-vote-link';
 
@@ -469,8 +476,14 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         status: ElectionStatus.ONGOING,
         type: ElectionType.SINGLECHOICE,
-        created_by: 'admin123',
+        created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
         vote_link: validVoteLink,
+        candidates: [],
+        created_by_user: {} as User, // Add this
+        votes: [] as Vote[], // Add this
+        created_at: new Date(), // Add this
+        updated_at: new Date(), // Add this
+        deleted_at: null, // Add this
       };
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection as Election);
@@ -480,7 +493,20 @@ describe('ElectionService', () => {
       expect(result).toEqual({
         status_code: HttpStatus.OK,
         message: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK,
-        data: mockElection,
+        data: {
+          election_id: mockElection.id, // Transformed field
+          election_title: mockElection.title, // Transformed field
+          description: mockElection.description,
+          start_date: mockElection.start_date,
+          end_date: mockElection.end_date,
+          vote_link: mockElection.vote_link,
+          election_type: ElectionType.SINGLECHOICE, // Transformed field
+          start_time: mockElection.start_time,
+          status: mockElection.status,
+          end_time: mockElection.end_time,
+          created_by: mockElection.created_by,
+          candidates: [], // Transformed field (if candidates are mapped)
+        },
       });
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
@@ -527,7 +553,7 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         status: ElectionStatus.COMPLETED,
         type: ElectionType.SINGLECHOICE,
-        created_by: 'admin123',
+        created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
         vote_link: validVoteLink,
       };
 
