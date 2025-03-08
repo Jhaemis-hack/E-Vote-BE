@@ -2,7 +2,6 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { User } from '../../user/entities/user.entity';
-import { VoteLink } from '../../votelink/entities/votelink.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 
 export enum ElectionStatus {
@@ -29,6 +28,15 @@ export class Election extends AbstractBaseEntity {
   @Column()
   end_date: Date;
 
+  @Column({ type: 'time', default: '09:00:00' })
+  start_time: string;
+
+  @Column({ type: 'time', default: '10:00:00' })
+  end_time: string;
+
+  @Column()
+  vote_link: string;
+
   @Column({
     type: 'enum',
     enum: ElectionStatus,
@@ -51,7 +59,4 @@ export class Election extends AbstractBaseEntity {
 
   @OneToMany(() => Vote, vote => vote.election)
   votes: Vote[];
-
-  @OneToMany(() => VoteLink, voteLink => voteLink.election)
-  voter_links: VoteLink[];
 }
