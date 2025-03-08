@@ -61,12 +61,12 @@ export class UserService {
     });
 
     if (!userExist) {
-      throw new BadRequestException('Bad credentials.');
+      throw new UnauthorizedException(SYS_MSG.INVALID_LOGIN_CREDENTIALS);
     }
 
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
-      throw new BadRequestException('Bad credentials');
+      throw new UnauthorizedException(SYS_MSG.INVALID_LOGIN_CREDENTIALS);
     }
 
     const { password, ...admin } = userExist;
@@ -75,7 +75,11 @@ export class UserService {
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
-      data: { id: admin.id, email: admin.email, token },
+      data: {
+        id: admin.id,
+        email: admin.email,
+        token,
+      },
     };
   }
 
