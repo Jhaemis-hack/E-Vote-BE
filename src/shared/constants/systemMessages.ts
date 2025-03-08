@@ -7,3 +7,7 @@ export const VOTELINK_CREATED = 'Vote link creation successful';
 export const FETCH_USER = 'User fetched successfully';
 export const DELETE_USER = 'User deleted successfully';
 export const USER_NOT_FOUND = 'User not found';
+export const INCORRECT_UUID = 'Not a valid uuid';
+export const FETCH_ELECTION_BY_VOTER_LINK = 'Election successfully by the voter link';
+export const ELECTION_NOT_FOUND = 'Election was not found';
+export const ELECTION_ENDED_VOTE_NOT_ALLOWED = 'The election has ended and voting is no longer allowed';
