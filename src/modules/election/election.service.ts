@@ -125,14 +125,16 @@ export class ElectionService {
     status_code: number;
     message: string;
     data: {
-      id: string;
-      title: string;
-      description: string;
-      start_date: Date;
-      end_date: Date;
-      election_type: ElectionType;
-      created_by: string;
-      votes: { candidate: string; vote_count: number }[];
+      election: {
+        id: string;
+        title: string;
+        description: string;
+        start_date: Date;
+        end_date: Date;
+        election_type: ElectionType;
+        created_by: string;
+        candidates: { candidate: string; vote_count: number }[];
+      };
     };
   }> {
     const [election, candidates, votes] = await Promise.all([
@@ -158,14 +160,16 @@ export class ElectionService {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_ELECTION,
       data: {
-        id: election.id,
-        title: election.title,
-        description: election.description,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        election_type: election.type,
-        created_by: election.created_by,
-        votes: result,
+        election: {
+          id: election.id,
+          title: election.title,
+          description: election.description,
+          start_date: election.start_date,
+          end_date: election.end_date,
+          election_type: election.type,
+          created_by: election.created_by,
+          candidates: result,
+        },
       },
     };
   }
