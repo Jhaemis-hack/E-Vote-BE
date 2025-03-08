@@ -25,6 +25,13 @@ export class ElectionDto {
     format: 'date-time',
   })
   start_date: string;
+  @ApiProperty({
+    description: 'The start time of the election',
+    example: '09:00:00',
+    type: String,
+    format: 'time',
+  })
+  start_time: string;
 
   @ApiProperty({
     description: 'The end date of the election',
@@ -34,36 +41,38 @@ export class ElectionDto {
   })
   end_date: string;
 
-  @ApiProperty({ description: 'The current status of the election', example: 'ongoing' })
-  status: string;
-
-  @ApiProperty({ description: 'The type of election', example: 'national' })
-  type: string;
-
   @ApiProperty({
-    description: 'The ID of the user who created the election',
-    example: '46ba1080-0a57-4029-8a18-6b980079d52d',
+    description: 'The end time of the election',
+    example: '09:00:00',
+    type: String,
+    format: 'time',
   })
-  created_by: string;
+  end_time: string;
 
-  @ApiProperty({ description: 'Total votes cast in the election', example: 4 })
-  total_votes: number;
+  @ApiProperty({ description: 'List of candidates and their votes', type: [CandidateDto] })
+  candidates: CandidateDto[];
 }
 
 export class ElectionDataDto {
   @ApiProperty({ description: 'The election details', type: ElectionDto })
   election: ElectionDto;
+}
 
-  @ApiProperty({ description: 'List of candidates and their votes', type: [CandidateDto] })
-  candidates: CandidateDto[];
+export class ElectionNotFound {
+  @ApiProperty({ description: 'Status code of the response', example: 404 })
+  status_code: number;
+
+  @ApiProperty({ description: 'message of the response', example: 'Election not found' })
+  message: string;
 }
 
 export class SingleElectionResponseDto {
   @ApiProperty({ description: 'Status code of the response', example: 200 })
   status_code: number;
 
+  @ApiProperty({ description: 'Message of the response', example: 'Election fetched successfully' })
+  message: string;
+
   @ApiProperty({ description: 'Election details' })
-  data: {
-    election: ElectionDataDto;
-  };
+  data: ElectionDataDto;
 }
