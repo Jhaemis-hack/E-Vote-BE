@@ -101,8 +101,6 @@ describe('ElectionService - update', () => {
       start_time: '08:00:00',
       end_time: '17:00:00',
       status: ElectionStatus.ONGOING,
-      start_date: new Date('2025-05-01T00:00:00Z'),
-      end_date: new Date('2025-05-02T00:00:00Z'),
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
@@ -156,8 +154,6 @@ describe('ElectionService - update', () => {
       status: ElectionStatus.COMPLETED,
       start_time: '08:00:00',
       end_time: '17:00:00',
-      start_date: new Date('2025-05-01T00:00:00Z'),
-      end_date: new Date('2025-05-02T00:00:00Z'),
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
