@@ -11,6 +11,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -21,6 +22,7 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
+import { Response } from 'express';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
@@ -107,5 +109,19 @@ export class ElectionController {
   async getElectionResults(@Param('id') id: string, @Req() req: any): Promise<ElectionResultsDto> {
     const adminId = req.user.sub;
     return this.electionService.getElectionResults(id, adminId);
+  }
+
+  @Get(':id/result/download')
+  @UseGuards(AuthGuard)
+  async downloadElectionResults(@Param('id') id: string, @Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const adminId = req.user.sub;
+    const { filename, csvData } = await this.electionService.getElectionResultsForDownload(id, adminId);
+
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    return csvData;
   }
 }
