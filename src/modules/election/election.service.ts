@@ -214,8 +214,25 @@ export class ElectionService {
     };
   }
 
-  update(id: number, updateElectionDto: UpdateElectionDto) {
-    return updateElectionDto;
+  async update(id: string, updateElectionDto: UpdateElectionDto): Promise<Election> {
+    const election = await this.electionRepository.findOne({ where: { id } });
+
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    if (updateElectionDto.start_date && updateElectionDto.end_date) {
+      if (new Date(updateElectionDto.start_date) >= new Date(updateElectionDto.end_date)) {
+        throw new Error(SYS_MSG.ELECTION_START_DATE_BEFORE_END_DATE);
+      }
+    }
+
+    Object.assign(election, updateElectionDto);
+    return this.electionRepository.save(election);
   }
 
   async remove(id: string) {
