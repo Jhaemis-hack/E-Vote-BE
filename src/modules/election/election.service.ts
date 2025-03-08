@@ -33,7 +33,7 @@ export class ElectionService {
       description,
       start_date: startDate,
       end_date: endDate,
-      status: ElectionStatus.ONGOING,
+      status: ElectionStatus.COMPLETED,
       type: electionType,
       start_time: start_time,
       end_time: end_time,
