@@ -24,6 +24,7 @@ import { Election } from './entities/election.entity';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
+import { ElectionResultsDto } from './dto/results.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -94,5 +95,17 @@ export class ElectionController {
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
   getElectionByVoterLink(@Param('voteLink') voteLink: string) {
     return this.electionService.getElectionByVoterLink(voteLink);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/result')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get election results by ID' })
+  @ApiResponse({ status: 200, description: 'Election results retrieved', type: ElectionResultsDto })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Election not found' })
+  async getElectionResults(@Param('id') id: string, @Req() req: any): Promise<ElectionResultsDto> {
+    const adminId = req.user.sub;
+    return this.electionService.getElectionResults(id, adminId);
   }
 }
