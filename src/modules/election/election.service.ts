@@ -134,8 +134,9 @@ export class ElectionService {
         title: string;
         description: string;
         start_date: Date;
+        start_time: string;
         end_date: Date;
-        election_type: ElectionType;
+        end_time: string;
         created_by: string;
         candidates: { candidate: string; vote_count: number }[];
       };
@@ -182,8 +183,9 @@ export class ElectionService {
           title: election.title,
           description: election.description,
           start_date: election.start_date,
+          start_time: election.start_time,
           end_date: election.end_date,
-          election_type: election.type,
+          end_time: election.end_time,
           created_by: election.created_by,
           candidates: result,
         },
