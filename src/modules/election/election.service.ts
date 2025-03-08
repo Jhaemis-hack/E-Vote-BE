@@ -8,7 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { isUUID } from 'class-validator';
+import { IsUUID, isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -80,6 +80,7 @@ export class ElectionService {
   async findAll(
     page: number,
     pageSize: number,
+    adminId: string,
   ): Promise<{
     status_code: number;
     message: string;
@@ -87,16 +88,31 @@ export class ElectionService {
       currentPage: number;
       totalPages: number;
       totalResults: number;
-      elections: ElectionResponseDto[];
+      elections;
       meta: any;
     };
   }> {
+    if (!adminId) {
+      throw new HttpException(
+        { status_code: 401, message: SYS_MSG.UNAUTHORIZED_USER, data: null },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!isUUID(adminId)) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     if (page < 1 || pageSize < 1) {
       throw new Error('Invalid pagination parameters. Page and pageSize must be greater than 0.');
     }
     const skip = (page - 1) * pageSize;
 
     const [result, total] = await this.electionRepository.findAndCount({
+      where: adminId ? { created_by: adminId } : {},
       skip,
       take: pageSize,
       relations: ['created_by_user', 'candidates', 'votes'],
@@ -247,46 +263,84 @@ export class ElectionService {
       );
     }
 
+    const mappedELection = this.transformElectionResponse(election);
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK,
-      data: election,
+      data: mappedELection,
     };
   }
 
-  private mapElections(result: Election[]): ElectionResponseDto[] {
-    return result
-      .map(election => {
-        if (!election.created_by) {
-          console.warn(`Admin for election with ID ${election.id} not found.`);
-          return null;
-        }
+  private mapElections(result: Election[]) {
+    return result.map(election => {
+      if (!election.created_by) {
+        console.warn(`Admin for election with ID ${election.id} not found.`);
+        return null;
+      }
 
-        let electionType: ElectionType;
-        if (election.type === 'singlechoice') {
-          electionType = ElectionType.SINGLECHOICE;
-        } else if (election.type === 'multichoice') {
-          electionType = ElectionType.MULTICHOICE;
-        } else {
-          console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-          electionType = ElectionType.SINGLECHOICE;
-        }
+      let electionType: ElectionType;
+      if (election.type === 'singlechoice') {
+        electionType = ElectionType.SINGLECHOICE;
+      } else if (election.type === 'multichoice') {
+        electionType = ElectionType.MULTICHOICE;
+      } else {
+        console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+        electionType = ElectionType.SINGLECHOICE;
+      }
 
-        return {
-          election_id: election.id,
-          election_title: election.title,
-          description: election.description,
-          start_date: election.start_date,
-          end_date: election.end_date,
-          vote_link: election.vote_link,
-          election_type: electionType,
-          start_time: election.start_time,
-          status: election.status,
-          end_time: election.end_time,
-          created_by: election.created_by,
-          candidates: election.candidates.map(candidate => candidate.name),
-        };
-      })
-      .filter(election => election !== null);
+      return {
+        election_id: election.id,
+        election_title: election.title,
+        description: election.description,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        vote_link: election.vote_link,
+        election_type: electionType,
+        start_time: election.start_time,
+        status: election.status,
+        end_time: election.end_time,
+        created_by: election.created_by,
+        candidates: election.candidates.map(candidate => ({
+          candidate_id: candidate.id,
+          name: candidate.name,
+        })),
+      };
+    });
+  }
+
+  private transformElectionResponse(election: any): any {
+    if (!election) {
+      return null;
+    }
+
+    let electionType: ElectionType;
+    if (election.type === 'singlechoice') {
+      electionType = ElectionType.SINGLECHOICE;
+    } else if (election.type === 'multichoice') {
+      electionType = ElectionType.MULTICHOICE;
+    } else {
+      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      electionType = ElectionType.SINGLECHOICE;
+    }
+
+    return {
+      election_id: election.id,
+      election_title: election.title,
+      description: election.description,
+      start_date: election.start_date,
+      end_date: election.end_date,
+      vote_link: election.vote_link,
+      election_type: electionType,
+      start_time: election.start_time,
+      status: election.status,
+      end_time: election.end_time,
+      created_by: election.created_by,
+      candidates:
+        election.candidates.map(candidate => ({
+          candidate_id: candidate.id,
+          name: candidate.name,
+        })) || [],
+    };
   }
 }
