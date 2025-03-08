@@ -30,14 +30,14 @@ export class ElectionService {
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, startDate, endDate, electionType, candidates, start_time, end_time } =
+    const { title, description, start_date, end_date, electionType, candidates, start_time, end_time } =
       createElectionDto;
     // Create a new election instance.
     const election = this.electionRepository.create({
       title,
       description,
-      start_date: startDate,
-      end_date: endDate,
+      start_date: start_date,
+      end_date: end_date,
       status: ElectionStatus.ONGOING,
       type: electionType,
       vote_link: randomUUID(),
