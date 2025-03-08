@@ -23,20 +23,18 @@ export class UserService {
 
     // Validate email format
     if (!email.match(/^\S+@\S+\.\S+$/)) {
-      throw new BadRequestException('Invalid email format');
+      throw new BadRequestException(SYS_MSG.INVALID_EMAIL_FORMAT);
     }
 
     // Check if email is already in use
     const existingUser = await this.userRepository.findOne({ where: { email } });
     if (existingUser) {
-      throw new BadRequestException('Email already in use');
+      throw new BadRequestException(SYS_MSG.EMAIL_IN_USE);
     }
 
     // Validate password strength
     if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
-      throw new BadRequestException(
-        'Password must be at least 8 characters long and include a number and special character',
-      );
+      throw new BadRequestException(SYS_MSG.INVALID_PASSWORD_FORMAT);
     }
 
     const newAdmin = this.userRepository.create({
@@ -61,12 +59,12 @@ export class UserService {
     });
 
     if (!userExist) {
-      throw new BadRequestException('Bad credentials.');
+      throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND);
     }
 
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
-      throw new BadRequestException('Bad credentials');
+      throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
     }
 
     const { password, ...admin } = userExist;
@@ -75,7 +73,11 @@ export class UserService {
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
-      data: { id: admin.id, email: admin.email, token },
+      data: {
+        id: admin.id,
+        email: admin.email,
+        token,
+      },
     };
   }
 
