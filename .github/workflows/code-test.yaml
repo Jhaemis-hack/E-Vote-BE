@@ -2,7 +2,7 @@ name: Node.js CI Test
 
 on:
   push:
-    branches-ignore:
+    branches:
       - dev
   pull_request:
     branches:
