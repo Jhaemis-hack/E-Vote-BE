@@ -308,15 +308,6 @@ describe('ElectionService', () => {
   describe('Get single election', () => {
     it('should return an election by ID', async () => {
       const electionId = '550e8400-e29b-41d4-a716-446655440000';
-      const candidate = {
-        id: '6bd6825a-313b-43e6-b3f5-616ec491ba2a',
-        created_at: new Date('2025-03-06T11:29:44.467Z'),
-        updated_at: new Date('2025-03-06T11:29:44.467Z'),
-        deleted_at: null,
-        name: 'John Doe',
-        election_id: electionId,
-        vote_count: 0,
-      };
       const expectedElection = {
         id: electionId,
         created_at: new Date('2025-03-06T13:35:13.731Z'),
@@ -334,7 +325,14 @@ describe('ElectionService', () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(expectedElection as Election);
 
       const result = await service.findOne(electionId);
-      expect(result).toEqual(expectedElection);
+      const equalResult = {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.FETCH_ELECTION,
+        data: {
+          election: expectedElection,
+        },
+      };
+      expect(result).toEqual(equalResult);
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: electionId },
         relations: ['candidates'],
@@ -345,7 +343,13 @@ describe('ElectionService', () => {
       const electionId = '550e8400-e29b-41d4-a716-446655440001';
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(service.findOne(electionId)).rejects.toThrow('Election not found');
+      await expect(service.findOne(electionId)).rejects.toThrow(
+        new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.ELECTION_NOT_FOUND,
+          data: null,
+        }),
+      );
     });
   });
 
@@ -393,9 +397,9 @@ describe('ElectionService', () => {
       expect(electionRepository.delete).toHaveBeenCalledWith({ id: electionId });
 
       expect(result).toEqual({
-        status: 'success',
-        status_code: 200,
-        message: `Election with id ${electionId} deleted successfully`,
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.ELECTION_DELETED,
+        data: null,
       });
     });
 
