@@ -44,10 +44,11 @@ export class UserService {
     if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
       throw new BadRequestException(SYS_MSG.INVALID_PASSWORD_FORMAT);
     }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const newAdmin = this.userRepository.create({
       email,
-      password,
+      password: hashedPassword,
     });
 
     await this.userRepository.save(newAdmin);
@@ -117,7 +118,7 @@ export class UserService {
       throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { password, hashPassword, ...userData } = user;
+    const { password, ...userData } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
@@ -141,7 +142,7 @@ export class UserService {
       });
     }
 
-    if (currentUser.user_type !== 'admin' && user.id !== currentUser.id) {
+    if (user.id !== currentUser.sub) {
       throw new UnauthorizedException({
         message: SYS_MSG.UNAUTHORIZED_USER,
         status_code: HttpStatus.FORBIDDEN,
@@ -150,13 +151,12 @@ export class UserService {
 
     if (updateUserDto.password) {
       this.validatePassword(updateUserDto.password);
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
-    } else {
-      delete updateUserDto.password;
+      user.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
     if (updateUserDto.email) {
       this.validateEmail(updateUserDto.email);
+      user.email = updateUserDto.email;
     }
 
     Object.assign(user, updateUserDto);
@@ -172,7 +172,7 @@ export class UserService {
   private validatePassword(password: string) {
     if (password.length < 8) {
       throw new BadRequestException({
-        message: SYS_MSG.VALIDATON_ERROR,
+        message: SYS_MSG.INVALID_PASSWORD_FORMAT,
         data: { password: 'Password must be at least 8 characters long' },
         status_code: HttpStatus.BAD_REQUEST,
       });
@@ -183,7 +183,7 @@ export class UserService {
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
       throw new BadRequestException({
-        message: SYS_MSG.VALIDATON_ERROR,
+        message: SYS_MSG.INVALID_EMAIL_FORMAT,
         data: { email: 'Invalid email format' },
         status_code: HttpStatus.BAD_REQUEST,
       });

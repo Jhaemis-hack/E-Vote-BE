@@ -9,6 +9,7 @@ export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
 export const INCORRECT_UUID = 'Not a valid uuid';
+export const USER_UPDATED = 'User updated sucessfully';
 export const FETCH_USER = 'User fetched successfully';
 export const DELETE_USER = 'User deleted successfully';
 export const USER_NOT_FOUND = 'User not found';

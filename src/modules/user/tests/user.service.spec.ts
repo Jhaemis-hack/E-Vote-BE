@@ -202,7 +202,6 @@ describe('UserService', () => {
         id: userId,
         email: 'test@example.com',
         password: 'hashedPassword',
-        hashPassword: 'hashedPassword',
         created_at: new Date(),
       };
 
@@ -257,7 +256,7 @@ describe('UserService', () => {
         email: 'new@example.com',
       };
       const currentUser = {
-        id: userId,
+        sub: userId,
         user_type: 'admin',
       };
       const mockUser = {
@@ -318,7 +317,7 @@ describe('UserService', () => {
         email: 'new@example.com',
       };
       const currentUser = {
-        id: 'another-user-id',
+        sub: 'another-user-id',
         user_type: 'user',
       };
       const mockUser = {
@@ -343,7 +342,7 @@ describe('UserService', () => {
         password: 'short',
       };
       const currentUser = {
-        id: userId,
+        sub: userId,
         user_type: 'admin',
       };
       const mockUser = {
@@ -356,9 +355,9 @@ describe('UserService', () => {
 
       await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
         new BadRequestException({
-          message: SYS_MSG.VALIDATON_ERROR,
-          data: { password: 'Password must be at least 8 characters long' },
           status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
         }),
       );
     });
@@ -369,7 +368,7 @@ describe('UserService', () => {
         email: 'invalid-email',
       };
       const currentUser = {
-        id: userId,
+        sub: userId,
         user_type: 'admin',
       };
       const mockUser = {
@@ -382,9 +381,9 @@ describe('UserService', () => {
 
       await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
         new BadRequestException({
-          message: SYS_MSG.VALIDATON_ERROR,
-          data: { email: 'Invalid email format' },
           status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_EMAIL_FORMAT,
+          data: null,
         }),
       );
     });

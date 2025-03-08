@@ -87,6 +87,7 @@ export class UserController {
     }
 
     const currentUser = req.user;
+    console.log('currentUser', currentUser);
     return this.userService.update(id, updateUserDto, currentUser);
   }
 

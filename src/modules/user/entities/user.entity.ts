@@ -17,12 +17,6 @@ export class User extends AbstractBaseEntity {
   @Column()
   password: string;
 
-  @BeforeInsert()
-  @BeforeUpdate()
-  async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
-
   @OneToMany(() => Election, election => election.created_by_user)
   created_elections: Election[];
 }
