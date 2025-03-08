@@ -1,7 +1,11 @@
 export const UNAUTHENTICATED_MESSAGE = 'Not an authenticated user';
 export const LOGIN_MESSAGE = 'Login successful';
 export const SIGNUP_MESSAGE = 'Signup successful';
-
+export const DELETE_ELECTION = `Election deleted successfully`;
+export const ERROR_DELETING_ELECTION = 'Cannot delete active election';
+export const FETCH_USER = 'User fetched successfully';
+export const DELETE_USER = 'User deleted successfully';
+export const USER_NOT_FOUND = 'User not found';
 export const EMAIL_NOT_FOUND = 'User with this email not found';
 export const INCORRECT_PASSWORD = 'Incorrect password';
 export const INVALID_EMAIL_FORMAT = 'Invalid email format';
@@ -9,13 +13,7 @@ export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
 export const INCORRECT_UUID = 'Not a valid uuid';
-
-export const FETCH_USER = 'User fetched successfully';
-export const DELETE_USER = 'User deleted successfully';
-export const USER_NOT_FOUND = 'User not found';
-
 export const VOTELINK_CREATED = 'Vote link creation successful';
-
 export const ELECTION_CREATED = 'Election creation successful';
 export const FETCH_ELECTIONS = 'Elections fetched successfully';
 export const FETCH_ELECTION = 'Election fetched successfully';

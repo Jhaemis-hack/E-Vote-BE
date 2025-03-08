@@ -77,7 +77,14 @@ export class ElectionController {
   @ApiResponse({ status: 500, description: 'Internal server error' })
   remove(@Param('id') id: string, @Req() req: any) {
     if (!isUUID(id)) {
-      throw new HttpException('Bad Request', HttpStatus.NOT_ACCEPTABLE);
+      throw new HttpException(
+        {
+          status_code: 406,
+          error: 'Not Acceptable',
+          message: 'Invalid UUID format',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
     }
 
     return this.electionService.remove(id);

@@ -362,6 +362,8 @@ describe('ElectionService', () => {
 
   describe('remove', () => {
     const electionId = '550e8400-e29b-41d4-a716-446655440000';
+    const electionTitle = 'Presidntial Election 2026';
+    const electionDescription = 'This election is to decide the next president of the country';
 
     it('should throw NotFoundException if election does not exist', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
