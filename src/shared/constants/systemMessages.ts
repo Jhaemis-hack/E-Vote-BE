@@ -26,6 +26,6 @@ export const EEROR_DELETING_ELECTION = 'Error occured while deleting election';
 export const UNAUTHORIZED_USER = 'Authorization is required to access this route.';
 export const VOTE_CREATION_MESSAGE = 'Thank you for voting! Your vote has been recorded.';
 export const CANDIDATE_NOT_FOUND = 'Candidate not found';
-export const ELECTION_START_DATE_BEFORE_END_DATE = 'Election End Date Cannot be before End Start Date';
+export const ELECTION_START_DATE_BEFORE_END_DATE = 'start_date must be before end_date';
 export const INTERNAL_SERVER_ERROR = 'Internal Server Error';
 export const BAD_REQUEST = 'Bad Request';
