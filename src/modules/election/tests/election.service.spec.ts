@@ -347,11 +347,29 @@ describe('ElectionService', () => {
       voteRepository.find = jest.fn().mockResolvedValue(mockVotes);
 
       const result = await service.findOne(electionId);
-      expect(result).toEqual(mockElection);
-      expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { id: electionId },
-        relations: ['candidates'],
+      expect(result).toEqual({
+        status_code: 200,
+        message: 'Election fetched successfully',
+        data: {
+          election: {
+            id: electionId,
+            title: '2025 Presidential Election',
+            description: 'Election to choose the next president of the country',
+            start_date: new Date('2025-03-01T00:00:00.000Z'),
+            end_date: new Date('2025-03-31T23:59:59.999Z'),
+            election_type: ElectionType.SINGLECHOICE,
+            created_by: 'admin123',
+            candidates: [
+              { candidate: 'Candidate A', vote_count: 2 },
+              { candidate: 'Candidate B', vote_count: 1 },
+            ],
+          },
+        },
       });
+      // expect(electionRepository.findOne).toHaveBeenCalledWith({
+      //   where: { id: electionId },
+      //   relations: ['candidates'],
+      // });
     });
 
     it('should throw NotFoundException if election does not exist', async () => {

@@ -23,6 +23,7 @@ import { Election } from './entities/election.entity';
 import { isUUID } from 'class-validator';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { SingleElectionResponseDto } from './dto/single-election.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -50,9 +51,8 @@ export class ElectionController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get an election by ID' })
-  @ApiResponse({ status: 200, description: 'Election found', type: Election })
+  @ApiResponse({ status: 200, description: 'Election found', type: SingleElectionResponseDto })
   @ApiResponse({ status: 404, description: 'Election not found' })
   findOne(@Param('id') id: string) {
     return this.electionService.findOne(id);

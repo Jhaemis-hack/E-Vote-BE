@@ -129,7 +129,16 @@ export class ElectionService {
     status_code: number;
     message: string;
     data: {
-      election: {};
+      election: {
+        id: string;
+        title: string;
+        description: string;
+        start_date: Date;
+        end_date: Date;
+        election_type: ElectionType;
+        created_by: string;
+        candidates: { candidate: string; vote_count: number }[];
+      };
     };
   }> {
     const [election, candidates, votes] = await Promise.all([
@@ -145,21 +154,39 @@ export class ElectionService {
         data: null,
       });
     }
-    const votearray = votes.map(v => v.candidate_id).flat();
+
     const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
-    const voteCounts = votearray.reduce((acc, id) => {
-      acc.set(id, (acc.get(id) || 0) + 1);
-      return acc;
-    }, new Map<string, number>());
-    const result = Array.from(voteCounts.entries()).map(([id, count]) => ({
-      candidate: candidateMap.get(id) || 'Unknown',
-      vote_count: count,
+
+    const voteCounts = new Map<string, number>();
+    votes.forEach(vote => {
+      if (Array.isArray(vote.candidate_id)) {
+        vote.candidate_id.forEach(id => {
+          voteCounts.set(id, (voteCounts.get(id) || 0) + 1);
+        });
+      } else {
+        voteCounts.set(vote.candidate_id, (voteCounts.get(vote.candidate_id) || 0) + 1);
+      }
+    });
+
+    const result = candidates.map(candidate => ({
+      candidate: candidate.name,
+      vote_count: voteCounts.get(candidate.id) || 0,
     }));
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_ELECTION,
       data: {
-        election,
+        election: {
+          id: election.id,
+          title: election.title,
+          description: election.description,
+          start_date: election.start_date,
+          end_date: election.end_date,
+          election_type: election.type,
+          created_by: election.created_by,
+          candidates: result,
+        },
       },
     };
   }
