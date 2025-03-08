@@ -1,64 +1,38 @@
-name: Deploy To Server
+name: Deployment
 
 on:
-  push:
-    branches: [ features/devops-test ]
+  workflow_run:
+    workflows: ['Node.js CI Test']
+    types:
+      - completed
+    branches:
+      - dev
 
 jobs:
   deploy:
     runs-on: evote
+    env:
+      HOST: ${{ secrets.HOST }}
+      USERNAME: ${{ secrets.USERNAME }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        node-version: "20"
-    
-    - name: Install Application Dependencies
-      run: npm install
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Create Environment File
-      run: |
-        printf "%s" "${{ secrets.DEV_ENV }}" > env.txt
-        cat env.txt
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
 
-
-    - name: Build Application
-      run: |
-        npm run build
-        cp -r package.json db_setup.sh .git env.txt dev-ecosystem-config.json .husky tsconfig*.json dist
-    
-    - name: Archive Production Artifact
-      run: | 
-        tar -czf evote.tar.gz dist
-
-    - name: Copy Production Artifact to Server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        source: "evote.tar.gz"
-        target: "/tmp/evote"
-        
-    - name: Clean Package 
-      run: rm -rf evote.tar.gz  
-
-    - name: Deploy To Server via SSH
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        script: |
-            set -e
-            tar -xzf /tmp/evote/evote.tar.gz -C e-vote
-            cd e-vote
-            rm -rf /tmp/evote/evote.tar.gz
-            mv dist/package.json dist/dev-ecosystem-config.json dist/.husky .
-            mv dist/tsconfig*.json dist/db_setup.sh dist/.git .
-            mv dist/env.txt .env
-            ./db_setup.sh
-            npm install
-            npm run migration:generate
-            npm run migration:run
-            pm2 restart dev-ecosystem-config.json
+      # - name: Deploy to Staging
+      #   run: |
+      #     sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << 'EOF'
+      #       cd ~/evote-backend/staging
+      #       git reset --hard
+      #       pm2 stop evote_staging
+      #       git pull origin dev
+      #       pnpm install
+      #       pnpm build
+      #       pm2 restart evote_staging --update-env
+      #     EOF
