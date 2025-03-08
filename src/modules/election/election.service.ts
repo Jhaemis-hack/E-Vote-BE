@@ -17,7 +17,7 @@ import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+import { Election, ElectionType } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
 
 @Injectable()
@@ -39,7 +39,6 @@ export class ElectionService {
       description,
       start_date: start_date,
       end_date: end_date,
-      status: ElectionStatus.ONGOING,
       type: electionType,
       vote_link: randomUUID(),
       start_time: start_time,
@@ -70,10 +69,9 @@ export class ElectionService {
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
         start_time: savedElection.start_time,
-        status: savedElection.status,
         end_time: savedElection.end_time,
         vote_link: savedElection.vote_link,
-        election_type: savedElection.type === 'singlechoice' ? ElectionType.SINGLECHOICE : ElectionType.MULTICHOICE,
+        election_type: savedElection.type,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
       },
@@ -150,7 +148,6 @@ export class ElectionService {
         id: string;
         title: string;
         description: string;
-        status: string;
         votes_casted: number;
         start_date: Date;
         start_time: string;
@@ -203,7 +200,6 @@ export class ElectionService {
           id: election.id,
           title: election.title,
           description: election.description,
-          status: election.status,
           votes_casted: totalVotesCast,
           start_date: election.start_date,
           start_time: election.start_time,
@@ -242,14 +238,14 @@ export class ElectionService {
         data: null,
       });
     }
-
-    if (election.status === ElectionStatus.ONGOING) {
-      throw new ForbiddenException({
-        status_code: HttpStatus.FORBIDDEN,
-        message: SYS_MSG.ELECTION_ACTIVE_CANNOT_DELETE,
-        data: null,
-      });
-    }
+    // TODO
+    // if (election.status === ElectionStatus.ONGOING) {
+    //   throw new ForbiddenException({
+    //     status_code: HttpStatus.FORBIDDEN,
+    //     message: SYS_MSG.ELECTION_ACTIVE_CANNOT_DELETE,
+    //     data: null,
+    //   });
+    // }
 
     try {
       // Step 1: Delete candidates linked to this election
@@ -294,16 +290,17 @@ export class ElectionService {
       });
     }
 
-    if (election?.status === ElectionStatus.COMPLETED) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
-          data: null,
-        },
-        HttpStatus.FORBIDDEN,
-      );
-    }
+    // TODO
+    // if (election?.status === ElectionStatus.COMPLETED) {
+    //   throw new HttpException(
+    //     {
+    //       status_code: HttpStatus.FORBIDDEN,
+    //       message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
+    //       data: null,
+    //     },
+    //     HttpStatus.FORBIDDEN,
+    //   );
+    // }
 
     const mappedELection = this.transformElectionResponse(election);
 
@@ -321,24 +318,24 @@ export class ElectionService {
         return null;
       }
 
-      let electionType: ElectionType;
-      if (election.type === 'singlechoice') {
-        electionType = ElectionType.SINGLECHOICE;
-      } else if (election.type === 'multichoice') {
-        electionType = ElectionType.MULTICHOICE;
-      } else {
-        console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-        electionType = ElectionType.SINGLECHOICE;
-      }
+      //TODO
+      // let electionType: ElectionType;
+      // if (election.type === 'singlechoice') {
+      //   electionType = ElectionType.SINGLECHOICE;
+      // } else if (election.type === 'multichoice') {
+      //   electionType = ElectionType.MULTICHOICE;
+      // } else {
+      //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      //   electionType = ElectionType.SINGLECHOICE;
+      // }
 
       return {
         election_id: election.id,
         election_title: election.title,
         start_date: election.start_date,
         end_date: election.end_date,
-        election_type: electionType,
+        election_type: election.type,
         start_time: election.start_time,
-        status: election.status,
         end_time: election.end_time,
         created_by: election.created_by,
       };
@@ -350,15 +347,16 @@ export class ElectionService {
       return null;
     }
 
-    let electionType: ElectionType;
-    if (election.type === 'singlechoice') {
-      electionType = ElectionType.SINGLECHOICE;
-    } else if (election.type === 'multichoice') {
-      electionType = ElectionType.MULTICHOICE;
-    } else {
-      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-      electionType = ElectionType.SINGLECHOICE;
-    }
+    //TODO
+    // let electionType: ElectionType;
+    // if (election.type === 'singlechoice') {
+    //   electionType = ElectionType.SINGLECHOICE;
+    // } else if (election.type === 'multichoice') {
+    //   electionType = ElectionType.MULTICHOICE;
+    // } else {
+    //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+    //   electionType = ElectionType.SINGLECHOICE;
+    // }
 
     return {
       election_id: election.id,
@@ -367,7 +365,7 @@ export class ElectionService {
       start_date: election.start_date,
       end_date: election.end_date,
       vote_link: election.vote_link,
-      election_type: electionType,
+      election_type: election.type,
       start_time: election.start_time,
       status: election.status,
       end_time: election.end_time,

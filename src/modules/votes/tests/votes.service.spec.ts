@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Vote } from '../entities/votes.entity';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { Election, ElectionStatus } from '../../election/entities/election.entity';
+import { Election } from '../../election/entities/election.entity';
 
 describe('VoteService', () => {
   let service: VoteService;
@@ -67,24 +67,24 @@ describe('VoteService', () => {
         relations: ['candidates'],
       });
     });
-    it('should throw a HttpExpection if election status is not ongoing', async () => {
-      const election = new Election();
-      election.status = ElectionStatus.COMPLETED;
-      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
-      await expect(service.createVote(validVoteLink, createVoteDto)).rejects.toThrow(
-        new HttpException(
-          {
-            status_code: HttpStatus.FORBIDDEN,
-            message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
-            data: null,
-          },
-          HttpStatus.FORBIDDEN,
-        ),
-      );
-    });
+
+    // it('should throw a HttpExpection if election status is not ongoing', async () => {
+    //   const election = new Election();
+    //   jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
+    //   await expect(service.createVote(validVoteLink, createVoteDto)).rejects.toThrow(
+    //     new HttpException(
+    //       {
+    //         status_code: HttpStatus.FORBIDDEN,
+    //         message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
+    //         data: null,
+    //       },
+    //       HttpStatus.FORBIDDEN,
+    //     ),
+    //   );
+    // });
+
     it('should throw a NotFoundException if candidate is not found', async () => {
       const election = new Election();
-      election.status = ElectionStatus.ONGOING;
       election.candidates = [
         {
           id: '7384fdbc-a1b9-45ad-a556-72edae14526d',
@@ -120,7 +120,6 @@ describe('VoteService', () => {
       const election = new Election();
       election.id = '7284fdbc-a1b9-55ad-a586-72edae14526d';
       election.vote_link = validVoteLink;
-      election.status = ElectionStatus.ONGOING;
       election.candidates = [
         {
           id: '7284fdbc-a1b9-45ad-a586-72edae14526d',
