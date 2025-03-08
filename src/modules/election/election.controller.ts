@@ -23,6 +23,7 @@ import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -54,11 +55,12 @@ export class ElectionController {
     return this.electionService.findAll(page, pageSize, adminId);
   }
 
+  @ApiBearerAuth()
   @Get(':id')
   @UseGuards(AuthGuard)
-  @ApiOperation({ summary: 'Get an election by ID' })
-  @ApiResponse({ status: 200, description: 'Election found', type: Election })
-  @ApiResponse({ status: 404, description: 'Election not found' })
+  @ApiOperation({ summary: 'Retrieve election details by ID, including candidates and their respective vote counts.' })
+  @ApiResponse({ status: 200, description: 'Election found', type: SingleElectionResponseDto })
+  @ApiResponse({ status: 404, description: 'Election not found', type: ElectionNotFound })
   findOne(@Param('id') id: string) {
     return this.electionService.findOne(id);
   }

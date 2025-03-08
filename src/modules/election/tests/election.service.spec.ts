@@ -20,6 +20,7 @@ describe('ElectionService', () => {
   let service: ElectionService;
   let electionRepository: Repository<Election>;
   let candidateRepository: Repository<Candidate>;
+  let voteRepository: Repository<Vote>;
 
   const mockElectionRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
@@ -42,6 +43,7 @@ describe('ElectionService', () => {
   });
 
   const mockCandidateRepository = () => ({
+    find: jest.fn().mockResolvedValue([]),
     save: jest
       .fn()
       .mockImplementation((entities: DeepPartial<Candidate>[]) =>
@@ -50,18 +52,24 @@ describe('ElectionService', () => {
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
   });
 
+  const mockVoteRepository = () => ({
+    find: jest.fn(),
+  });
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ElectionService,
         { provide: getRepositoryToken(Election), useFactory: mockElectionRepository },
         { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
+        { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
       ],
     }).compile();
 
     service = module.get<ElectionService>(ElectionService);
     electionRepository = module.get<Repository<Election>>(getRepositoryToken(Election));
     candidateRepository = module.get<Repository<Candidate>>(getRepositoryToken(Candidate));
+    voteRepository = module.get<Repository<Vote>>(getRepositoryToken(Vote));
   });
 
   afterEach(() => {
@@ -306,10 +314,10 @@ describe('ElectionService', () => {
       );
     });
   });
-  describe('Get single election', () => {
-    it('should return an election by ID', async () => {
-      const electionId = '550e8400-e29b-41d4-a716-446655440000';
-      const expectedElection = {
+  describe('findOne', () => {
+    it('should return an election with votes and candidates', async () => {
+      const electionId = '123';
+      const mockElection = {
         id: electionId,
         created_at: new Date('2025-03-06T13:35:13.731Z'),
         updated_at: new Date('2025-03-06T13:35:13.731Z'),
@@ -318,32 +326,56 @@ describe('ElectionService', () => {
         description: 'Election to choose the next president of the country',
         start_date: new Date('2025-03-01T00:00:00.000Z'),
         end_date: new Date('2025-03-31T23:59:59.999Z'),
+        start_time: '09:00:00',
+        end_time: '10:00:00',
         status: 'ongoing',
         type: 'singlechoice',
         created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
       };
 
-      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(expectedElection as Election);
+      const mockCandidates = [
+        { id: 'c1', name: 'Candidate A', election_id: electionId },
+        { id: 'c2', name: 'Candidate B', election_id: electionId },
+      ];
+
+      const mockVotes = [
+        { candidate_id: 'c1', election_id: electionId },
+        { candidate_id: 'c1', election_id: electionId },
+        { candidate_id: 'c2', election_id: electionId },
+      ];
+
+      // Mock repository methods
+      electionRepository.findOne = jest.fn().mockResolvedValue(mockElection);
+      candidateRepository.find = jest.fn().mockResolvedValue(mockCandidates);
+      voteRepository.find = jest.fn().mockResolvedValue(mockVotes);
 
       const result = await service.findOne(electionId);
-      const equalResult = {
-        status_code: HttpStatus.OK,
-        message: SYS_MSG.FETCH_ELECTION,
+      expect(result).toEqual({
+        status_code: 200,
+        message: 'Election fetched successfully',
         data: {
-          election: expectedElection,
+          election: {
+            id: electionId,
+            title: '2025 Presidential Election',
+            description: 'Election to choose the next president of the country',
+            status: 'ongoing',
+            votes_casted: 3,
+            start_date: new Date('2025-03-01T00:00:00.000Z'),
+            start_time: '09:00:00',
+            end_date: new Date('2025-03-31T23:59:59.999Z'),
+            end_time: '10:00:00',
+            candidates: [
+              { id: 'c1', candidate: 'Candidate A', vote_count: 2 },
+              { id: 'c2', candidate: 'Candidate B', vote_count: 1 },
+            ],
+          },
         },
-      };
-      expect(result).toEqual(equalResult);
-      expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { id: electionId },
-        relations: ['candidates'],
       });
     });
 
-    it('should throw an error if the election is not found', async () => {
-      const electionId = '550e8400-e29b-41d4-a716-446655440001';
-      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
-
+    it('should throw NotFoundException if election does not exist', async () => {
+      electionRepository.findOne = jest.fn().mockResolvedValue(null);
+      const electionId = '123';
       await expect(service.findOne(electionId)).rejects.toThrow(
         new NotFoundException({
           status_code: HttpStatus.NOT_FOUND,
