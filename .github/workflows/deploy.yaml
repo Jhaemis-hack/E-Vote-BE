@@ -25,14 +25,14 @@ jobs:
         with:
           node-version: '23'
 
-      # - name: Deploy to Staging
-      #   run: |
-      #     sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << 'EOF'
-      #       cd ~/evote-backend/staging
-      #       git reset --hard
-      #       pm2 stop evote_staging
-      #       git pull origin dev
-      #       pnpm install
-      #       pnpm build
-      #       pm2 restart evote_staging --update-env
-      #     EOF
+      - name: Deploy to Staging
+        run: |
+          sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << 'EOF'
+            cd ~/evote-backend/staging
+            git reset --hard
+            pm2 stop evote_staging
+            git pull origin dev
+            pnpm install
+            pnpm build
+            pm2 restart evote_staging --update-env
+          EOF
