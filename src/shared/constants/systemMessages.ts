@@ -2,6 +2,12 @@ export const UNAUTHENTICATED_MESSAGE = 'Not an authenticated user';
 export const LOGIN_MESSAGE = 'Login successful';
 export const SIGNUP_MESSAGE = 'Signup successful';
 
+export const EMAIL_NOT_FOUND = 'User with this email not found';
+export const INCORRECT_PASSWORD = 'Incorrect password';
+export const INVALID_EMAIL_FORMAT = 'Invalid email format';
+export const EMAIL_IN_USE = 'Email already in use';
+export const INVALID_PASSWORD_FORMAT =
+  'Password must be at least 8 characters long and include a number and special character';
 export const INCORRECT_UUID = 'Not a valid uuid';
 
 export const FETCH_USER = 'User fetched successfully';
@@ -15,7 +21,6 @@ export const FETCH_ELECTIONS = 'Elections fetched successfully';
 export const FETCH_ELECTION = 'Election fetched successfully';
 export const ELECTION_UPDATED = 'Election updated successfully';
 export const ELECTION_DELETED = 'Election deleted successfully';
-
 export const FETCH_ELECTION_BY_VOTER_LINK = 'Fetched election successfully by the voter link';
 export const ELECTION_NOT_FOUND = 'Election not found';
 export const ELECTION_ENDED_VOTE_NOT_ALLOWED = 'The election has ended and voting is no longer allowed';
