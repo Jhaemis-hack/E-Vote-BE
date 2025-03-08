@@ -6,3 +6,4 @@ export const FETCH_ELECTIONS = 'Elections fetched successfully';
 export const FETCH_USER = 'User fetched successfully';
 export const DELETE_USER = 'User deleted successfully';
 export const USER_NOT_FOUND = 'User not found';
+export const INVALID_LOGIN_CREDENTIALS = 'Email or password is incorrect';
