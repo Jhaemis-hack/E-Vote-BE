@@ -230,8 +230,18 @@ export class ElectionService {
       });
     }
 
-    if (start_date && end_date && new Date(start_date) >= new Date(end_date)) {
-      throw new BadRequestException(SYS_MSG.ELECTION_START_DATE_BEFORE_END_DATE);
+    if (start_date && end_date) {
+      if (new Date(start_date) >= new Date(end_date)) {
+        throw new BadRequestException(SYS_MSG.ELECTION_START_DATE_BEFORE_END_DATE);
+      }
+    }
+
+    if (start_time && end_time) {
+      const startTime = new Date(`1970-01-01T${start_time}`);
+      const endTime = new Date(`1970-02-01T${end_time}`);
+      if (startTime >= endTime) {
+        throw new BadRequestException(SYS_MSG.ELECTION_START_TIME_BEFORE_END_TIME);
+      }
     }
 
     Object.assign(election, {
