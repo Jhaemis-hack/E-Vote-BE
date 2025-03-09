@@ -12,11 +12,11 @@ export function IsAfterDate(property: string, validationOptions?: ValidationOpti
         validate(value: any, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
           const relatedValue = (args.object as any)[relatedPropertyName];
-          return value > relatedValue;
+          return value >= relatedValue; // Allow same day
         },
         defaultMessage(args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
-          return `${args.property} must be after ${relatedPropertyName}`;
+          return `${args.property} must be after or on the same day as ${relatedPropertyName}`;
         },
       },
     });

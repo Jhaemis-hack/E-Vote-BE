@@ -10,6 +10,7 @@ import { User } from '../entities/user.entity';
 import { UserService } from '../user.service';
 import { randomUUID } from 'crypto';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
+import { UpdateUserDto } from '../dto/update-user.dto';
 
 interface CreateUserDto {
   id?: string;
@@ -44,15 +45,15 @@ describe('UserService', () => {
         UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: mockUserRepository, // Provide a mock repository
+          useValue: mockUserRepository,
         },
         {
           provide: JwtService,
-          useValue: mockJwtService, // Mock JWT service
+          useValue: mockJwtService,
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService, // Mock ConfigService
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -71,7 +72,7 @@ describe('UserService', () => {
         password: 'StrongPass1!',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(null); // Ensure findOne does not return a user
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
       const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
         ReturnType<(key: string) => Promise<string>>,
         Parameters<(key: string) => Promise<string>>
@@ -109,7 +110,7 @@ describe('UserService', () => {
         password: 'StrongPass1!',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(userDto as User); // Simulate email already in use
+      userRepository.findOne = jest.fn().mockResolvedValue(userDto as User);
 
       await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Email already in use'));
     });
@@ -120,7 +121,7 @@ describe('UserService', () => {
         password: 'weakpass',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(null); // Ensure findOne does not return a user
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
 
       await expect(userService.registerAdmin(userDto)).rejects.toThrow(
         new BadRequestException(
@@ -152,7 +153,7 @@ describe('UserService', () => {
 
       expect(result).toEqual({
         status_code: HttpStatus.OK,
-        message: SYS_MSG.LOGIN_MESSAGE, // e.g. "You have successfully logged in."
+        message: SYS_MSG.LOGIN_MESSAGE,
         data: {
           id: mockUser.id,
           email: loginDto.email,
@@ -167,19 +168,17 @@ describe('UserService', () => {
         password: 'WrongPass1!',
       };
 
-      // Simulate user not found
       userRepository.findOne = jest.fn().mockResolvedValue(null);
 
       await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND));
     });
 
-    it('should throw an error for incorrect password', async () => {
+    it('should throw an error for incorrect credentials', async () => {
       const loginDto: LoginDto = {
         email: 'user@example.com',
         password: 'WrongPass1!',
       };
 
-      // The actual password was "CorrectPass1!"
       const hashedPassword = await bcrypt.hash('CorrectPass1!', 10);
       const mockUser: Partial<User> = {
         id: '1',
@@ -201,7 +200,6 @@ describe('UserService', () => {
         id: userId,
         email: 'test@example.com',
         password: 'hashedPassword',
-        hashPassword: 'hashedPassword',
         created_at: new Date(),
       };
 
@@ -247,6 +245,144 @@ describe('UserService', () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
 
       await expect(userService.deactivateUser('non-existent-uuid')).rejects.toThrow(NotFoundException);
+    });
+  });
+  describe('update', () => {
+    it('✅ should update a user successfully', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+      jest.spyOn(userRepository, 'save').mockResolvedValue({ ...mockUser, ...updateUserDto } as any);
+
+      const result = await userService.update(userId, updateUserDto, currentUser);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.USER_UPDATED,
+        data: { user_id: mockUser.id },
+      });
+    });
+
+    it('❌ should throw UnauthorizedException if currentUser is not provided', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+
+      await expect(userService.update(userId, updateUserDto, null)).rejects.toThrow(
+        new UnauthorizedException({
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          status_code: HttpStatus.UNAUTHORIZED,
+        }),
+      );
+    });
+
+    it('❌ should throw NotFoundException if user does not exist', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+      const currentUser = {
+        id: userId,
+        user_type: 'admin',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new NotFoundException({
+          message: SYS_MSG.USER_NOT_FOUND,
+          status_code: HttpStatus.NOT_FOUND,
+        }),
+      );
+    });
+
+    it('❌ should throw UnauthorizedException if a non-admin tries to update another user', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'new@example.com',
+      };
+      const currentUser = {
+        sub: 'another-user-id',
+        user_type: 'user',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new UnauthorizedException({
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          status_code: HttpStatus.FORBIDDEN,
+        }),
+      );
+    });
+
+    it('❌ should throw BadRequestException for an invalid password', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        password: 'short',
+      };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
+        }),
+      );
+    });
+
+    it('❌ should throw BadRequestException for an invalid email', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        email: 'invalid-email',
+      };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_EMAIL_FORMAT,
+          data: null,
+        }),
+      );
     });
   });
 });

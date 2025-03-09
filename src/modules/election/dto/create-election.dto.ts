@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsDate, IsEnum, IsNotEmpty, IsString, Matches, ArrayMinSize, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
-import { ElectionStatus, ElectionType } from '../entities/election.entity';
+import { ElectionType } from '../entities/election.entity';
 import { Column } from 'typeorm';
 
 export class CreateElectionDto {
@@ -20,14 +20,14 @@ export class CreateElectionDto {
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  startDate: Date;
+  start_date: Date;
 
   @ApiProperty({ example: '2025-06-02T00:00:00Z' })
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  @IsAfterDate('startDate', { message: 'End date must be after start date' })
-  endDate: Date;
+  @IsAfterDate('start_date', { message: 'End date must be after start date' })
+  end_date: Date;
 
   @ApiProperty({ example: '09:00:00' })
   @IsNotEmpty()
@@ -44,14 +44,14 @@ export class CreateElectionDto {
   // @IsNotEmpty()
   // vote_link:string
 
-  @ApiProperty({
-    description: 'Status of the election',
-    enum: ElectionStatus,
-    default: ElectionStatus.ONGOING,
-    example: ElectionStatus.ONGOING,
-  })
-  @IsEnum(ElectionStatus)
-  status: ElectionStatus;
+  // @ApiProperty({
+  //   description: 'Status of the election',
+  //   enum: ElectionStatus,
+  //   default: ElectionStatus.ONGOING,
+  //   example: ElectionStatus.ONGOING,
+  // })
+  // @IsEnum(ElectionStatus)
+  // status?: ElectionStatus;
 
   @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
   @IsNotEmpty()
