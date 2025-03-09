@@ -19,7 +19,7 @@ export class UserService {
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
-    const { email, password } = createAdminDto;
+    const { first_name, last_name, email, password } = createAdminDto;
 
     // Validate email format
     if (!email.match(/^\S+@\S+\.\S+$/)) {
@@ -40,8 +40,11 @@ export class UserService {
     }
 
     const newAdmin = this.userRepository.create({
+      first_name,
+      last_name,
       email,
       password,
+      is_verified: false,
     });
 
     await this.userRepository.save(newAdmin);
@@ -51,7 +54,14 @@ export class UserService {
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.SIGNUP_MESSAGE,
-      data: { id: newAdmin.id, email: newAdmin.email, token },
+      data: {
+        id: newAdmin.id,
+        first_name: newAdmin.first_name,
+        last_name: newAdmin.last_name,
+        email: newAdmin.email,
+        is_verified: newAdmin.is_verified,
+        token,
+      },
     };
   }
 

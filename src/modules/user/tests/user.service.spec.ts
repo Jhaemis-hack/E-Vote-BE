@@ -13,6 +13,8 @@ import * as SYS_MSG from '../../../shared/constants/systemMessages';
 
 interface CreateUserDto {
   id?: string;
+  first_name: string;
+  last_name: string;
   email: string;
   password: string;
 }
@@ -67,6 +69,8 @@ describe('UserService', () => {
     it('✅ should register an admin successfully', async () => {
       const adminDto: CreateUserDto = {
         id: randomUUID(),
+        first_name: 'John',
+        last_name: 'Doe',
         email: 'admin@example.com',
         password: 'StrongPass1!',
       };
@@ -88,14 +92,19 @@ describe('UserService', () => {
         message: SYS_MSG.SIGNUP_MESSAGE,
         data: {
           id: adminDto.id,
+          first_name: adminDto.first_name,
+          last_name: adminDto.last_name,
           email: adminDto.email,
           token: 'mockedToken',
+          is_verified: undefined,
         },
       });
     });
 
     it('❌ should throw an error for an invalid email format', async () => {
       const userDto: CreateUserDto = {
+        first_name: 'John',
+        last_name: 'Doe',
         email: 'invalid-email',
         password: 'StrongPass1!',
       };
@@ -105,6 +114,8 @@ describe('UserService', () => {
 
     it('❌ should throw an error if email is already in use', async () => {
       const userDto: CreateUserDto = {
+        first_name: 'John',
+        last_name: 'Doe',
         email: 'admin@example.com',
         password: 'StrongPass1!',
       };
@@ -116,6 +127,8 @@ describe('UserService', () => {
 
     it('❌ should throw an error for a weak password', async () => {
       const userDto: CreateUserDto = {
+        first_name: 'John',
+        last_name: 'Doe',
         email: 'admin@example.com',
         password: 'weakpass',
       };

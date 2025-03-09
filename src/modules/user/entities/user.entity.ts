@@ -11,11 +11,19 @@ export class User extends AbstractBaseEntity {
   // @Column()
   // last_name: string;
 
+  first_name: string;
+
+  @Column()
+  last_name: string;
+
   @Column({ unique: true })
   email: string;
 
   @Column()
   password: string;
+
+  @Column({ default: false })
+  is_verified: boolean;
 
   @BeforeInsert()
   @BeforeUpdate()

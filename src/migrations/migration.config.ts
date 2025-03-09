@@ -6,6 +6,8 @@ config();
 
 const configService = new ConfigService();
 
+console.log('DATABASE_PASSWORD:', configService.get('DATABASE_PASSWORD'));
+
 const dataSource = new DataSource({
   type: 'postgres',
   host: configService.get('DATABASE_HOST'),
