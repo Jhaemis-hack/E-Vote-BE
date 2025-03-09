@@ -124,7 +124,7 @@ describe('ElectionService - update', () => {
       id: electionId,
       title: 'Original Election Title',
       description: 'Original description.',
-      start_date: new Date('2025-05-01T00:00:00Z'),
+      start_date: new Date('2027-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
       type: ElectionType.SINGLECHOICE,
       created_by: 'admin123',
