@@ -4,14 +4,13 @@ import { Candidate } from '../../candidate/entities/candidate.entity';
 import { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 
-export enum ElectionStatus {
-  ONGOING = 'ongoing',
-  COMPLETED = 'completed',
-}
+// export enum ElectionStatus {
+//   ONGOING = 'ongoing',
+//   COMPLETED = 'completed',
+// }
 
 export enum ElectionType {
   SINGLECHOICE = 'singlechoice',
-  MULTICHOICE = 'multichoice',
 }
 
 @Entity({ name: 'elections' })
@@ -37,12 +36,12 @@ export class Election extends AbstractBaseEntity {
   @Column()
   vote_link: string;
 
-  @Column({
-    type: 'enum',
-    enum: ElectionStatus,
-    default: ElectionStatus.ONGOING,
-  })
-  status: ElectionStatus;
+  // @Column({
+  //   type: 'enum',
+  //   enum: ElectionStatus,
+  //   default: ElectionStatus.ONGOING,
+  // })
+  // status: ElectionStatus;
 
   @Column({ type: 'enum', enum: ElectionType, default: ElectionType.SINGLECHOICE })
   type: ElectionType;

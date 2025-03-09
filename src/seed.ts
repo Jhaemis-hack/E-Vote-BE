@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { User } from './modules/user/entities/user.entity';
-import { Election, ElectionStatus, ElectionType } from './modules/election/entities/election.entity';
+import { Election, ElectionType } from './modules/election/entities/election.entity';
 import { Candidate } from './modules/candidate/entities/candidate.entity';
 import { Vote } from './modules/votes/entities/votes.entity';
 
@@ -62,7 +62,6 @@ async function seed() {
   election.start_time = '09:00:00';
   election.end_time = '17:00:00';
   election.vote_link = 'http://example.com/vote';
-  election.status = ElectionStatus.ONGOING;
   election.type = ElectionType.SINGLECHOICE;
   election.created_by_user = user;
   await electionRepository.save(election);
@@ -76,8 +75,7 @@ async function seed() {
   election2.start_time = '09:00:00';
   election2.end_time = '17:00:00';
   election2.vote_link = 'http://example.com/vote2';
-  election2.status = ElectionStatus.COMPLETED;
-  election2.type = ElectionType.MULTICHOICE;
+  election2.type = ElectionType.SINGLECHOICE;
   election2.created_by_user = user2;
   await electionRepository.save(election2);
 

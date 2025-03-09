@@ -5,7 +5,7 @@ import { Vote } from './entities/votes.entity';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { isUUID } from 'class-validator';
-import { Election, ElectionStatus } from '../election/entities/election.entity';
+import { Election } from '../election/entities/election.entity';
 
 @Injectable()
 export class VoteService {
@@ -36,16 +36,16 @@ export class VoteService {
         data: null,
       });
     }
-    if (election?.status !== ElectionStatus.ONGOING) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
-          data: null,
-        },
-        HttpStatus.FORBIDDEN,
-      );
-    }
+    // if (election?.status !== ElectionStatus.ONGOING) {
+    //   throw new HttpException(
+    //     {
+    //       status_code: HttpStatus.FORBIDDEN,
+    //       message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
+    //       data: null,
+    //     },
+    //     HttpStatus.FORBIDDEN,
+    //   );
+    // }
     const candidates = election.candidates.map(candidate => candidate.id);
     const invalid_candidates = createVoteDto.candidate_id.filter(id => !candidates.includes(id));
     if (invalid_candidates.length > 0) {
