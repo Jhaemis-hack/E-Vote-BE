@@ -3,7 +3,7 @@ export const LOGIN_MESSAGE = 'Login successful';
 export const SIGNUP_MESSAGE = 'Signup successful';
 
 export const EMAIL_NOT_FOUND = 'User with this email not found';
-export const INCORRECT_PASSWORD = 'Incorrect password';
+export const INCORRECT_PASSWORD = 'Incorrect credentials';
 export const INVALID_EMAIL_FORMAT = 'Invalid email format';
 export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =

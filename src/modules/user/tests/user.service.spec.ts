@@ -174,7 +174,7 @@ describe('UserService', () => {
       await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND));
     });
 
-    it('should throw an error for incorrect password', async () => {
+    it('should throw an error for incorrect credentials', async () => {
       const loginDto: LoginDto = {
         email: 'user@example.com',
         password: 'WrongPass1!',
