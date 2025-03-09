@@ -45,15 +45,15 @@ describe('UserService', () => {
         UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: mockUserRepository, // Provide a mock repository
+          useValue: mockUserRepository,
         },
         {
           provide: JwtService,
-          useValue: mockJwtService, // Mock JWT service
+          useValue: mockJwtService,
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService, // Mock ConfigService
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -72,7 +72,7 @@ describe('UserService', () => {
         password: 'StrongPass1!',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(null); // Ensure findOne does not return a user
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
       const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
         ReturnType<(key: string) => Promise<string>>,
         Parameters<(key: string) => Promise<string>>
@@ -110,7 +110,7 @@ describe('UserService', () => {
         password: 'StrongPass1!',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(userDto as User); // Simulate email already in use
+      userRepository.findOne = jest.fn().mockResolvedValue(userDto as User);
 
       await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Email already in use'));
     });
@@ -121,7 +121,7 @@ describe('UserService', () => {
         password: 'weakpass',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(null); // Ensure findOne does not return a user
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
 
       await expect(userService.registerAdmin(userDto)).rejects.toThrow(
         new BadRequestException(
@@ -153,7 +153,7 @@ describe('UserService', () => {
 
       expect(result).toEqual({
         status_code: HttpStatus.OK,
-        message: SYS_MSG.LOGIN_MESSAGE, // e.g. "You have successfully logged in."
+        message: SYS_MSG.LOGIN_MESSAGE,
         data: {
           id: mockUser.id,
           email: loginDto.email,
@@ -168,7 +168,6 @@ describe('UserService', () => {
         password: 'WrongPass1!',
       };
 
-      // Simulate user not found
       userRepository.findOne = jest.fn().mockResolvedValue(null);
 
       await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND));
@@ -180,7 +179,6 @@ describe('UserService', () => {
         password: 'WrongPass1!',
       };
 
-      // The actual password was "CorrectPass1!"
       const hashedPassword = await bcrypt.hash('CorrectPass1!', 10);
       const mockUser: Partial<User> = {
         id: '1',
@@ -262,7 +260,6 @@ describe('UserService', () => {
       const mockUser = {
         id: userId,
         email: 'old@example.com',
-        // password: 'hashedPassword',
       };
 
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
