@@ -31,3 +31,4 @@ export const INTERNAL_SERVER_ERROR = 'Internal Server Error';
 export const BAD_REQUEST = 'Bad Request';
 export const UNAUTHORIZED_ACCESS = 'Unauthorized Access';
 export const USER_UPDATED = 'User Updated Successfully';
+export const ELECTION_START_TIME_BEFORE_END_TIME = 'start_time must be before end_time';
