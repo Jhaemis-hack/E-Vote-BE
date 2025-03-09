@@ -36,7 +36,7 @@ export class ElectionService {
       description,
       start_date: startDate,
       end_date: endDate,
-      status: ElectionStatus.COMPLETED,
+      status: ElectionStatus.ONGOING,
       type: electionType,
       vote_link: randomUUID(),
       start_time: start_time,

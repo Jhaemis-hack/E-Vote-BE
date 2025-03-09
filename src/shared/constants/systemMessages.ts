@@ -25,3 +25,4 @@ export const ELECTION_ENDED_VOTE_NOT_ALLOWED = 'The election has ended and votin
 export const ELECTION_ACTIVE_CANNOT_DELETE = 'Election is active and cannot be deleted';
 export const EEROR_DELETING_ELECTION = 'Error occured while deleting election';
 export const UNAUTHORIZED_USER = 'Authorization is required to access this route.';
+export const EMAIL_NOT_VERIFIED = 'Email not verified. Verify email and try again.';
