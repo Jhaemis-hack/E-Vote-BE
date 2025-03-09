@@ -458,11 +458,11 @@ describe('ElectionService', () => {
         created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
         vote_link: validVoteLink,
         candidates: [],
-        created_by_user: {} as User, // Add this
-        votes: [] as Vote[], // Add this
-        created_at: new Date(), // Add this
-        updated_at: new Date(), // Add this
-        deleted_at: null, // Add this
+        created_by_user: {} as User,
+        votes: [] as Vote[],
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
       };
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection as Election);
@@ -473,17 +473,17 @@ describe('ElectionService', () => {
         status_code: HttpStatus.OK,
         message: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK,
         data: {
-          election_id: mockElection.id, // Transformed field
-          election_title: mockElection.title, // Transformed field
+          election_id: mockElection.id,
+          election_title: mockElection.title,
           description: mockElection.description,
           start_date: mockElection.start_date,
           end_date: mockElection.end_date,
           vote_link: mockElection.vote_link,
-          election_type: ElectionType.SINGLECHOICE, // Transformed field
+          election_type: ElectionType.SINGLECHOICE,
           start_time: mockElection.start_time,
           end_time: mockElection.end_time,
           created_by: mockElection.created_by,
-          candidates: [], // Transformed field (if candidates are mapped)
+          candidates: [],
         },
       });
 
