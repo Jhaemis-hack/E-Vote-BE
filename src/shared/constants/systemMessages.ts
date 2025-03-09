@@ -9,7 +9,6 @@ export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
 export const INCORRECT_UUID = 'Not a valid uuid';
-export const USER_UPDATED = 'User updated sucessfully';
 export const FETCH_USER = 'User fetched successfully';
 export const DELETE_USER = 'User deleted successfully';
 export const USER_NOT_FOUND = 'User not found';
@@ -27,5 +26,8 @@ export const EEROR_DELETING_ELECTION = 'Error occured while deleting election';
 export const UNAUTHORIZED_USER = 'Authorization is required to access this route.';
 export const VOTE_CREATION_MESSAGE = 'Thank you for voting! Your vote has been recorded.';
 export const CANDIDATE_NOT_FOUND = 'Candidate not found';
-export const UNAUTHORIZED_ACCESS =
-  'Unauthorized access to election results. Only the election creator can view results.';
+export const ELECTION_START_DATE_BEFORE_END_DATE = 'start_date must be before end_date';
+export const INTERNAL_SERVER_ERROR = 'Internal Server Error';
+export const BAD_REQUEST = 'Bad Request';
+export const UNAUTHORIZED_ACCESS = 'Unauthorized Access';
+export const USER_UPDATED = 'User Updated Successfully';

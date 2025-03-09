@@ -6,6 +6,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsUUID, isUUID } from 'class-validator';
@@ -216,8 +217,34 @@ export class ElectionService {
     };
   }
 
-  update(id: number, updateElectionDto: UpdateElectionDto) {
-    return updateElectionDto;
+  async update(id: string, updateElectionDto: UpdateElectionDto): Promise<Election> {
+    const { title, description, start_date, end_date, electionType, start_time, end_time } = updateElectionDto;
+
+    const election = await this.electionRepository.findOne({ where: { id } });
+
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    if (start_date && end_date && new Date(start_date) >= new Date(end_date)) {
+      throw new BadRequestException(SYS_MSG.ELECTION_START_DATE_BEFORE_END_DATE);
+    }
+
+    Object.assign(election, {
+      title: title ?? election.title,
+      description: description ?? election.description,
+      start_date: start_date ?? election.start_date,
+      end_date: end_date ?? election.end_date,
+      type: electionType ?? election.type,
+      start_time: start_time ?? election.start_time,
+      end_time: end_time ?? election.end_time,
+    });
+
+    return this.electionRepository.save(election);
   }
 
   async remove(id: string) {
