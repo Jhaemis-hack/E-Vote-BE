@@ -14,6 +14,8 @@ import {
   Req,
   UseGuards,
   NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
 import { isUUID } from 'class-validator';
@@ -23,7 +25,6 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
-import { ElectionStatus } from './entities/election.entity';
 import { ElectionType } from './entities/election.entity';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -85,34 +86,47 @@ export class ElectionController {
           end_date: '2025-06-02T00:00:00Z',
           start_time: '09:00:00',
           end_time: '10:00:00',
-          status: ElectionStatus.ONGOING,
-          electionType: ElectionType.MULTICHOICE,
+          electionType: ElectionType.SINGLECHOICE,
           candidates: ['Candidate A', 'Candidate B'],
         },
       },
     },
   })
-  @ApiResponse({ status: HttpStatus.OK, description: SYS_MSG.ELECTION_UPDATED })
+  @ApiResponse({ status: HttpStatus.OK, description: SYS_MSG.ELECTION_UPDATED, type: Election })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: SYS_MSG.BAD_REQUEST })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: SYS_MSG.ELECTION_NOT_FOUND })
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: SYS_MSG.INTERNAL_SERVER_ERROR })
-  async update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto) {
+  async update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto, @Req() req: any) {
     try {
       const updatedElection = await this.electionService.update(id, updateElectionDto);
+
       return {
         status_code: HttpStatus.OK,
         message: SYS_MSG.ELECTION_UPDATED,
         data: updatedElection,
       };
     } catch (error) {
-      throw new NotFoundException({
-        status_code: HttpStatus.BAD_REQUEST,
-        message: SYS_MSG.BAD_REQUEST,
-        data: null,
-      });
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.ELECTION_NOT_FOUND,
+          data: null,
+        });
+      } else if (error instanceof BadRequestException) {
+        throw new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: error.message || SYS_MSG.BAD_REQUEST,
+          data: null,
+        });
+      } else {
+        throw new InternalServerErrorException({
+          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: SYS_MSG.INTERNAL_SERVER_ERROR,
+          data: null,
+        });
+      }
     }
   }
-
   @Delete(':id')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete Inactive Election' })

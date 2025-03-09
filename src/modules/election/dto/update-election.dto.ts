@@ -1,9 +1,20 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateElectionDto } from './create-election.dto';
-import { IsOptional, IsDateString, ValidateIf, IsEnum, IsString, IsArray, IsNotEmpty, Matches } from 'class-validator';
+import {
+  IsOptional,
+  IsDateString,
+  ValidateIf,
+  IsEnum,
+  IsString,
+  IsArray,
+  IsDate,
+  IsNotEmpty,
+  Matches,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ElectionType, ElectionStatus } from '../entities/election.entity';
-
+import { ElectionType } from '../entities/election.entity';
+import { Type } from 'class-transformer';
+import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @ApiProperty({
     example: 'Updated Election Title',
@@ -21,22 +32,18 @@ export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @IsString()
   description?: string;
 
-  @ApiProperty({
-    example: '2025-06-01T00:00:00Z',
-    description: 'The updated start date of the election',
-  })
-  @IsOptional()
-  @IsDateString()
-  start_date?: Date;
+  @ApiProperty({ example: '2025-06-01T00:00:00Z' })
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  start_date: Date;
 
-  @ApiProperty({
-    example: '2025-06-02T00:00:00Z',
-    description: 'The updated end date of the election',
-  })
-  @IsOptional()
-  @IsDateString()
-  @ValidateIf(o => o.start_date) // Validate end_date only if start_date is provided
-  end_date?: Date;
+  @ApiProperty({ example: '2025-06-02T00:00:00Z' })
+  @IsNotEmpty()
+  @IsDate()
+  @Type(() => Date)
+  @IsAfterDate('start_date', { message: 'End date must be after start date' })
+  end_date: Date;
 
   @ApiProperty({ example: '09:00:00' })
   @IsNotEmpty()
@@ -48,23 +55,10 @@ export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'end_time must be in the format HH:MM:SS' })
   end_time: string;
 
-  @ApiProperty({
-    description: 'Status of the election',
-    enum: ElectionStatus,
-    default: ElectionStatus.ONGOING,
-    example: ElectionStatus.ONGOING,
-  })
-  @IsEnum(ElectionStatus)
-  status: ElectionStatus;
-
-  @ApiProperty({
-    example: ElectionType.SINGLECHOICE,
-    description: 'The updated type of the election',
-    enum: ElectionType,
-  })
-  @IsOptional()
+  @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
+  @IsNotEmpty()
   @IsEnum(ElectionType)
-  electionType?: ElectionType;
+  electionType: ElectionType;
 
   @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
   @IsArray()

@@ -2,7 +2,7 @@ import { NotFoundException, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ElectionService } from '../election.service';
-import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
+import { Election, ElectionType } from '../entities/election.entity';
 import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
 import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
@@ -34,8 +34,7 @@ describe('ElectionService - update', () => {
       description: 'This is an updated description.',
       start_date: new Date('2025-06-01T00:00:00Z'),
       end_date: new Date('2025-06-02T00:00:00Z'),
-      status: ElectionStatus.ONGOING,
-      electionType: ElectionType.MULTICHOICE,
+      electionType: ElectionType.SINGLECHOICE,
       candidates: ['candidate1', 'candidate2'],
       start_time: '20:25:22',
       end_time: '20:23:23',
@@ -47,7 +46,6 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2025-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      status: ElectionStatus.ONGOING,
       type: ElectionType.SINGLECHOICE,
       created_by: 'admin123',
       created_by_user: {} as User,
@@ -70,7 +68,6 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2025-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      status: ElectionStatus.ONGOING,
       type: ElectionType.SINGLECHOICE,
       created_by: 'admin123',
       created_by_user: {} as User,
@@ -100,7 +97,9 @@ describe('ElectionService - update', () => {
       candidates: ['candidate1'],
       start_time: '08:00:00',
       end_time: '17:00:00',
-      status: ElectionStatus.ONGOING,
+      start_date: new Date('2023-11-01T00:00:00.000Z'),
+      end_date: new Date('2023-11-30T23:59:59.000Z'),
+      electionType: ElectionType.SINGLECHOICE,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
@@ -118,7 +117,7 @@ describe('ElectionService - update', () => {
       candidates: ['candidate1'],
       start_time: '08:00:00',
       end_time: '17:00:00',
-      status: ElectionStatus.ONGOING,
+      electionType: ElectionType.SINGLECHOICE,
     };
 
     const existingElection = {
@@ -127,7 +126,6 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2025-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      status: ElectionStatus.COMPLETED,
       type: ElectionType.SINGLECHOICE,
       created_by: 'admin123',
       created_by_user: {} as User,
@@ -151,9 +149,11 @@ describe('ElectionService - update', () => {
     const updateElectionDto: UpdateElectionDto = {
       title: 'Updated Election Title',
       candidates: ['candidate1'],
-      status: ElectionStatus.COMPLETED,
       start_time: '08:00:00',
       end_time: '17:00:00',
+      start_date: new Date('2023-11-01T00:00:00.000Z'),
+      end_date: new Date('2023-11-30T23:59:59.000Z'),
+      electionType: ElectionType.SINGLECHOICE,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
@@ -162,7 +162,6 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2025-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      status: ElectionStatus.ONGOING,
       type: ElectionType.SINGLECHOICE,
       created_by: 'admin123',
       created_by_user: {} as User,
