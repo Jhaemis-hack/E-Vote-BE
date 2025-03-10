@@ -25,7 +25,6 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
-import { ElectionType } from './entities/election.entity';
 
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
@@ -86,7 +85,6 @@ export class ElectionController {
           end_date: '2025-06-02T00:00:00Z',
           start_time: '09:00:00',
           end_time: '10:00:00',
-          electionType: ElectionType.SINGLECHOICE,
           candidates: ['Candidate A', 'Candidate B'],
         },
       },

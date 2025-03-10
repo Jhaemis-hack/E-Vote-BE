@@ -16,9 +16,8 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
-import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionType } from './entities/election.entity';
+import { Election } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
 
 interface ElectionResultsDownload {
@@ -37,15 +36,13 @@ export class ElectionService {
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time } =
-      createElectionDto;
+    const { title, description, start_date, end_date, candidates, start_time, end_time } = createElectionDto;
 
     const election = this.electionRepository.create({
       title,
       description,
       start_date: start_date,
       end_date: end_date,
-      type: election_type,
       vote_link: randomUUID(),
       start_time: start_time,
       end_time: end_time,
@@ -75,7 +72,6 @@ export class ElectionService {
         start_time: savedElection.start_time,
         end_time: savedElection.end_time,
         vote_id: savedElection.vote_link,
-        election_type: savedElection.type,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
       },
@@ -216,7 +212,7 @@ export class ElectionService {
   }
 
   async update(id: string, updateElectionDto: UpdateElectionDto): Promise<Election> {
-    const { title, description, start_date, end_date, election_type, start_time, end_time } = updateElectionDto;
+    const { title, description, start_date, end_date, start_time, end_time } = updateElectionDto;
 
     const election = await this.electionRepository.findOne({ where: { id } });
 
@@ -247,7 +243,6 @@ export class ElectionService {
       description: description ?? election.description,
       start_date: start_date ?? election.start_date,
       end_date: end_date ?? election.end_date,
-      type: election_type ?? election.type,
       start_time: start_time ?? election.start_time,
       end_time: end_time ?? election.end_time,
     });
@@ -372,7 +367,6 @@ export class ElectionService {
         title: election.title,
         start_date: election.start_date,
         end_date: election.end_date,
-        election_type: election.type,
         start_time: election.start_time,
         end_time: election.end_time,
         created_by: election.created_by,

@@ -14,7 +14,7 @@ import { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
-import { Election, ElectionType } from '../entities/election.entity';
+import { Election, ElectionStatus } from '../entities/election.entity';
 import { Response } from 'express';
 
 describe('ElectionService', () => {
@@ -163,7 +163,7 @@ describe('ElectionService', () => {
           end_date: new Date('2023-10-31T23:59:59.000Z'),
           start_time: '09:00:00',
           end_time: '10:00:00',
-          type: ElectionType.SINGLECHOICE,
+          election_status: ElectionStatus.ONGOING,
           created_at: new Date(),
           created_by: userId,
           created_by_user: user,
@@ -181,7 +181,7 @@ describe('ElectionService', () => {
           end_date: new Date('2023-11-30T23:59:59.000Z'),
           start_time: '09:00:00',
           end_time: '10:00:00',
-          type: ElectionType.SINGLECHOICE,
+          election_status: ElectionStatus.PENDING,
           created_by: userId,
           deleted_at: null,
           updated_at: new Date(),
@@ -216,7 +216,6 @@ describe('ElectionService', () => {
               end_date: new Date('2023-10-31T23:59:59.000Z'),
               start_time: '09:00:00',
               end_time: '10:00:00',
-              election_type: ElectionType.SINGLECHOICE,
               created_by: userId,
             },
             {
@@ -226,7 +225,6 @@ describe('ElectionService', () => {
               end_date: new Date('2023-11-30T23:59:59.000Z'),
               start_time: '09:00:00',
               end_time: '10:00:00',
-              election_type: ElectionType.SINGLECHOICE,
               created_by: userId,
             },
           ],
@@ -454,7 +452,6 @@ describe('ElectionService', () => {
         end_date: new Date('2025-03-31T23:59:59.999Z'),
         start_time: '09:00:00',
         end_time: '10:00:00',
-        type: ElectionType.SINGLECHOICE,
         created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
         vote_link: validVoteLink,
         candidates: [],
@@ -465,7 +462,7 @@ describe('ElectionService', () => {
         deleted_at: null,
       };
 
-      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection as Election);
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection as unknown as Election);
 
       const result = await service.getElectionByVoterLink(validVoteLink);
 
@@ -479,7 +476,6 @@ describe('ElectionService', () => {
           start_date: mockElection.start_date,
           end_date: mockElection.end_date,
           vote_id: mockElection.vote_link,
-          election_type: ElectionType.SINGLECHOICE,
           start_time: mockElection.start_time,
           end_time: mockElection.end_time,
           created_by: mockElection.created_by,
@@ -557,7 +553,6 @@ describe('ElectionService', () => {
         id: electionId,
         title: '2025 Presidential Election',
         created_by: adminId,
-        type: ElectionType.SINGLECHOICE,
         candidates: [
           { id: 'candidate-1', name: 'Candidate A' },
           { id: 'candidate-2', name: 'Candidate B' },
