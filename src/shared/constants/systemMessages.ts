@@ -8,6 +8,7 @@ export const INVALID_EMAIL_FORMAT = 'Invalid email format';
 export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
+export const PASSWORD_RESET_LINK_SENT = 'Password reset link has been sent to your email';
 export const INCORRECT_UUID = 'Not a valid uuid';
 export const FETCH_USER = 'User fetched successfully';
 export const DELETE_USER = 'User deleted successfully';

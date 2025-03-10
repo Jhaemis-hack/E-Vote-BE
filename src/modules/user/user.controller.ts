@@ -102,6 +102,7 @@ export class UserController {
   }
 
   @Post('forgot-password')
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request a password reset link' })
   @ApiResponse({ status: 200, description: 'Password reset link has been sent to your email.' })
@@ -112,7 +113,9 @@ export class UserController {
   ) {
     try {
       await this.userService.forgotPassword(forgotPasswordDto);
-      return { message: 'Password reset link has been sent to your email.' };
+      return {
+        message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
+      };
     } catch (error) {
       throw new BadRequestException(error.message);
     }

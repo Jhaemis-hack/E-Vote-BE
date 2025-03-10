@@ -221,6 +221,7 @@ export class UserService {
     const resetTokenExpiry = new Date(Date.now() + 86400000);
 
     const forgotPasswordToken = this.forgotPasswordRepository.create({
+      email: user.email,
       reset_token: resetToken,
       token_expiry: resetTokenExpiry,
     });

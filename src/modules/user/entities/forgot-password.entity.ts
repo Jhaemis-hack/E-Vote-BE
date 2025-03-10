@@ -1,15 +1,14 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 @Entity()
 export class ForgotPasswordToken extends AbstractBaseEntity {
-  @Column()
+  @Column({ nullable: false })
   reset_token: string;
 
-  @Column()
+  @Column({ type: 'timestamp', nullable: false })
   token_expiry: Date;
 
-  @Column()
+  @Column({ nullable: false })
   email: string;
 }
