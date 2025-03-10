@@ -1,7 +1,11 @@
 export const UNAUTHENTICATED_MESSAGE = 'Not an authenticated user';
 export const LOGIN_MESSAGE = 'Login successful';
 export const SIGNUP_MESSAGE = 'Signup successful';
-
+export const DELETE_ELECTION = `Election deleted successfully`;
+export const ERROR_DELETING_ELECTION = 'Cannot delete active election';
+export const FETCH_USER = 'User fetched successfully';
+export const DELETE_USER = 'User deleted successfully';
+export const USER_NOT_FOUND = 'User not found';
 export const EMAIL_NOT_FOUND = 'User with this email not found';
 export const INCORRECT_PASSWORD = 'Incorrect credentials';
 export const INVALID_EMAIL_FORMAT = 'Invalid email format';
@@ -10,9 +14,6 @@ export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
 export const PASSWORD_RESET_LINK_SENT = 'Password reset link has been sent to your email';
 export const INCORRECT_UUID = 'Not a valid uuid';
-export const FETCH_USER = 'User fetched successfully';
-export const DELETE_USER = 'User deleted successfully';
-export const USER_NOT_FOUND = 'User not found';
 export const VOTELINK_CREATED = 'Vote link creation successful';
 export const ELECTION_CREATED = 'Election creation successful';
 export const FETCH_ELECTIONS = 'Elections fetched successfully';
@@ -25,6 +26,7 @@ export const ELECTION_ENDED_VOTE_NOT_ALLOWED = 'The election has ended and votin
 export const ELECTION_ACTIVE_CANNOT_DELETE = 'Election is active and cannot be deleted';
 export const EEROR_DELETING_ELECTION = 'Error occured while deleting election';
 export const UNAUTHORIZED_USER = 'Authorization is required to access this route.';
+export const EMAIL_NOT_VERIFIED = 'Email not verified. Verify email and try again.';
 export const VOTE_CREATION_MESSAGE = 'Thank you for voting! Your vote has been recorded.';
 export const CANDIDATE_NOT_FOUND = 'Candidate not found';
 export const ELECTION_START_DATE_BEFORE_END_DATE = 'start_date must be before end_date';
@@ -33,3 +35,5 @@ export const BAD_REQUEST = 'Bad Request';
 export const UNAUTHORIZED_ACCESS = 'Unauthorized Access';
 export const USER_UPDATED = 'User Updated Successfully';
 export const ELECTION_START_TIME_BEFORE_END_TIME = 'start_time must be before end_time';
+export const ELECTION_HAS_NOT_STARTED = 'Election has not started.';
+export const ELECTION_HAS_ENDED = 'Election has ended';

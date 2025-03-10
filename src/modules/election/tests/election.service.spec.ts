@@ -369,7 +369,7 @@ describe('ElectionService', () => {
     it('should throw NotFoundException if election does not exist', async () => {
       electionRepository.findOne = jest.fn().mockResolvedValue(null);
       const electionId = '123';
-      await expect(service.findOne(electionId)).rejects.toThrow(
+      const adminId = await expect(service.findOne(electionId)).rejects.toThrow(
         new NotFoundException({
           status_code: HttpStatus.NOT_FOUND,
           message: SYS_MSG.ELECTION_NOT_FOUND,
@@ -381,11 +381,26 @@ describe('ElectionService', () => {
 
   describe('remove', () => {
     const electionId = '550e8400-e29b-41d4-a716-446655440000';
+    const adminId = 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf';
 
     it('should throw NotFoundException if election does not exist', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(service.remove(electionId)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(electionId, adminId)).rejects.toThrow(NotFoundException);
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { id: electionId },
+        relations: ['candidates'],
+      });
+    });
+
+    it('should throw ForbiddenException if adminId does not match election creator', async () => {
+      const differentAdminId = 'f14acef6-abf1-41fc-aca5-0cf932db657f';
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        id: electionId,
+        created_by: differentAdminId,
+      } as Election);
+
+      await expect(service.remove(electionId, adminId)).rejects.toThrow(ForbiddenException);
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: electionId },
         relations: ['candidates'],
@@ -408,12 +423,13 @@ describe('ElectionService', () => {
     it('should delete election if it exists and is not ongoing', async () => {
       const completedElection = {
         id: electionId,
+        created_by: adminId,
       };
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(completedElection as Election);
       jest.spyOn(electionRepository, 'delete').mockResolvedValue({ affected: 1 } as any);
 
-      const result = await service.remove(electionId);
+      const result = await service.remove(electionId, adminId);
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: electionId },
@@ -431,11 +447,12 @@ describe('ElectionService', () => {
     it('should throw InternalServerErrorException if deletion fails', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
         id: electionId,
+        created_by: adminId,
       } as Election);
 
       jest.spyOn(electionRepository, 'delete').mockRejectedValue(new Error('Delete error'));
 
-      await expect(service.remove(electionId)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.remove(electionId, adminId)).rejects.toThrow(InternalServerErrorException);
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: electionId },
         relations: ['candidates'],
@@ -443,11 +460,12 @@ describe('ElectionService', () => {
       expect(electionRepository.delete).toHaveBeenCalledWith({ id: electionId });
     });
   });
+
   describe('Get Election By Vote Link', () => {
     const validVoteLink = '7284fdbc-a1b9-45ad-a586-72edae14526d';
     const invalidVoteLink = 'invalid-vote-link';
 
-    it('should return the election when a valid vote_link is provided and the election exists', async () => {
+    it('should return the election when a valid vote_id is provided and the election exists', async () => {
       const mockElection = {
         id: '550e8400-e29b-41d4-a716-446655440000',
         title: '2025 Presidential Election',
@@ -495,7 +513,7 @@ describe('ElectionService', () => {
       });
     });
 
-    it('should throw a HttpException with 400 status when the vote_link is not a valid UUID', async () => {
+    it('should throw a HttpException with 400 status when the vote_id is not a valid UUID', async () => {
       await expect(service.getElectionByVoterLink(invalidVoteLink)).rejects.toThrow(
         new HttpException(
           { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
@@ -503,6 +521,46 @@ describe('ElectionService', () => {
         ),
       );
       expect(electionRepository.findOne).not.toHaveBeenCalled();
+    });
+
+    it('should throw a ForbiddenException with 403 status when the election status is pending', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        vote_id: validVoteLink,
+        status: ElectionStatus.UPCOMING,
+      } as Election);
+
+      await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
+        new ForbiddenException({
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
+          data: null,
+        }),
+      );
+
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { vote_id: validVoteLink },
+        relations: ['candidates'],
+      });
+    });
+
+    it('should throw a NotFoundException with 404 status when the election status is completed', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        vote_id: validVoteLink,
+        status: ElectionStatus.COMPLETED,
+      } as Election);
+
+      await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
+        new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.ELECTION_HAS_ENDED,
+          data: null,
+        }),
+      );
+
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { vote_id: validVoteLink },
+        relations: ['candidates'],
+      });
     });
 
     it('should throw a NotFoundException when the election with the provided vote_link does not exist', async () => {
@@ -551,68 +609,64 @@ describe('ElectionService', () => {
     //     });
     //   });
     // });
+  });
 
-    describe('getElectionResults', () => {
-      const electionId = '550e8400-e29b-41d4-a716-446655440000';
-      const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
-      const mockElection = {
-        id: electionId,
-        title: '2025 Presidential Election',
-        created_by: adminId,
-        candidates: [
-          { id: 'candidate-1', name: 'Candidate A' },
-          { id: 'candidate-2', name: 'Candidate B' },
-        ],
-        votes: [
-          { candidate_id: ['candidate-1'] },
-          { candidate_id: ['candidate-1'] },
-          { candidate_id: ['candidate-2'] },
-        ],
-      } as Election;
+  describe('getElectionResults', () => {
+    const electionId = '550e8400-e29b-41d4-a716-446655440000';
+    const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+    const mockElection = {
+      id: electionId,
+      title: '2025 Presidential Election',
+      created_by: adminId,
+      candidates: [
+        { id: 'candidate-1', name: 'Candidate A' },
+        { id: 'candidate-2', name: 'Candidate B' },
+      ],
+      votes: [{ candidate_id: ['candidate-1'] }, { candidate_id: ['candidate-1'] }, { candidate_id: ['candidate-2'] }],
+    } as Election;
 
-      it('should throw HttpException if electionId is invalid', async () => {
-        await expect(service.getElectionResults('invalid-id', adminId)).rejects.toThrow(
-          new HttpException(
-            { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-            HttpStatus.BAD_REQUEST,
-          ),
-        );
-      });
+    it('should throw HttpException if electionId is invalid', async () => {
+      await expect(service.getElectionResults('invalid-id', adminId)).rejects.toThrow(
+        new HttpException(
+          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
 
-      it('should throw HttpException if adminId is invalid', async () => {
-        await expect(service.getElectionResults(electionId, 'invalid-admin')).rejects.toThrow(
-          new HttpException(
-            { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-            HttpStatus.BAD_REQUEST,
-          ),
-        );
-      });
+    it('should throw HttpException if adminId is invalid', async () => {
+      await expect(service.getElectionResults(electionId, 'invalid-admin')).rejects.toThrow(
+        new HttpException(
+          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
 
-      it('should throw NotFoundException if election does not exist', async () => {
-        jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
-        await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
-          new NotFoundException({
-            status_code: HttpStatus.NOT_FOUND,
-            message: SYS_MSG.ELECTION_NOT_FOUND,
-            data: null,
-          }),
-        );
-      });
+    it('should throw NotFoundException if election does not exist', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+      await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
+        new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.ELECTION_NOT_FOUND,
+          data: null,
+        }),
+      );
+    });
 
-      it('should throw ForbiddenException if adminId does not match election creator', async () => {
-        const differentAdminId = 'different-admin-id';
-        jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-          ...mockElection,
-          created_by: differentAdminId,
-        } as Election);
-        await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
-          new ForbiddenException({
-            status_code: HttpStatus.FORBIDDEN,
-            message: SYS_MSG.UNAUTHORIZED_ACCESS,
-            data: null,
-          }),
-        );
-      });
+    it('should throw ForbiddenException if adminId does not match election creator', async () => {
+      const differentAdminId = 'different-admin-id';
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        ...mockElection,
+        created_by: differentAdminId,
+      } as Election);
+      await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
+        new ForbiddenException({
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.UNAUTHORIZED_ACCESS,
+          data: null,
+        }),
+      );
     });
   });
 
