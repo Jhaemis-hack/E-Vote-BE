@@ -38,14 +38,14 @@ export class CreateElectionDto {
   @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'end_time must be in the format HH:MM:SS' })
   end_time: string;
 
-  @ApiProperty({
-    description: 'Status of the election',
-    enum: ElectionStatus,
-    default: ElectionStatus.PENDING,
-    example: ElectionStatus.ONGOING,
-  })
-  @IsEnum(ElectionStatus)
-  status?: ElectionStatus;
+  // @ApiProperty({
+  //   description: 'Status of the election',
+  //   enum: ElectionStatus,
+  //   default: ElectionStatus.PENDING,
+  //   example: ElectionStatus.ONGOING,
+  // })
+  // @IsEnum(ElectionStatus)
+  // status?: ElectionStatus;
 
   //TODO:
   // @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
