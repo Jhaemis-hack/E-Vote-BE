@@ -36,14 +36,14 @@ export class Election extends AbstractBaseEntity {
   end_time: string;
 
   @Column()
-  vote_link: string;
+  vote_id: string;
 
   @Column({
     type: 'enum',
     enum: ElectionStatus,
     default: ElectionStatus.PENDING,
   })
-  election_status: ElectionStatus;
+  status: ElectionStatus;
 
   // @Column({ type: 'enum', enum: ElectionType, default: ElectionType.SINGLECHOICE })
   // type: ElectionType;
