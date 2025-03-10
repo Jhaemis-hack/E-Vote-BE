@@ -94,14 +94,14 @@ export class UserService {
       take: limit,
       select: ['id', 'email', 'created_at'],
     });
-    const totalPages = Math.ceil(total / limit);
+    const total_pages = Math.ceil(total / limit);
     return {
       status: 'success',
       message: 'Retrieved users successfully',
       data: {
-        currentPage: page,
-        totalPages,
-        totalResults: total,
+        current_page: page,
+        total_pages,
+        total_results: total,
         messages,
       },
     };

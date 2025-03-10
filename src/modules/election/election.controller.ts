@@ -53,7 +53,7 @@ export class ElectionController {
   @ApiResponse({ status: 200, description: 'All ', type: [ElectionResponseDto] })
   async findAll(
     @Query('page') page: number = 1,
-    @Query('pageSize') pageSize: number = 10,
+    @Query('page_size') pageSize: number = 10,
     @Req() req: any,
   ): Promise<any> {
     const adminId = req.user.sub;
@@ -142,14 +142,14 @@ export class ElectionController {
     return this.electionService.remove(id);
   }
 
-  @Get('vote/:voteLink')
+  @Get('votes/:vote_id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get an election from vote link' })
   @ApiResponse({ status: 200, description: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK })
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
-  getElectionByVoterLink(@Param('voteLink') voteLink: string) {
-    return this.electionService.getElectionByVoterLink(voteLink);
+  getElectionByVoterLink(@Param('vote_id') vote_id: string) {
+    return this.electionService.getElectionByVoterLink(vote_id);
   }
 }
