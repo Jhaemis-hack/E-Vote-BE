@@ -63,7 +63,7 @@ describe('VoteService', () => {
         ),
       );
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
     });
@@ -119,7 +119,7 @@ describe('VoteService', () => {
 
       const election = new Election();
       election.id = '7284fdbc-a1b9-55ad-a586-72edae14526d';
-      election.vote_link = validVoteLink;
+      election.vote_id = validVoteLink;
       election.candidates = [
         {
           id: '7284fdbc-a1b9-45ad-a586-72edae14526d',
@@ -140,7 +140,7 @@ describe('VoteService', () => {
       const result = await service.createVote(validVoteLink, createVoteDto);
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
       expect(voteRepository.create).toHaveBeenCalledWith({ ...createVoteDto, election_id: election.id });
