@@ -8,7 +8,6 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { EmailService } from './email.service';
 import { join } from 'path';
 
-console.log('Email template path:', join(__dirname, 'templates'));
 @Module({
   imports: [
     MailerModule.forRootAsync({
