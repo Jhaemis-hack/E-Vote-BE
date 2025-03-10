@@ -50,7 +50,11 @@ export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'start_time must be in the format HH:MM:SS' })
   start_time: string;
 
-  @ApiProperty({ description: 'This shows the election status', example: ElectionStatus.PENDING, enum: ElectionStatus })
+  @ApiProperty({
+    description: 'This shows the election status',
+    example: ElectionStatus.UPCOMING,
+    enum: ElectionStatus,
+  })
   @IsNotEmpty()
   @IsEnum(ElectionStatus)
   election_status: ElectionStatus;

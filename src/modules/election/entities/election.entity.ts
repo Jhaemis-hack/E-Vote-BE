@@ -5,7 +5,7 @@ import { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 
 export enum ElectionStatus {
-  PENDING = 'pending',
+  UPCOMING = 'upcoming',
   ONGOING = 'ongoing',
   COMPLETED = 'completed',
 }
@@ -41,7 +41,7 @@ export class Election extends AbstractBaseEntity {
   @Column({
     type: 'enum',
     enum: ElectionStatus,
-    default: ElectionStatus.PENDING,
+    default: ElectionStatus.UPCOMING,
   })
   status: ElectionStatus;
 
