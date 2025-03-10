@@ -337,7 +337,7 @@ export class ElectionService {
       });
     }
 
-    if (election.election_status === ElectionStatus.PENDING) {
+    if (election.status === ElectionStatus.PENDING) {
       throw new ForbiddenException({
         status_code: HttpStatus.FORBIDDEN,
         message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
@@ -345,7 +345,7 @@ export class ElectionService {
       });
     }
 
-    if (election.election_status === ElectionStatus.COMPLETED) {
+    if (election.status === ElectionStatus.COMPLETED) {
       throw new NotFoundException({
         status_code: HttpStatus.NOT_FOUND,
         message: SYS_MSG.ELECTION_HAS_ENDED,

@@ -465,7 +465,7 @@ describe('ElectionService', () => {
     const validVoteLink = '7284fdbc-a1b9-45ad-a586-72edae14526d';
     const invalidVoteLink = 'invalid-vote-link';
 
-    it('should return the election when a valid vote_link is provided and the election exists', async () => {
+    it('should return the election when a valid vote_id is provided and the election exists', async () => {
       const mockElection = {
         id: '550e8400-e29b-41d4-a716-446655440000',
         title: '2025 Presidential Election',
@@ -513,7 +513,7 @@ describe('ElectionService', () => {
       });
     });
 
-    it('should throw a HttpException with 400 status when the vote_link is not a valid UUID', async () => {
+    it('should throw a HttpException with 400 status when the vote_id is not a valid UUID', async () => {
       await expect(service.getElectionByVoterLink(invalidVoteLink)).rejects.toThrow(
         new HttpException(
           { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
@@ -525,8 +525,8 @@ describe('ElectionService', () => {
 
     it('should throw a ForbiddenException with 403 status when the election status is pending', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-        vote_link: validVoteLink,
-        election_status: ElectionStatus.PENDING,
+        vote_id: validVoteLink,
+        status: ElectionStatus.PENDING,
       } as Election);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
@@ -538,15 +538,15 @@ describe('ElectionService', () => {
       );
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
     });
 
     it('should throw a NotFoundException with 404 status when the election status is completed', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-        vote_link: validVoteLink,
-        election_status: ElectionStatus.COMPLETED,
+        vote_id: validVoteLink,
+        status: ElectionStatus.COMPLETED,
       } as Election);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
@@ -558,7 +558,7 @@ describe('ElectionService', () => {
       );
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
     });
