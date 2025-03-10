@@ -26,7 +26,7 @@ export class VoteService {
       );
     }
     const election = await this.electionRepository.findOne({
-      where: { vote_link: vote_link },
+      where: { vote_id: vote_link },
       relations: ['candidates'],
     });
     if (!election) {
