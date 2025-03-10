@@ -11,11 +11,6 @@ export class User extends AbstractBaseEntity {
   // @Column()
   // last_name: string;
 
-  first_name: string;
-
-  @Column()
-  last_name: string;
-
   @Column({ unique: true })
   email: string;
 
