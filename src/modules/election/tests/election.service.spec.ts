@@ -163,11 +163,11 @@ describe('ElectionService', () => {
           end_date: new Date('2023-10-31T23:59:59.000Z'),
           start_time: '09:00:00',
           end_time: '10:00:00',
-          election_status: ElectionStatus.ONGOING,
+          status: ElectionStatus.ONGOING,
           created_at: new Date(),
           created_by: userId,
           created_by_user: user,
-          vote_link: '7284fdbc-a1b9-45ad-a586-72edae14526d',
+          vote_id: '7284fdbc-a1b9-45ad-a586-72edae14526d',
           updated_at: new Date(),
           deleted_at: null,
           candidates: [] as Candidate[],
@@ -181,11 +181,11 @@ describe('ElectionService', () => {
           end_date: new Date('2023-11-30T23:59:59.000Z'),
           start_time: '09:00:00',
           end_time: '10:00:00',
-          election_status: ElectionStatus.PENDING,
+          status: ElectionStatus.PENDING,
           created_by: userId,
           deleted_at: null,
           updated_at: new Date(),
-          vote_link: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
+          vote_id: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
           created_by_user: user,
           created_at: new Date(),
           candidates: [] as Candidate[],
@@ -215,6 +215,8 @@ describe('ElectionService', () => {
               start_date: new Date('2023-10-01T00:00:00.000Z'),
               end_date: new Date('2023-10-31T23:59:59.000Z'),
               start_time: '09:00:00',
+              vote_id: '7284fdbc-a1b9-45ad-a586-72edae14526d',
+              status: ElectionStatus.ONGOING,
               end_time: '10:00:00',
               created_by: userId,
             },
@@ -225,6 +227,8 @@ describe('ElectionService', () => {
               end_date: new Date('2023-11-30T23:59:59.000Z'),
               start_time: '09:00:00',
               end_time: '10:00:00',
+              status: ElectionStatus.PENDING,
+              vote_id: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
               created_by: userId,
             },
           ],
@@ -461,7 +465,7 @@ describe('ElectionService', () => {
     const validVoteLink = '7284fdbc-a1b9-45ad-a586-72edae14526d';
     const invalidVoteLink = 'invalid-vote-link';
 
-    it('should return the election when a valid vote_link is provided and the election exists', async () => {
+    it('should return the election when a valid vote_id is provided and the election exists', async () => {
       const mockElection = {
         id: '550e8400-e29b-41d4-a716-446655440000',
         title: '2025 Presidential Election',
@@ -469,9 +473,10 @@ describe('ElectionService', () => {
         start_date: new Date('2025-03-01T00:00:00.000Z'),
         end_date: new Date('2025-03-31T23:59:59.999Z'),
         start_time: '09:00:00',
+        status: ElectionStatus.ONGOING,
         end_time: '10:00:00',
         created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
-        vote_link: validVoteLink,
+        // vote_id: validVoteLink,
         candidates: [],
         created_by_user: {} as User,
         votes: [] as Vote[],
@@ -493,7 +498,8 @@ describe('ElectionService', () => {
           description: mockElection.description,
           start_date: mockElection.start_date,
           end_date: mockElection.end_date,
-          vote_id: mockElection.vote_link,
+          // vote_id: mockElection.vote_id,
+          status: mockElection.status,
           start_time: mockElection.start_time,
           end_time: mockElection.end_time,
           created_by: mockElection.created_by,
@@ -502,12 +508,12 @@ describe('ElectionService', () => {
       });
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
     });
 
-    it('should throw a HttpException with 400 status when the vote_link is not a valid UUID', async () => {
+    it('should throw a HttpException with 400 status when the vote_id is not a valid UUID', async () => {
       await expect(service.getElectionByVoterLink(invalidVoteLink)).rejects.toThrow(
         new HttpException(
           { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
@@ -519,8 +525,8 @@ describe('ElectionService', () => {
 
     it('should throw a ForbiddenException with 403 status when the election status is pending', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-        vote_link: validVoteLink,
-        election_status: ElectionStatus.PENDING,
+        vote_id: validVoteLink,
+        status: ElectionStatus.PENDING,
       } as Election);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
@@ -532,15 +538,15 @@ describe('ElectionService', () => {
       );
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
     });
 
     it('should throw a NotFoundException with 404 status when the election status is completed', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-        vote_link: validVoteLink,
-        election_status: ElectionStatus.COMPLETED,
+        vote_id: validVoteLink,
+        status: ElectionStatus.COMPLETED,
       } as Election);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
@@ -552,7 +558,7 @@ describe('ElectionService', () => {
       );
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
     });
@@ -569,7 +575,7 @@ describe('ElectionService', () => {
       );
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
-        where: { vote_link: validVoteLink },
+        where: { vote_id: validVoteLink },
         relations: ['candidates'],
       });
     });
