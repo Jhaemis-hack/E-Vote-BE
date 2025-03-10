@@ -29,15 +29,18 @@ export class UserService {
   async registerAdmin(createAdminDto: CreateUserDto) {
     const { email, password } = createAdminDto;
 
+    // Validate email format
     if (!email.match(/^\S+@\S+\.\S+$/)) {
       throw new BadRequestException(SYS_MSG.INVALID_EMAIL_FORMAT);
     }
 
+    // Check if email is already in use
     const existingUser = await this.userRepository.findOne({ where: { email } });
     if (existingUser) {
       throw new BadRequestException(SYS_MSG.EMAIL_IN_USE);
     }
 
+    // Validate password strength
     if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
       throw new BadRequestException(SYS_MSG.INVALID_PASSWORD_FORMAT);
     }
@@ -99,14 +102,14 @@ export class UserService {
       take: limit,
       select: ['id', 'email', 'created_at'],
     });
-    const total_pages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / limit);
     return {
       status: 'success',
       message: 'Retrieved users successfully',
       data: {
-        current_page: page,
-        total_pages,
-        total_results: total,
+        currentPage: page,
+        totalPages,
+        totalResults: total,
         messages,
       },
     };
@@ -182,6 +185,7 @@ export class UserService {
       });
     }
   }
+
   private validateEmail(email: string) {
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
