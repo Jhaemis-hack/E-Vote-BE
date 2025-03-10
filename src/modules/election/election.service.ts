@@ -406,30 +406,6 @@ export class ElectionService {
     });
   }
 
-  private mergeDateTime(date, time) {
-    console.log(date, time);
-
-    return new Date(`${date}T${time}`);
-  }
-
-  private extract_present_time() {
-    return new Date().toLocaleTimeString().split(' ')[0];
-  }
-
-  private extract_date(date_obj) {
-    const date = new Date(date_obj);
-
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0];
-    }
-
-    return date.toISOString().split('T')[0];
-  }
-
-  private extract_present_date() {
-    return new Date().toISOString().split('T')[0];
-  }
-
   private transformElectionResponse(election: any): any {
     if (!election) {
       return null;
