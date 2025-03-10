@@ -37,7 +37,7 @@ export class ElectionService {
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, electionType, candidates, start_time, end_time } =
+    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time } =
       createElectionDto;
 
     const election = this.electionRepository.create({
@@ -45,7 +45,7 @@ export class ElectionService {
       description,
       start_date: start_date,
       end_date: end_date,
-      type: electionType,
+      type: election_type,
       vote_link: randomUUID(),
       start_time: start_time,
       end_time: end_time,
@@ -68,13 +68,13 @@ export class ElectionService {
       message: SYS_MSG.ELECTION_CREATED,
       data: {
         election_id: savedElection.id,
-        election_title: savedElection.title,
+        title: savedElection.title,
         description: savedElection.description,
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
         start_time: savedElection.start_time,
         end_time: savedElection.end_time,
-        vote_link: savedElection.vote_link,
+        vote_id: savedElection.vote_link,
         election_type: savedElection.type,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
@@ -90,9 +90,9 @@ export class ElectionService {
     status_code: number;
     message: string;
     data: {
-      currentPage: number;
-      totalPages: number;
-      totalResults: number;
+      current_page: number;
+      total_pages: number;
+      total_results: number;
       elections;
       meta: any;
     };
@@ -124,20 +124,20 @@ export class ElectionService {
     });
 
     const data = this.mapElections(result);
-    const totalPages = Math.ceil(total / pageSize);
+    const total_pages = Math.ceil(total / pageSize);
 
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_ELECTIONS,
       data: {
-        currentPage: page,
-        totalPages,
-        totalResults: total,
+        current_page: page,
+        total_pages,
+        total_results: total,
         elections: data,
         meta: {
-          hasNext: page < totalPages,
+          hasNext: page < total_pages,
           total,
-          nextPage: page < totalPages ? page + 1 : null,
+          nextPage: page < total_pages ? page + 1 : null,
           prevPage: page > 1 ? page - 1 : null,
         },
       },
@@ -149,7 +149,7 @@ export class ElectionService {
     message: string;
     data: {
       election: {
-        id: string;
+        election_id: string;
         title: string;
         description: string;
         votes_casted: number;
@@ -157,7 +157,7 @@ export class ElectionService {
         start_time: string;
         end_date: Date;
         end_time: string;
-        candidates: { id: string; candidate: string; vote_count: number }[];
+        candidates: { candidate_id: string; name: string; vote_count: number }[];
       };
     };
   }> {
@@ -191,8 +191,8 @@ export class ElectionService {
     const totalVotesCast = Array.from(voteCounts.values()).reduce((sum, count) => sum + count, 0);
 
     const result = candidates.map(candidate => ({
-      id: candidate.id,
-      candidate: candidate.name,
+      candidate_id: candidate.id,
+      name: candidate.name,
       vote_count: voteCounts.get(candidate.id) || 0,
     }));
 
@@ -201,7 +201,7 @@ export class ElectionService {
       message: SYS_MSG.FETCH_ELECTION,
       data: {
         election: {
-          id: election.id,
+          election_id: election.id,
           title: election.title,
           description: election.description,
           votes_casted: totalVotesCast,
@@ -216,7 +216,7 @@ export class ElectionService {
   }
 
   async update(id: string, updateElectionDto: UpdateElectionDto): Promise<Election> {
-    const { title, description, start_date, end_date, electionType, start_time, end_time } = updateElectionDto;
+    const { title, description, start_date, end_date, election_type, start_time, end_time } = updateElectionDto;
 
     const election = await this.electionRepository.findOne({ where: { id } });
 
@@ -247,7 +247,7 @@ export class ElectionService {
       description: description ?? election.description,
       start_date: start_date ?? election.start_date,
       end_date: end_date ?? election.end_date,
-      type: electionType ?? election.type,
+      type: election_type ?? election.type,
       start_time: start_time ?? election.start_time,
       end_time: end_time ?? election.end_time,
     });
@@ -369,7 +369,7 @@ export class ElectionService {
 
       return {
         election_id: election.id,
-        election_title: election.title,
+        title: election.title,
         start_date: election.start_date,
         end_date: election.end_date,
         election_type: election.type,
@@ -398,11 +398,11 @@ export class ElectionService {
 
     return {
       election_id: election.id,
-      election_title: election.title,
+      title: election.title,
       description: election.description,
       start_date: election.start_date,
       end_date: election.end_date,
-      vote_link: election.vote_link,
+      vote_id: election.vote_link,
       election_type: election.type,
       start_time: election.start_time,
       status: election.status,
@@ -476,7 +476,7 @@ export class ElectionService {
       message: 'Election results retrieved successfully',
       data: {
         election_id: election.id,
-        election_title: election.title,
+        title: election.title,
         total_votes: election.votes.length,
         results: results,
       },

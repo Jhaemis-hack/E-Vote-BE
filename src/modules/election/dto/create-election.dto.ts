@@ -56,7 +56,7 @@ export class CreateElectionDto {
   @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
   @IsNotEmpty()
   @IsEnum(ElectionType)
-  electionType: ElectionType;
+  election_type: ElectionType;
 
   @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
   @IsArray()

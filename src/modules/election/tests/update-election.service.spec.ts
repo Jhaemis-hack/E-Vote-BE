@@ -34,7 +34,7 @@ describe('ElectionService - update', () => {
       description: 'This is an updated description.',
       start_date: new Date('2025-06-01T00:00:00Z'),
       end_date: new Date('2025-06-02T00:00:00Z'),
-      electionType: ElectionType.SINGLECHOICE,
+      election_type: ElectionType.SINGLECHOICE,
       candidates: ['candidate1', 'candidate2'],
       start_time: '20:25:22',
       end_time: '20:23:23',
@@ -99,7 +99,7 @@ describe('ElectionService - update', () => {
       end_time: '17:00:00',
       start_date: new Date('2023-11-01T00:00:00.000Z'),
       end_date: new Date('2023-11-30T23:59:59.000Z'),
-      electionType: ElectionType.SINGLECHOICE,
+      election_type: ElectionType.SINGLECHOICE,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
@@ -117,7 +117,7 @@ describe('ElectionService - update', () => {
       candidates: ['candidate1'],
       start_time: '08:00:00',
       end_time: '17:00:00',
-      electionType: ElectionType.SINGLECHOICE,
+      election_type: ElectionType.SINGLECHOICE,
     };
 
     const existingElection = {
@@ -153,7 +153,7 @@ describe('ElectionService - update', () => {
       end_time: '17:00:00',
       start_date: new Date('2023-11-01T00:00:00.000Z'),
       end_date: new Date('2023-11-30T23:59:59.000Z'),
-      electionType: ElectionType.SINGLECHOICE,
+      election_type: ElectionType.SINGLECHOICE,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
