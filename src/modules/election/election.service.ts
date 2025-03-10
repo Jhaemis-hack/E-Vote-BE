@@ -17,7 +17,7 @@ import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election } from './entities/election.entity';
+import { Election, ElectionStatus } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
 
 interface ElectionResultsDownload {
@@ -255,7 +255,7 @@ export class ElectionService {
     return this.electionRepository.save(election);
   }
 
-  async remove(id: string) {
+  async remove(id: string, adminId: string) {
     if (!isUUID(id)) {
       throw new HttpException(
         {
@@ -266,6 +266,7 @@ export class ElectionService {
         HttpStatus.BAD_REQUEST,
       );
     }
+
     const election = await this.electionRepository.findOne({
       where: { id },
       relations: ['candidates'],
@@ -286,6 +287,14 @@ export class ElectionService {
     //     data: null,
     //   });
     // }
+
+    if (election.created_by !== adminId) {
+      throw new ForbiddenException({
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.UNAUTHORIZED_ACCESS,
+        data: null,
+      });
+    }
 
     try {
       await this.candidateRepository.delete({ election: { id } });
@@ -324,6 +333,22 @@ export class ElectionService {
       throw new NotFoundException({
         status_code: HttpStatus.NOT_FOUND,
         message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    if (election.status === ElectionStatus.UPCOMING) {
+      throw new ForbiddenException({
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
+        data: null,
+      });
+    }
+
+    if (election.status === ElectionStatus.COMPLETED) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_HAS_ENDED,
         data: null,
       });
     }

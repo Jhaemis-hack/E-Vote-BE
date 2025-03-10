@@ -69,6 +69,10 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND);
     }
 
+    // if (userExist.is_verified === false) {
+    //   throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED);
+    // }
+
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
