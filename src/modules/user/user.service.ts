@@ -17,16 +17,18 @@ import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { exist, string } from 'joi';
-import { MailService } from 'src/mail/mail.service'; // Assuming you have a mail service
+import { EmailService } from '../email/email.service'; // Assuming you have a mail service
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private readonly mailService: MailService, // Inject your mail service
+    private readonly mailService: EmailService, // Inject your mail service
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -217,13 +219,10 @@ export class UserService {
     const resetToken = '2453628758';
     const resetTokenExpiry = new Date(Date.now() + 86400000);
 
-    // Save the token and expiry in the user entity
-    user.resetToken = resetToken;
-    user.resetTokenExpiry = resetTokenExpiry;
-    await this.userRepository.save(user);
-
-    // // Send the password reset email
-    // const resetUrl = `https://yourapp.com/reset-password?token=${resetToken}`;
-    // await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
+    const forgotPasswordToken = this.forgotPasswordRepository.create({
+      reset_token: resetToken,
+      token_expiry: resetTokenExpiry,
+    });
+    await this.forgotPasswordRepository.save(forgotPasswordToken);
   }
 }
