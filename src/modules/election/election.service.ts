@@ -47,6 +47,7 @@ export class ElectionService {
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
+      status: ElectionStatus.ONGOING,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -337,7 +338,7 @@ export class ElectionService {
       });
     }
 
-    if (election.status === ElectionStatus.PENDING) {
+    if (election.status === ElectionStatus.UPCOMING) {
       throw new ForbiddenException({
         status_code: HttpStatus.FORBIDDEN,
         message: SYS_MSG.ELECTION_HAS_NOT_STARTED,

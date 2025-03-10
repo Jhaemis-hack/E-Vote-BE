@@ -526,7 +526,7 @@ describe('ElectionService', () => {
     it('should throw a ForbiddenException with 403 status when the election status is pending', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
         vote_id: validVoteLink,
-        status: ElectionStatus.PENDING,
+        status: ElectionStatus.UPCOMING,
       } as Election);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
