@@ -134,6 +134,58 @@ describe('UserService', () => {
         ),
       );
     });
+
+    it('❌ should throw BadRequestException for password without number', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        password: 'password!',
+      };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
+        }),
+      );
+    });
+
+    it('❌ should throw BadRequestException for password without special character', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        password: 'pass1234',
+      };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
+        }),
+      );
+    });
   });
 
   describe('login', () => {
