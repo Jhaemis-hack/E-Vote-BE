@@ -15,6 +15,11 @@ import { catchError, map } from 'rxjs/operators';
 export class ResponseInterceptor implements NestInterceptor {
   private readonly logger = new Logger(ResponseInterceptor.name);
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const response = context.switchToHttp().getResponse();
+    if (response.getHeader('Content-Type') === 'text/csv') {
+      return next.handle();
+    }
+
     return next.handle().pipe(
       map((res: any) => this.responseHandler(res, context)),
       catchError((err: unknown) => throwError(() => this.errorHandler(err, context))),
@@ -38,7 +43,10 @@ export class ResponseInterceptor implements NestInterceptor {
     const response = ctx.getResponse();
     const status_code = response.statusCode;
 
-    response.setHeader('Content-Type', 'application/json');
+    if (!response.getHeader('Content-Type')) {
+      response.setHeader('Content-Type', 'application/json');
+    }
+
     if (typeof res === 'object') {
       const { message, ...data } = res;
       this.logger.log('response', res);

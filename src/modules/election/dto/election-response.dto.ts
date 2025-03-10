@@ -6,7 +6,7 @@ export class ElectionResponseDto {
   election_id: string;
 
   @ApiProperty({ description: 'The title of the election', example: '2023 Presidential Election' })
-  election_title: string;
+  title: string;
 
   @ApiProperty({
     description: 'The description of the election',
@@ -19,6 +19,9 @@ export class ElectionResponseDto {
 
   @ApiProperty({ description: 'The end date of the election', example: '2023-10-31T23:59:59.000Z' })
   end_date: Date;
+
+  @ApiProperty({ description: 'This uuid is used to acesss this election by a voter.' })
+  vote_link: string;
 
   @ApiProperty({
     description: 'The type of the election',
