@@ -3,7 +3,7 @@ export class ElectionResultsDto {
   message: string;
   data: {
     election_id: string;
-    election_title: string;
+    title: string;
     total_votes: number;
     results: Array<{
       candidate_id: string;

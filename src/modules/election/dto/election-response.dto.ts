@@ -6,7 +6,7 @@ export class ElectionResponseDto {
   election_id: string;
 
   @ApiProperty({ description: 'The title of the election', example: '2023 Presidential Election' })
-  election_title: string;
+  title: string;
 
   @ApiProperty({
     description: 'The description of the election',

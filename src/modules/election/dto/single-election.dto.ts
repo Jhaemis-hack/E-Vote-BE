@@ -10,7 +10,7 @@ export class CandidateDto {
 
 export class ElectionDto {
   @ApiProperty({ description: 'The ID of the election', example: 'a5ed5700-2b84-477e-93e0-6cf08398aa7b' })
-  id: string;
+  election_id: string;
 
   @ApiProperty({ description: 'The title of the election', example: 'Presidential Election 2025' })
   title: string;
@@ -18,8 +18,8 @@ export class ElectionDto {
   @ApiProperty({ description: 'The description of the election', example: 'Election to determine the next president' })
   description: string;
 
-  @ApiProperty({ description: 'The status of the election', example: 'onGoing' })
-  status: string;
+  //  @ApiProperty({ description: 'The status of the election', example: 'onGoing' })
+  //  status: string;
 
   @ApiProperty({ description: 'The total casted votes in the election', example: '5' })
   votes_casted: string;
