@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, MinLength, IsString, IsStrongPassword } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, MinLength, IsString, IsStrongPassword, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
@@ -41,4 +41,12 @@ export class CreateUserDto {
     },
   )
   password: string;
+
+  @ApiProperty({
+    description: 'Indicates whether the user is verified',
+    example: false,
+    default: false,
+  })
+  @IsBoolean()
+  is_verified: boolean = false;
 }

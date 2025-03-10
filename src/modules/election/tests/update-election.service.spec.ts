@@ -2,7 +2,7 @@ import { NotFoundException, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ElectionService } from '../election.service';
-import { Election, ElectionType } from '../entities/election.entity';
+import { Election, ElectionStatus } from '../entities/election.entity';
 import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
 import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
@@ -34,7 +34,7 @@ describe('ElectionService - update', () => {
       description: 'This is an updated description.',
       start_date: new Date('2025-06-01T00:00:00Z'),
       end_date: new Date('2025-06-02T00:00:00Z'),
-      election_type: ElectionType.SINGLECHOICE,
+      election_status: ElectionStatus.ONGOING,
       candidates: ['candidate1', 'candidate2'],
       start_time: '20:25:22',
       end_time: '20:23:23',
@@ -46,12 +46,13 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2025-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      type: ElectionType.SINGLECHOICE,
+      election_status: ElectionStatus.ONGOING,
       created_by: 'admin123',
       created_by_user: {} as User,
       candidates: [] as Candidate[],
       votes: [] as Vote[],
-      vote_link: 'https://vote-link.com',
+      status: ElectionStatus.ONGOING,
+      vote_id: 'https://vote-link.com',
       start_time: '08:00:00',
       end_time: '17:00:00',
       created_at: new Date(),
@@ -68,7 +69,6 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2025-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      type: ElectionType.SINGLECHOICE,
       created_by: 'admin123',
       created_by_user: {} as User,
       candidates: [] as Candidate[],
@@ -94,12 +94,12 @@ describe('ElectionService - update', () => {
     const electionId = 'non-existent-id';
     const updateElectionDto: UpdateElectionDto = {
       title: 'Updated Election Title',
+      election_status: ElectionStatus.UPCOMING,
       candidates: ['candidate1'],
       start_time: '08:00:00',
       end_time: '17:00:00',
       start_date: new Date('2023-11-01T00:00:00.000Z'),
       end_date: new Date('2023-11-30T23:59:59.000Z'),
-      election_type: ElectionType.SINGLECHOICE,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
@@ -115,9 +115,9 @@ describe('ElectionService - update', () => {
       start_date: new Date('2025-06-02T00:00:00Z'),
       end_date: new Date('2025-06-01T00:00:00Z'),
       candidates: ['candidate1'],
+      election_status: ElectionStatus.ONGOING,
       start_time: '08:00:00',
       end_time: '17:00:00',
-      election_type: ElectionType.SINGLECHOICE,
     };
 
     const existingElection = {
@@ -126,12 +126,13 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2027-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      type: ElectionType.SINGLECHOICE,
+      election_status: ElectionStatus.COMPLETED,
       created_by: 'admin123',
       created_by_user: {} as User,
       candidates: [] as Candidate[],
       votes: [] as Vote[],
-      vote_link: 'https://vote-link.com',
+      status: ElectionStatus.ONGOING,
+      vote_id: 'https://vote-link.com',
       start_time: '08:00:00',
       end_time: '17:00:00',
       created_at: new Date(),
@@ -150,10 +151,10 @@ describe('ElectionService - update', () => {
       title: 'Updated Election Title',
       candidates: ['candidate1'],
       start_time: '08:00:00',
+      election_status: ElectionStatus.COMPLETED,
       end_time: '17:00:00',
       start_date: new Date('2023-11-01T00:00:00.000Z'),
       end_date: new Date('2023-11-30T23:59:59.000Z'),
-      election_type: ElectionType.SINGLECHOICE,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
@@ -162,12 +163,12 @@ describe('ElectionService - update', () => {
       description: 'Original description.',
       start_date: new Date('2025-05-01T00:00:00Z'),
       end_date: new Date('2025-05-02T00:00:00Z'),
-      type: ElectionType.SINGLECHOICE,
       created_by: 'admin123',
       created_by_user: {} as User,
       candidates: [] as Candidate[],
       votes: [] as Vote[],
-      vote_link: 'https://vote-link.com',
+      status: ElectionStatus.COMPLETED,
+      vote_id: 'https://vote-link.com',
       start_time: '08:00:00',
       end_time: '17:00:00',
       created_at: new Date(),

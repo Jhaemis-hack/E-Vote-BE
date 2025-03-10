@@ -16,6 +16,7 @@ interface CreateUserDto {
   id?: string;
   email: string;
   password: string;
+  is_verified: false;
 }
 
 describe('UserService', () => {
@@ -70,6 +71,7 @@ describe('UserService', () => {
         id: randomUUID(),
         email: 'admin@example.com',
         password: 'StrongPass1!',
+        is_verified: false,
       };
 
       userRepository.findOne = jest.fn().mockResolvedValue(null);
@@ -99,6 +101,7 @@ describe('UserService', () => {
       const userDto: CreateUserDto = {
         email: 'invalid-email',
         password: 'StrongPass1!',
+        is_verified: false,
       };
 
       await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Invalid email format'));
@@ -108,6 +111,7 @@ describe('UserService', () => {
       const userDto: CreateUserDto = {
         email: 'admin@example.com',
         password: 'StrongPass1!',
+        is_verified: false,
       };
 
       userRepository.findOne = jest.fn().mockResolvedValue(userDto as User);
@@ -119,6 +123,7 @@ describe('UserService', () => {
       const userDto: CreateUserDto = {
         email: 'admin@example.com',
         password: 'weakpass',
+        is_verified: false,
       };
 
       userRepository.findOne = jest.fn().mockResolvedValue(null);

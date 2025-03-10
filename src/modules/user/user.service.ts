@@ -49,6 +49,7 @@ export class UserService {
     const newAdmin = this.userRepository.create({
       email,
       password: hashedPassword,
+      is_verified: false,
     });
 
     await this.userRepository.save(newAdmin);

@@ -1,20 +1,20 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateElectionDto } from './create-election.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
-  IsOptional,
-  IsDateString,
-  ValidateIf,
-  IsEnum,
-  IsString,
   IsArray,
   IsDate,
+  IsDateString,
+  IsEnum,
   IsNotEmpty,
+  IsOptional,
+  IsString,
   Matches,
+  ValidateIf,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { ElectionType } from '../entities/election.entity';
-import { Type } from 'class-transformer';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
+import { ElectionStatus } from '../entities/election.entity';
+import { CreateElectionDto } from './create-election.dto';
 export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @ApiProperty({
     example: 'Updated Election Title',
@@ -50,15 +50,25 @@ export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'start_time must be in the format HH:MM:SS' })
   start_time: string;
 
+  @ApiProperty({
+    description: 'This shows the election status',
+    example: ElectionStatus.UPCOMING,
+    enum: ElectionStatus,
+  })
+  @IsNotEmpty()
+  @IsEnum(ElectionStatus)
+  election_status: ElectionStatus;
+
   @ApiProperty({ example: '10:00:00' })
   @IsNotEmpty()
   @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'end_time must be in the format HH:MM:SS' })
   end_time: string;
 
-  @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
-  @IsNotEmpty()
-  @IsEnum(ElectionType)
-  election_type: ElectionType;
+  //TODO:
+  // @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
+  // @IsNotEmpty()
+  // @IsEnum(ElectionType)
+  // election_type: ElectionType;
 
   @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
   @IsArray()
