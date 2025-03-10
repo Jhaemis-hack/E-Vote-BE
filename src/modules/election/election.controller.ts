@@ -138,9 +138,9 @@ export class ElectionController {
     if (!isUUID(id)) {
       throw new HttpException(
         {
-          status_code: 406,
-          error: 'Not Acceptable',
-          message: 'Invalid UUID format',
+          status_code: HttpStatus.NOT_ACCEPTABLE,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
         },
         HttpStatus.NOT_ACCEPTABLE,
       );
