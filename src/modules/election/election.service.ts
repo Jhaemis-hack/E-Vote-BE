@@ -47,7 +47,6 @@ export class ElectionService {
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
-      status: ElectionStatus.ONGOING,
     });
 
     const savedElection = await this.electionRepository.save(election);
