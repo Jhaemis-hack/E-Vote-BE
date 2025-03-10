@@ -16,9 +16,8 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
-import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionType } from './entities/election.entity';
+import { Election } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
 
 interface ElectionResultsDownload {
@@ -37,16 +36,14 @@ export class ElectionService {
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time } =
-      createElectionDto;
+    const { title, description, start_date, end_date, candidates, start_time, end_time } = createElectionDto;
 
     const election = this.electionRepository.create({
       title,
       description,
       start_date: start_date,
       end_date: end_date,
-      type: election_type,
-      vote_link: randomUUID(),
+      vote_id: randomUUID(),
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
@@ -72,10 +69,10 @@ export class ElectionService {
         description: savedElection.description,
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
+        status: savedElection.status,
         start_time: savedElection.start_time,
         end_time: savedElection.end_time,
-        vote_id: savedElection.vote_link,
-        election_type: savedElection.type,
+        vote_id: savedElection.vote_id,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
       },
@@ -153,8 +150,10 @@ export class ElectionService {
         title: string;
         description: string;
         votes_casted: number;
+        status: string;
         start_date: Date;
         start_time: string;
+        vote_id: string;
         end_date: Date;
         end_time: string;
         candidates: { candidate_id: string; name: string; vote_count: number }[];
@@ -203,9 +202,11 @@ export class ElectionService {
         election: {
           election_id: election.id,
           title: election.title,
+          vote_id: election.vote_id,
           description: election.description,
           votes_casted: totalVotesCast,
           start_date: election.start_date,
+          status: election.status,
           start_time: election.start_time,
           end_date: election.end_date,
           end_time: election.end_time,
@@ -216,7 +217,7 @@ export class ElectionService {
   }
 
   async update(id: string, updateElectionDto: UpdateElectionDto): Promise<Election> {
-    const { title, description, start_date, end_date, election_type, start_time, end_time } = updateElectionDto;
+    const { title, description, start_date, end_date, start_time, end_time } = updateElectionDto;
 
     const election = await this.electionRepository.findOne({ where: { id } });
 
@@ -247,7 +248,6 @@ export class ElectionService {
       description: description ?? election.description,
       start_date: start_date ?? election.start_date,
       end_date: end_date ?? election.end_date,
-      type: election_type ?? election.type,
       start_time: start_time ?? election.start_time,
       end_time: end_time ?? election.end_time,
     });
@@ -303,8 +303,8 @@ export class ElectionService {
     }
   }
 
-  async getElectionByVoterLink(vote_link: string) {
-    if (!isUUID(vote_link)) {
+  async getElectionByVoterLink(vote_id: string) {
+    if (!isUUID(vote_id)) {
       throw new HttpException(
         {
           status_code: HttpStatus.BAD_REQUEST,
@@ -316,7 +316,7 @@ export class ElectionService {
     }
 
     const election = await this.electionRepository.findOne({
-      where: { vote_link: vote_link },
+      where: { vote_id: vote_id },
       relations: ['candidates'],
     });
 
@@ -372,7 +372,8 @@ export class ElectionService {
         title: election.title,
         start_date: election.start_date,
         end_date: election.end_date,
-        election_type: election.type,
+        vote_id: election.vote_id,
+        status: election.status,
         start_time: election.start_time,
         end_time: election.end_time,
         created_by: election.created_by,
@@ -403,7 +404,6 @@ export class ElectionService {
       start_date: election.start_date,
       end_date: election.end_date,
       vote_id: election.vote_link,
-      election_type: election.type,
       start_time: election.start_time,
       status: election.status,
       end_time: election.end_time,
