@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ElectionType } from '../entities/election.entity';
+import { ElectionStatus } from '../entities/election.entity';
 
 export class ElectionResponseDto {
   @ApiProperty({ description: 'The ID of the election', example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -23,12 +23,20 @@ export class ElectionResponseDto {
   @ApiProperty({ description: 'This uuid is used to acesss this election by a voter.' })
   vote_link: string;
 
+  //TODO:
+  // @ApiProperty({
+  //   description: 'The type of the election',
+  //   enum: ElectionType,
+  //   example: ElectionType.SINGLECHOICE,
+  // })
+  // election_type: ElectionType;
+
   @ApiProperty({
-    description: 'The type of the election',
-    enum: ElectionType, // Use the enum here
-    example: ElectionType.SINGLECHOICE, // Provide an example
+    description: 'The status of the electoin',
+    enum: ElectionStatus,
+    example: ElectionStatus.COMPLETED,
   })
-  election_type: ElectionType;
+  election_status: ElectionStatus;
 
   @ApiProperty({
     description: 'The ID of the user who created the election',

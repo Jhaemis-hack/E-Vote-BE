@@ -149,7 +149,7 @@ describe('VoteService', () => {
         status_code: HttpStatus.OK,
         message: SYS_MSG.VOTE_CREATION_MESSAGE,
         data: {
-          vote_id: vote.id,
+          voter_id: vote.id,
           election_id: vote.election_id,
           candidate_id: vote.candidate_id,
         },
