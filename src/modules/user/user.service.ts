@@ -17,6 +17,8 @@ import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { exist, string } from 'joi';
+import { MailService } from 'src/mail/mail.service'; // Assuming you have a mail service
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Injectable()
 export class UserService {
@@ -24,6 +26,7 @@ export class UserService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private readonly mailService: MailService, // Inject your mail service
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -198,5 +201,29 @@ export class UserService {
       status_code: HttpStatus.OK,
       message: SYS_MSG.DELETE_USER,
     };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+
+    const resetToken = '2453628758';
+    const resetTokenExpiry = new Date(Date.now() + 86400000);
+
+    // Save the token and expiry in the user entity
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetTokenExpiry;
+    await this.userRepository.save(user);
+
+    // // Send the password reset email
+    // const resetUrl = `https://yourapp.com/reset-password?token=${resetToken}`;
+    // await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
   }
 }
