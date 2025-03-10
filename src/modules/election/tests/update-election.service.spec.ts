@@ -94,7 +94,7 @@ describe('ElectionService - update', () => {
     const electionId = 'non-existent-id';
     const updateElectionDto: UpdateElectionDto = {
       title: 'Updated Election Title',
-      election_status: ElectionStatus.PENDING,
+      election_status: ElectionStatus.UPCOMING,
       candidates: ['candidate1'],
       start_time: '08:00:00',
       end_time: '17:00:00',
