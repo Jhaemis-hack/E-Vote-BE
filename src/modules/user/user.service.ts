@@ -55,7 +55,11 @@ export class UserService {
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.SIGNUP_MESSAGE,
-      data: { id: newAdmin.id, email: newAdmin.email, token },
+      data: {
+        id: newAdmin.id,
+        email: newAdmin.email,
+        token,
+      },
     };
   }
 

@@ -91,6 +91,7 @@ describe('UserService', () => {
           id: adminDto.id,
           email: adminDto.email,
           token: 'mockedToken',
+          is_verified: undefined,
         },
       });
     });
