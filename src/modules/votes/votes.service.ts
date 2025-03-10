@@ -61,7 +61,7 @@ export class VoteService {
       status_code: HttpStatus.OK,
       message: SYS_MSG.VOTE_CREATION_MESSAGE,
       data: {
-        vote_id: saved_vote.id,
+        voter_id: saved_vote.id,
         election_id: saved_vote.election_id,
         candidate_id: saved_vote.candidate_id,
       },
