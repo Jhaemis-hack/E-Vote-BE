@@ -134,10 +134,17 @@ export class ElectionController {
   @ApiResponse({ status: 500, description: 'Internal server error' })
   remove(@Param('id') id: string, @Req() req: any) {
     if (!isUUID(id)) {
-      throw new HttpException('Bad Request', HttpStatus.NOT_ACCEPTABLE);
+      throw new HttpException(
+        {
+          status_code: HttpStatus.NOT_ACCEPTABLE,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
     }
-
-    return this.electionService.remove(id);
+    const adminId = req.user.sub;
+    return this.electionService.remove(id, adminId);
   }
 
   @Get('votes/:vote_id')
