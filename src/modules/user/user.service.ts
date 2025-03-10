@@ -221,7 +221,7 @@ export class UserService {
       });
     }
 
-    const resetToken = '2453628758';
+    const resetToken = process.env.RESET_TOKEN_SECRET;
     const resetTokenExpiry = new Date(Date.now() + 86400000);
 
     const forgotPasswordToken = this.forgotPasswordRepository.create({
