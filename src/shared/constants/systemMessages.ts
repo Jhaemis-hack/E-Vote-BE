@@ -34,3 +34,5 @@ export const BAD_REQUEST = 'Bad Request';
 export const UNAUTHORIZED_ACCESS = 'Unauthorized Access';
 export const USER_UPDATED = 'User Updated Successfully';
 export const ELECTION_START_TIME_BEFORE_END_TIME = 'start_time must be before end_time';
+export const ELECTION_HAS_NOT_STARTED = 'Election has not started.';
+export const ELECTION_HAS_ENDED = 'Election has ended';

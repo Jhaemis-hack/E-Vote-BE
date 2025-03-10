@@ -337,6 +337,28 @@ export class ElectionService {
       });
     }
 
+    if (
+      this.mergeDateTime(this.extract_date(election.start_date), election.start_time) >
+      this.mergeDateTime(this.extract_present_date(), this.extract_present_time())
+    ) {
+      throw new ForbiddenException({
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
+        data: null,
+      });
+    }
+
+    if (
+      this.mergeDateTime(this.extract_date(election.end_date), election.end_time) <
+      this.mergeDateTime(this.extract_present_date(), this.extract_present_time())
+    ) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_HAS_ENDED,
+        data: null,
+      });
+    }
+
     // TODO
     // if (election?.status === ElectionStatus.COMPLETED) {
     //   throw new HttpException(
@@ -387,6 +409,30 @@ export class ElectionService {
         created_by: election.created_by,
       };
     });
+  }
+
+  private mergeDateTime(date, time) {
+    console.log(date, time);
+
+    return new Date(`${date}T${time}`);
+  }
+
+  private extract_present_time() {
+    return new Date().toLocaleTimeString().split(' ')[0];
+  }
+
+  private extract_date(date_obj) {
+    const date = new Date(date_obj);
+
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+
+    return date.toISOString().split('T')[0];
+  }
+
+  private extract_present_date() {
+    return new Date().toISOString().split('T')[0];
   }
 
   private transformElectionResponse(election: any): any {
