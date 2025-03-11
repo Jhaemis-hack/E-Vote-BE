@@ -15,8 +15,7 @@ import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
-import { Response } from 'express';
-import { max } from 'class-validator';
+import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -24,6 +23,7 @@ describe('ElectionService', () => {
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
 
+  // Mock repositories
   const mockElectionRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
     create: jest.fn().mockImplementation((data: Partial<Election>) => ({
@@ -58,6 +58,11 @@ describe('ElectionService', () => {
     find: jest.fn(),
   });
 
+  // Mock ElectionStatusUpdaterService
+  const mockElectionStatusUpdaterService = {
+    scheduleElectionUpdates: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -65,6 +70,7 @@ describe('ElectionService', () => {
         { provide: getRepositoryToken(Election), useFactory: mockElectionRepository },
         { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
         { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
+        { provide: ElectionStatusUpdaterService, useValue: mockElectionStatusUpdaterService }, // Provide the mock service
       ],
     }).compile();
 
@@ -87,7 +93,6 @@ describe('ElectionService', () => {
         end_date: new Date('2025-03-22T00:00:00.000Z'),
         start_time: '09:00:00',
         end_time: '10:00:00',
-        // vote_link: expect.any(String),
         election_type: ElectionType.SINGLECHOICE,
         candidates: ['Candidate A', 'Candidate B'],
       };
@@ -126,6 +131,7 @@ describe('ElectionService', () => {
 
       expect(electionRepository.save).toHaveBeenCalled();
       expect(candidateRepository.save).toHaveBeenCalled();
+      expect(mockElectionStatusUpdaterService.scheduleElectionUpdates);
     });
 
     it('should handle errors during election creation', async () => {

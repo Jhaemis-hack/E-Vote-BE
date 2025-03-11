@@ -20,8 +20,7 @@ import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import * as moment from 'moment';
-import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
-
+import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 interface ElectionResultsDownload {
   filename: string;
   csvData: string;
