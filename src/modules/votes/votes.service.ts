@@ -5,7 +5,7 @@ import { Vote } from './entities/votes.entity';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { isUUID } from 'class-validator';
-import { Election } from '../election/entities/election.entity';
+import { Election, ElectionType } from '../election/entities/election.entity';
 
 @Injectable()
 export class VoteService {
@@ -46,6 +46,18 @@ export class VoteService {
     //     HttpStatus.FORBIDDEN,
     //   );
     // }
+
+    if (election.type === ElectionType.MULTICHOICE && createVoteDto.candidate_id.length > (election.max_choices ?? 0)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: `You can select up to ${election.max_choices} candidates`,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const candidates = election.candidates.map(candidate => candidate.id);
     const invalid_candidates = createVoteDto.candidate_id.filter(id => !candidates.includes(id));
     if (invalid_candidates.length > 0) {

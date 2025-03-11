@@ -13,7 +13,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
-import { ElectionStatus } from '../entities/election.entity';
+import { ElectionStatus, ElectionType } from '../entities/election.entity';
 import { CreateElectionDto } from './create-election.dto';
 export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @ApiProperty({
@@ -64,11 +64,10 @@ export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @Matches(/^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/, { message: 'end_time must be in the format HH:MM:SS' })
   end_time: string;
 
-  //TODO:
-  // @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
-  // @IsNotEmpty()
-  // @IsEnum(ElectionType)
-  // election_type: ElectionType;
+  @ApiProperty({ enum: ElectionType, example: ElectionType.SINGLECHOICE })
+  @IsNotEmpty()
+  @IsEnum(ElectionType)
+  election_type: ElectionType;
 
   @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
   @IsArray()

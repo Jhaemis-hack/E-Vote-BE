@@ -9,7 +9,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsUUID, isUUID } from 'class-validator';
+import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -17,7 +17,7 @@ import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionStatus } from './entities/election.entity';
+import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
 
 interface ElectionResultsDownload {
@@ -36,17 +36,20 @@ export class ElectionService {
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, candidates, start_time, end_time } = createElectionDto;
+    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
+      createElectionDto;
 
     const election = this.electionRepository.create({
       title,
       description,
       start_date: start_date,
       end_date: end_date,
+      type: election_type,
       vote_id: randomUUID(),
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
+      max_choices: election_type === ElectionType.MULTICHOICE ? max_choices : undefined,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -58,7 +61,8 @@ export class ElectionService {
       return candidate;
     });
 
-    savedElection.candidates = await this.candidateRepository.save(candidateEntities);
+    const savedCandidates = await this.candidateRepository.save(candidateEntities);
+    savedElection.candidates = savedCandidates;
 
     return {
       status_code: HttpStatus.CREATED,
@@ -69,10 +73,11 @@ export class ElectionService {
         description: savedElection.description,
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
-        status: savedElection.status,
         start_time: savedElection.start_time,
         end_time: savedElection.end_time,
         vote_id: savedElection.vote_id,
+        max_choices: savedElection.max_choices,
+        election_type: savedElection.type,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
       },
@@ -381,16 +386,15 @@ export class ElectionService {
         return null;
       }
 
-      // TODO
-      // let electionType: ElectionType;
-      // if (election.type === 'singlechoice') {
-      //   electionType = ElectionType.SINGLECHOICE;
-      // } else if (election.type === 'multichoice') {
-      //   electionType = ElectionType.MULTICHOICE;
-      // } else {
-      //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-      //   electionType = ElectionType.SINGLECHOICE;
-      // }
+      let electionType: ElectionType;
+      if (election.type === 'singlechoice') {
+        electionType = ElectionType.SINGLECHOICE;
+      } else if (election.type === 'multichoice') {
+        electionType = ElectionType.MULTICHOICE;
+      } else {
+        console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+        electionType = ElectionType.SINGLECHOICE;
+      }
 
       return {
         election_id: election.id,
@@ -402,6 +406,13 @@ export class ElectionService {
         start_time: election.start_time,
         end_time: election.end_time,
         created_by: election.created_by,
+        max_choices: election.max_choices,
+        election_type: electionType,
+        candidates:
+          election.candidates.map(candidate => ({
+            candidate_id: candidate.id,
+            name: candidate.name,
+          })) || [],
       };
     });
   }
@@ -411,16 +422,15 @@ export class ElectionService {
       return null;
     }
 
-    //TODO
-    // let electionType: ElectionType;
-    // if (election.type === 'singlechoice') {
-    //   electionType = ElectionType.SINGLECHOICE;
-    // } else if (election.type === 'multichoice') {
-    //   electionType = ElectionType.MULTICHOICE;
-    // } else {
-    //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-    //   electionType = ElectionType.SINGLECHOICE;
-    // }
+    let electionType: ElectionType;
+    if (election.type === 'singlechoice') {
+      electionType = ElectionType.SINGLECHOICE;
+    } else if (election.type === 'multichoice') {
+      electionType = ElectionType.MULTICHOICE;
+    } else {
+      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      electionType = ElectionType.SINGLECHOICE;
+    }
 
     return {
       election_id: election.id,
@@ -433,6 +443,8 @@ export class ElectionService {
       status: election.status,
       end_time: election.end_time,
       created_by: election.created_by,
+      max_choices: election.max_choices,
+      election_type: electionType,
       candidates:
         election.candidates.map(candidate => ({
           candidate_id: candidate.id,

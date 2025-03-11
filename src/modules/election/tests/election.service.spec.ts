@@ -14,8 +14,9 @@ import { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
-import { Election, ElectionStatus } from '../entities/election.entity';
+import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { Response } from 'express';
+import { max } from 'class-validator';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -76,7 +77,7 @@ describe('ElectionService', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
-  /*
+
   describe('create', () => {
     it('should create a new election with valid data', async () => {
       const createElectionDto: CreateElectionDto = {
@@ -148,7 +149,7 @@ describe('ElectionService', () => {
         'Error creating election',
       );
     });
-  }); */
+  });
 
   describe('Get all elections', () => {
     it('should return all elections', async () => {
@@ -172,6 +173,8 @@ describe('ElectionService', () => {
           deleted_at: null,
           candidates: [] as Candidate[],
           votes: [] as Vote[],
+          max_choices: 1,
+          type: ElectionType.SINGLECHOICE,
         },
         {
           id: '550e8400-e29b-41d4-a716-446655440001',
@@ -190,6 +193,8 @@ describe('ElectionService', () => {
           created_at: new Date(),
           candidates: [] as Candidate[],
           votes: [] as Vote[],
+          max_choices: 1,
+          type: ElectionType.SINGLECHOICE,
         },
       ];
 
@@ -219,6 +224,9 @@ describe('ElectionService', () => {
               status: ElectionStatus.ONGOING,
               end_time: '10:00:00',
               created_by: userId,
+              max_choices: 1,
+              election_type: ElectionType.SINGLECHOICE,
+              candidates: [],
             },
             {
               election_id: '550e8400-e29b-41d4-a716-446655440001',
@@ -230,6 +238,9 @@ describe('ElectionService', () => {
               status: ElectionStatus.UPCOMING,
               vote_id: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
               created_by: userId,
+              max_choices: 1,
+              election_type: ElectionType.SINGLECHOICE,
+              candidates: [],
             },
           ],
           meta: {
@@ -483,6 +494,8 @@ describe('ElectionService', () => {
         created_at: new Date(),
         updated_at: new Date(),
         deleted_at: null,
+        type: ElectionType.SINGLECHOICE,
+        max_choices: 1,
       };
 
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection as unknown as Election);
@@ -504,6 +517,8 @@ describe('ElectionService', () => {
           end_time: mockElection.end_time,
           created_by: mockElection.created_by,
           candidates: [],
+          max_choices: 1,
+          election_type: ElectionType.SINGLECHOICE,
         },
       });
 
