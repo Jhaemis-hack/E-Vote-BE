@@ -10,6 +10,7 @@ import { join } from 'path';
 import dataSource from './migrations/migration.config';
 import authConfig from './config/auth.config';
 import { VoteModule } from './modules/votes/votes.module';
+import { ScheduleModule } from '@nestjs/schedule';
 // import dataSource from './migrations/migration.config';
 
 @Module({
@@ -36,6 +37,7 @@ import { VoteModule } from './modules/votes/votes.module';
     UserModule,
     ElectionModule,
     VoteModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
