@@ -1,12 +1,10 @@
 name: Production Deployment
 
 on:
-  workflow_run:
-    workflows: ['Node.js CI Test']
-    types:
-      - completed
+  push:
     branches:
       - prod
+  workflow_dispatch:
 
 jobs:
   deploy:
