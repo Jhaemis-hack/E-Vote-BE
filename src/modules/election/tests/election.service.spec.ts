@@ -815,8 +815,8 @@ describe('ElectionService', () => {
     it('should accept when start time is after end time but on different days', async () => {
       const dto = {
         ...baseDto,
-        start_date: new Date('2025-03-01T00:00:00.000Z'),
-        end_date: new Date('2025-03-02T00:00:00.000Z'),
+        start_date: new Date('2025-03-21T00:00:00.000Z'),
+        end_date: new Date('2025-03-22T00:00:00.000Z'),
         start_time: '17:00:00',
         end_time: '09:00:00',
       };

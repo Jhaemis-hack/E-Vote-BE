@@ -19,6 +19,8 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+// import { add, isPast, isAfter, isSameDay, parseISO, format, parse, startOfDay } from 'date-fns';
+import * as moment from 'moment';
 
 interface ElectionResultsDownload {
   filename: string;
@@ -39,20 +41,27 @@ export class ElectionService {
     const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
       createElectionDto;
 
-    const currentDate = new Date();
+    const currentDate = moment().utc();
+    console.log('Current Date (UTC): ', currentDate.format('YYYY-MM-DD HH:mm:ss'));
 
-    const startDate = new Date(start_date);
-    const endDate = new Date(end_date);
+    const currentDateStartOfDay = moment.utc().startOf('day');
+    console.log('Current Date Start of Day (UTC): ', currentDateStartOfDay.format('YYYY-MM-DD HH:mm:ss'));
 
-    // First validate the dates as you've been doing
-    if (startDate < currentDate) {
+    const startDate = moment.utc(start_date);
+    const endDate = moment.utc(end_date);
+
+    console.log('Start Date (UTC): ', startDate.format('YYYY-MM-DD HH:mm:ss'));
+    console.log('End Date (UTC): ', endDate.format('YYYY-MM-DD HH:mm:ss'));
+
+    // Validate start_date and end_date
+    if (startDate.isBefore(currentDateStartOfDay)) {
       throw new HttpException(
         { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    if (startDate > endDate) {
+    if (startDate.isAfter(endDate)) {
       throw new HttpException(
         { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
         HttpStatus.BAD_REQUEST,
@@ -61,33 +70,22 @@ export class ElectionService {
 
     // If start_time and end_time are provided
     if (start_time && end_time) {
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
+      const startTime = moment.utc(start_time, 'HH:mm:ss');
+      const endTime = moment.utc(end_time, 'HH:mm:ss');
 
-      const startDateTime = new Date(`${startDateStr}T${start_time}`);
-      const endDateTime = new Date(`${endDateStr}T${end_time}`);
-
-      // For same date elections, compare times directly
-      if (startDate.getTime() === endDate.getTime()) {
-        const [startHours, startMinutes] = start_time.split(':').map(Number);
-        const [endHours, endMinutes] = end_time.split(':').map(Number);
-
-        if (startHours > endHours || (startHours === endHours && startMinutes >= endMinutes)) {
+      // For same-day elections, compare times directly
+      if (startDate.isSame(endDate, 'day')) {
+        if (startTime.isAfter(endTime) || startTime.isSame(endTime)) {
           throw new HttpException(
             { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
             HttpStatus.BAD_REQUEST,
           );
         }
       }
-      // For different dates, use the full datetime comparison
-      else if (startDateTime >= endDateTime) {
-        throw new HttpException(
-          { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_END_TIME, data: null },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
 
-      if (startDateTime < currentDate) {
+      // Validate startDateTime against currentDate and startTime
+      const startDateTime = moment.utc(`${startDate.format('YYYY-MM-DD')}T${start_time}`);
+      if (startDateTime.isBefore(currentDate)) {
         throw new HttpException(
           { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
           HttpStatus.BAD_REQUEST,
@@ -98,8 +96,8 @@ export class ElectionService {
     const election = this.electionRepository.create({
       title,
       description,
-      start_date: startDate,
-      end_date: endDate,
+      start_date: startDate.toDate(),
+      end_date: endDate.toDate(),
       type: election_type,
       vote_id: randomUUID(),
       start_time: start_time,
@@ -237,6 +235,34 @@ export class ElectionService {
 
     const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
 
+    // Check if election is active based on dates and times
+    const now = new Date();
+
+    const startDateTime = new Date(election.start_date);
+    const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+    startDateTime.setHours(startHour, startMinute, startSecond || 0);
+
+    // For end datetime
+    const endDateTime = new Date(election.end_date);
+    const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+    endDateTime.setHours(endHour, endMinute, endSecond || 0);
+
+    // Transform the election response
+    const mappedElection = this.transformElectionResponse(election);
+
+    let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
+    // Simple datetime comparison
+    if (now < startDateTime) {
+      mappedElection.status = 'upcoming';
+      // mappedElection.message = "Election has not started.";
+    } else if (now > endDateTime) {
+      mappedElection.status = 'completed';
+      message = 'Election has ended.';
+    } else {
+      mappedElection.status = 'ongoing';
+      message = 'Election is live. Vote now!';
+    }
+
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
       if (Array.isArray(vote.candidate_id)) {
@@ -267,7 +293,7 @@ export class ElectionService {
           description: election.description,
           votes_casted: totalVotesCast,
           start_date: election.start_date,
-          status: election.status,
+          status: mappedElection.status,
           start_time: election.start_time,
           end_date: election.end_date,
           end_time: election.end_time,
@@ -434,41 +460,70 @@ export class ElectionService {
   }
 
   private mapElections(result: Election[]) {
-    return result.map(election => {
-      if (!election.created_by) {
-        console.warn(`Admin for election with ID ${election.id} not found.`);
-        return null;
-      }
+    return result
+      .map(election => {
+        if (!election.created_by) {
+          console.warn(`Admin for election with ID ${election.id} not found.`);
+          return null;
+        }
 
-      let electionType: ElectionType;
-      if (election.type === 'singlechoice') {
-        electionType = ElectionType.SINGLECHOICE;
-      } else if (election.type === 'multiplechoice') {
-        electionType = ElectionType.MULTIPLECHOICE;
-      } else {
-        console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-        electionType = ElectionType.SINGLECHOICE;
-      }
+        let electionType: ElectionType;
+        if (election.type === 'singlechoice') {
+          electionType = ElectionType.SINGLECHOICE;
+        } else if (election.type === 'multiplechoice') {
+          electionType = ElectionType.MULTIPLECHOICE;
+        } else {
+          console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+          electionType = ElectionType.SINGLECHOICE;
+        }
+        // Check if election is active based on dates and times
+        const now = new Date();
 
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        vote_id: election.vote_id,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
-        created_by: election.created_by,
-        max_choices: election.max_choices,
-        election_type: electionType,
-        candidates:
-          election.candidates.map(candidate => ({
-            candidate_id: candidate.id,
-            name: candidate.name,
-          })) || [],
-      };
-    });
+        const startDateTime = new Date(election.start_date);
+        const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+        startDateTime.setHours(startHour, startMinute, startSecond || 0);
+
+        // For end datetime
+        const endDateTime = new Date(election.end_date);
+        const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+        endDateTime.setHours(endHour, endMinute, endSecond || 0);
+
+        // Transform the election response
+        const mappedElection = this.transformElectionResponse(election);
+
+        let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
+        // Simple datetime comparison
+        if (now < startDateTime) {
+          mappedElection.status = 'upcoming';
+          // mappedElection.message = "Election has not started.";
+        } else if (now > endDateTime) {
+          mappedElection.status = 'completed';
+          message = 'Election has ended.';
+        } else {
+          mappedElection.status = 'ongoing';
+          message = 'Election is live. Vote now!';
+        }
+
+        return {
+          election_id: election.id,
+          title: election.title,
+          start_date: election.start_date,
+          end_date: election.end_date,
+          vote_id: election.vote_id,
+          status: mappedElection.status,
+          start_time: election.start_time,
+          end_time: election.end_time,
+          created_by: election.created_by,
+          max_choices: election.max_choices,
+          election_type: electionType,
+          candidates:
+            election.candidates.map(candidate => ({
+              candidate_id: candidate.id,
+              name: candidate.name,
+            })) || [],
+        };
+      })
+      .filter(election => election !== null);
   }
 
   private transformElectionResponse(election: any): any {
