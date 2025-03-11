@@ -47,7 +47,10 @@ export class VoteService {
     //   );
     // }
 
-    if (election.type === ElectionType.MULTICHOICE && createVoteDto.candidate_id.length > (election.max_choices ?? 0)) {
+    if (
+      election.type === ElectionType.MULTIPLECHOICE &&
+      createVoteDto.candidate_id.length > (election.max_choices ?? 0)
+    ) {
       throw new HttpException(
         {
           status_code: HttpStatus.BAD_REQUEST,

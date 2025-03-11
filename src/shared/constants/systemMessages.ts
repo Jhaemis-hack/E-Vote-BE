@@ -36,3 +36,9 @@ export const USER_UPDATED = 'User Updated Successfully';
 export const ELECTION_START_TIME_BEFORE_END_TIME = 'start_time must be before end_time';
 export const ELECTION_HAS_NOT_STARTED = 'Election has not started.';
 export const ELECTION_HAS_ENDED = 'Election has ended';
+export const ERROR_START_DATE_PAST = 'Start date cannot be in the past.';
+export const ERROR_START_DATE_AFTER_END_DATE = 'Start date must be before the end date.';
+export const ERROR_START_TIME_AFTER_END_TIME = 'Start time must be before the end time.';
+export const ERROR_START_TIME_PAST = 'Start time cannot be in the past.';
+export const ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME =
+  'End time must be greater than start time for elections on the same day.';
