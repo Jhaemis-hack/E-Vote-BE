@@ -9,7 +9,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsUUID, isUUID } from 'class-validator';
+import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -17,7 +17,7 @@ import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionStatus } from './entities/election.entity';
+import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
 
 interface ElectionResultsDownload {
@@ -36,17 +36,20 @@ export class ElectionService {
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, candidates, start_time, end_time } = createElectionDto;
+    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
+      createElectionDto;
 
     const election = this.electionRepository.create({
       title,
       description,
       start_date: start_date,
       end_date: end_date,
+      type: election_type,
       vote_id: randomUUID(),
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
+      max_choices: election_type === ElectionType.MULTICHOICE ? max_choices : undefined,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -58,7 +61,8 @@ export class ElectionService {
       return candidate;
     });
 
-    savedElection.candidates = await this.candidateRepository.save(candidateEntities);
+    const savedCandidates = await this.candidateRepository.save(candidateEntities);
+    savedElection.candidates = savedCandidates;
 
     return {
       status_code: HttpStatus.CREATED,
@@ -69,10 +73,11 @@ export class ElectionService {
         description: savedElection.description,
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
-        status: savedElection.status,
         start_time: savedElection.start_time,
         end_time: savedElection.end_time,
         vote_id: savedElection.vote_id,
+        max_choices: savedElection.max_choices,
+        election_type: savedElection.type,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
       },
@@ -337,40 +342,38 @@ export class ElectionService {
       });
     }
 
-    // if (election.status === ElectionStatus.UPCOMING) {
-    //   throw new ForbiddenException({
-    //     status_code: HttpStatus.FORBIDDEN,
-    //     message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
-    //     data: null,
-    //   });
-    // }
+    // Check if election is active based on dates and times
+    const now = new Date();
 
-    // if (election.status === ElectionStatus.COMPLETED) {
-    //   throw new NotFoundException({
-    //     status_code: HttpStatus.NOT_FOUND,
-    //     message: SYS_MSG.ELECTION_HAS_ENDED,
-    //     data: null,
-    //   });
-    // }
+    const startDateTime = new Date(election.start_date);
+    const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+    startDateTime.setHours(startHour, startMinute, startSecond || 0);
 
-    // TODO
-    // if (election?.status === ElectionStatus.COMPLETED) {
-    //   throw new HttpException(
-    //     {
-    //       status_code: HttpStatus.FORBIDDEN,
-    //       message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
-    //       data: null,
-    //     },
-    //     HttpStatus.FORBIDDEN,
-    //   );
-    // }
+    // For end datetime
+    const endDateTime = new Date(election.end_date);
+    const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+    endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
-    const mappedELection = this.transformElectionResponse(election);
+    // Transform the election response
+    const mappedElection = this.transformElectionResponse(election);
+
+    let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
+    // Simple datetime comparison
+    if (now < startDateTime) {
+      mappedElection.status = 'upcoming';
+      // mappedElection.message = "Election has not started.";
+    } else if (now > endDateTime) {
+      mappedElection.status = 'completed';
+      message = 'Election has ended.';
+    } else {
+      mappedElection.status = 'ongoing';
+      message = 'Election is live. Vote now!';
+    }
 
     return {
       status_code: HttpStatus.OK,
-      message: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK,
-      data: mappedELection,
+      message: message,
+      data: mappedElection,
     };
   }
 
@@ -381,16 +384,15 @@ export class ElectionService {
         return null;
       }
 
-      // TODO
-      // let electionType: ElectionType;
-      // if (election.type === 'singlechoice') {
-      //   electionType = ElectionType.SINGLECHOICE;
-      // } else if (election.type === 'multichoice') {
-      //   electionType = ElectionType.MULTICHOICE;
-      // } else {
-      //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-      //   electionType = ElectionType.SINGLECHOICE;
-      // }
+      let electionType: ElectionType;
+      if (election.type === 'singlechoice') {
+        electionType = ElectionType.SINGLECHOICE;
+      } else if (election.type === 'multichoice') {
+        electionType = ElectionType.MULTICHOICE;
+      } else {
+        console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+        electionType = ElectionType.SINGLECHOICE;
+      }
 
       return {
         election_id: election.id,
@@ -402,6 +404,13 @@ export class ElectionService {
         start_time: election.start_time,
         end_time: election.end_time,
         created_by: election.created_by,
+        max_choices: election.max_choices,
+        election_type: electionType,
+        candidates:
+          election.candidates.map(candidate => ({
+            candidate_id: candidate.id,
+            name: candidate.name,
+          })) || [],
       };
     });
   }
@@ -411,34 +420,58 @@ export class ElectionService {
       return null;
     }
 
-    //TODO
-    // let electionType: ElectionType;
-    // if (election.type === 'singlechoice') {
-    //   electionType = ElectionType.SINGLECHOICE;
-    // } else if (election.type === 'multichoice') {
-    //   electionType = ElectionType.MULTICHOICE;
-    // } else {
-    //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-    //   electionType = ElectionType.SINGLECHOICE;
-    // }
+    let electionType: ElectionType;
+    if (election.type === 'singlechoice') {
+      electionType = ElectionType.SINGLECHOICE;
+    } else if (election.type === 'multichoice') {
+      electionType = ElectionType.MULTICHOICE;
+    } else {
+      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      electionType = ElectionType.SINGLECHOICE;
+    }
 
-    return {
-      election_id: election.id,
-      title: election.title,
-      description: election.description,
-      start_date: election.start_date,
-      end_date: election.end_date,
-      vote_id: election.vote_link,
-      start_time: election.start_time,
-      status: election.status,
-      end_time: election.end_time,
-      created_by: election.created_by,
-      candidates:
-        election.candidates.map(candidate => ({
-          candidate_id: candidate.id,
-          name: candidate.name,
-        })) || [],
-    };
+    if (election.status === ElectionStatus.UPCOMING) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.COMPLETED) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.ONGOING) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        vote_id: election.vote_id,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+        created_by: election.created_by,
+        max_choices: election.max_choices,
+        election_type: electionType,
+        candidates:
+          election.candidates.map(candidate => ({
+            candidate_id: candidate.id,
+            name: candidate.name,
+          })) || [],
+      };
+    } else {
+      console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
+    }
   }
 
   async getElectionResults(electionId: string, adminId: string): Promise<ElectionResultsDto> {
