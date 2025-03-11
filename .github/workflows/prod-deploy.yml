@@ -30,9 +30,9 @@ jobs:
           sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << 'EOF'
             cd ~/evote-backend/production
             git reset --hard
-            pm2 stop evote_production
+           #pm2 stop evote_production
             git pull origin prod
             pnpm install
             pnpm build
-            pm2 restart evote_production --update-env
+            pm2 start evote_production --update-env
           EOF
