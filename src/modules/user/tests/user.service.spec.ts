@@ -74,7 +74,7 @@ describe('UserService', () => {
         },
         {
           provide: EmailService,
-          useValue: mockEmailService, // Mock EmailService
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -274,7 +274,7 @@ describe('UserService', () => {
     });
   });
   describe('update', () => {
-    it('✅ should update a user successfully', async () => {
+    it('should update a user successfully', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -300,7 +300,7 @@ describe('UserService', () => {
       });
     });
 
-    it('❌ should throw UnauthorizedException if currentUser is not provided', async () => {
+    it('should throw UnauthorizedException if currentUser is not provided', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -314,7 +314,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw NotFoundException if user does not exist', async () => {
+    it('should throw NotFoundException if user does not exist', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -334,7 +334,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw UnauthorizedException if a non-admin tries to update another user', async () => {
+    it('should throw UnauthorizedException if a non-admin tries to update another user', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -359,7 +359,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw BadRequestException for an invalid password', async () => {
+    it('should throw BadRequestException for an invalid password', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         password: 'short',
@@ -385,7 +385,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw BadRequestException for an invalid email', async () => {
+    it('should throw BadRequestException for an invalid email', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'invalid-email',
@@ -412,34 +412,51 @@ describe('UserService', () => {
     });
   });
   describe('forgotPassword', () => {
+    const email = 'test@example.com';
+    const user_id = '12345';
     const forgotPasswordDto: ForgotPasswordDto = {
-      email: 'test@example.com',
+      email,
     };
 
     it('should throw NotFoundException if user does not exist', async () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
-      await expect(userService.forgotPassword(forgotPasswordDto)).rejects.toThrow(
+
+      await expect(userService.forgotPassword(user_id, forgotPasswordDto)).rejects.toThrow(
         new NotFoundException({
           status_code: 404,
           message: SYS_MSG.USER_NOT_FOUND,
         }),
       );
       expect(userRepository.findOne).toHaveBeenCalledWith({
-        where: { email: forgotPasswordDto.email },
+        where: { email: forgotPasswordDto.email, id: user_id },
       });
     });
 
     it('should create and save a ForgotPasswordToken if user exists', async () => {
-      const mockUser = { id: '1', email: 'test@example.com' } as User;
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+      const user = { id: user_id, email } as User;
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(user);
 
       const mockForgotPasswordToken = {
+        email: user.email,
         reset_token: process.env.PASSWORD_RESET_TOKEN_SECRET,
         token_expiry: new Date(Date.now() + 86400000),
       } as ForgotPasswordToken;
       jest.spyOn(forgotPasswordRepository, 'create').mockReturnValue(mockForgotPasswordToken);
       jest.spyOn(forgotPasswordRepository, 'save').mockResolvedValue(mockForgotPasswordToken);
-      await userService.forgotPassword(forgotPasswordDto);
+      await userService.forgotPassword(user_id, forgotPasswordDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { email: forgotPasswordDto.email, id: user_id },
+      });
+
+      expect(forgotPasswordRepository.create).toHaveBeenCalledWith({
+        email: user.email,
+        reset_token: process.env.PASSWORD_RESET_TOKEN_SECRET,
+        token_expiry: expect.any(Date),
+      });
+
+      expect(forgotPasswordRepository.save).toHaveBeenCalledWith(mockForgotPasswordToken);
     });
   });
 });
