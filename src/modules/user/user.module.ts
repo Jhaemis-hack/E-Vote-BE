@@ -19,6 +19,7 @@ import { EmailModule } from '../email/email.module';
         signOptions: { expiresIn: configService.get<string>('auth.jwtExpiry') },
       }),
     }),
+    EmailModule,
   ],
   providers: [UserService],
   controllers: [UserController],
