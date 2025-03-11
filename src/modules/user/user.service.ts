@@ -17,13 +17,18 @@ import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { exist, string } from 'joi';
+import { EmailService } from '../email/email.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private readonly mailService: EmailService, // Inject your mail service
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -203,5 +208,27 @@ export class UserService {
       status_code: HttpStatus.OK,
       message: SYS_MSG.DELETE_USER,
     };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+
+    const resetToken = process.env.PASSWORD_RESET_TOKEN_SECRET;
+    const resetTokenExpiry = new Date(Date.now() + 86400000);
+
+    const forgotPasswordToken = this.forgotPasswordRepository.create({
+      email: user.email,
+      reset_token: resetToken,
+      token_expiry: resetTokenExpiry,
+    });
+    await this.forgotPasswordRepository.save(forgotPasswordToken);
   }
 }

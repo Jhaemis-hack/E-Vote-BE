@@ -11,6 +11,9 @@ import { UserService } from '../user.service';
 import { randomUUID } from 'crypto';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { ForgotPasswordToken } from '../entities/forgot-password.entity';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { EmailService } from '../../email/email.service';
 
 interface CreateUserDto {
   id?: string;
@@ -24,6 +27,7 @@ describe('UserService', () => {
   let userRepository: Repository<User>;
   let jwtService: JwtService;
   let configService: ConfigService;
+  let forgotPasswordRepository: Repository<ForgotPasswordToken>;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -33,12 +37,20 @@ describe('UserService', () => {
       softRemove: jest.fn(),
     };
 
+    const mockForgotPasswordTokenRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+
     const mockJwtService = {
       sign: jest.fn(),
     };
 
     const mockConfigService = {
       get: jest.fn().mockReturnValue('mocked-secret-key'),
+    };
+    const mockEmailService = {
+      sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,6 +68,14 @@ describe('UserService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: getRepositoryToken(ForgotPasswordToken),
+          useValue: mockForgotPasswordTokenRepository,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService, // Mock EmailService
+        },
       ],
     }).compile();
 
@@ -63,6 +83,7 @@ describe('UserService', () => {
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
+    forgotPasswordRepository = module.get<Repository<ForgotPasswordToken>>(getRepositoryToken(ForgotPasswordToken));
   });
 
   describe('registerAdmin', () => {
@@ -388,6 +409,37 @@ describe('UserService', () => {
           data: null,
         }),
       );
+    });
+  });
+  describe('forgotPassword', () => {
+    const forgotPasswordDto: ForgotPasswordDto = {
+      email: 'test@example.com',
+    };
+
+    it('should throw NotFoundException if user does not exist', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+      await expect(userService.forgotPassword(forgotPasswordDto)).rejects.toThrow(
+        new NotFoundException({
+          status_code: 404,
+          message: SYS_MSG.USER_NOT_FOUND,
+        }),
+      );
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { email: forgotPasswordDto.email },
+      });
+    });
+
+    it('should create and save a ForgotPasswordToken if user exists', async () => {
+      const mockUser = { id: '1', email: 'test@example.com' } as User;
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+
+      const mockForgotPasswordToken = {
+        reset_token: process.env.PASSWORD_RESET_TOKEN_SECRET,
+        token_expiry: new Date(Date.now() + 86400000),
+      } as ForgotPasswordToken;
+      jest.spyOn(forgotPasswordRepository, 'create').mockReturnValue(mockForgotPasswordToken);
+      jest.spyOn(forgotPasswordRepository, 'save').mockResolvedValue(mockForgotPasswordToken);
+      await userService.forgotPassword(forgotPasswordDto);
     });
   });
 });
