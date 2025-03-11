@@ -83,8 +83,8 @@ describe('ElectionService', () => {
       const createElectionDto: CreateElectionDto = {
         title: '2025 Presidential Election',
         description: 'Election to choose the next president of the country',
-        start_date: new Date('2025-03-01T00:00:00.000Z'),
-        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        start_date: new Date('2025-03-22T00:00:00.000Z'),
+        end_date: new Date('2025-03-22T00:00:00.000Z'),
         start_time: '09:00:00',
         end_time: '10:00:00',
         // vote_link: expect.any(String),
@@ -132,8 +132,8 @@ describe('ElectionService', () => {
       const createElectionDto: CreateElectionDto = {
         title: '2025 Presidential Election',
         description: 'Election to choose the next president of the country',
-        start_date: new Date('2025-03-01T00:00:00.000Z'),
-        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        start_date: new Date('2025-03-21T00:00:00.000Z'),
+        end_date: new Date('2025-03-22T00:00:00.000Z'),
         start_time: '09:00:00',
         end_time: '10:00:00',
         // vote_link: '7284fdbc-a1b9-45ad-a586-72edae14526d',
@@ -723,5 +723,127 @@ describe('ElectionService', () => {
       expect(result.csvData).toBe('Candidate Name,Votes\n' + '"Candidate A",2\n' + '"Candidate B",1');
       expect(result.filename).toBe(`election-${electionId}-results.csv`);
     });
+  });
+
+  describe('date and time validation', () => {
+    let baseDto: CreateElectionDto;
+    let adminId: string;
+
+    beforeEach(() => {
+      // Mock the current date to a fixed value
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2025-01-01T12:00:00Z'));
+
+      baseDto = {
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president',
+        start_date: new Date('2025-03-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        start_time: '09:00:00',
+        end_time: '17:00:00',
+        election_type: ElectionType.SINGLECHOICE,
+        candidates: ['Candidate A', 'Candidate B'],
+      };
+
+      adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should throw an exception when start date is in the past', async () => {
+      const dto = {
+        ...baseDto,
+        start_date: new Date('2024-12-31T00:00:00.000Z'), // Past date
+      };
+
+      await expect(service.create(dto, adminId)).rejects.toThrow(
+        new HttpException(
+          { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
+
+    it('should throw an exception when start date is after end date', async () => {
+      const dto = {
+        ...baseDto,
+        start_date: new Date('2025-04-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-31T00:00:00.000Z'),
+      };
+
+      await expect(service.create(dto, adminId)).rejects.toThrow(
+        new HttpException(
+          { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
+
+    it('should throw an exception when start time is after end time on the same day', async () => {
+      const dto = {
+        ...baseDto,
+        start_date: new Date('2025-03-22T00:00:00.000Z'),
+        end_date: new Date('2025-03-22T00:00:00.000Z'),
+        start_time: '15:00:00',
+        end_time: '09:00:00',
+      };
+
+      await expect(service.create(dto, adminId)).rejects.toThrow(
+        new HttpException(
+          { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
+          HttpStatus.BAD_REQUEST,
+        ),
+      );
+    });
+
+    it('should accept when start time is before end time on the same day', async () => {
+      const dto = {
+        ...baseDto,
+        start_date: new Date('2025-03-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-01T00:00:00.000Z'),
+        start_time: '09:00:00',
+        end_time: '17:00:00',
+      };
+
+      await expect(service.create(dto, adminId)).resolves.toBeDefined();
+      expect(electionRepository.create).toHaveBeenCalled();
+      expect(electionRepository.save).toHaveBeenCalled();
+    });
+
+    it('should accept when start time is after end time but on different days', async () => {
+      const dto = {
+        ...baseDto,
+        start_date: new Date('2025-03-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-02T00:00:00.000Z'),
+        start_time: '17:00:00',
+        end_time: '09:00:00',
+      };
+
+      await expect(service.create(dto, adminId)).resolves.toBeDefined();
+      expect(electionRepository.create).toHaveBeenCalled();
+      expect(electionRepository.save).toHaveBeenCalled();
+    });
+
+    //   it('should throw an exception when start datetime is in the past', async () => {
+
+    //     jest.setSystemTime(new Date('2025-03-01T00:00:00Z'));
+
+    //     const dto = {
+    //       ...baseDto,
+    //       start_date: new Date('2025-03-01T00:00:00.000Z'),
+    //       end_date: new Date('2025-03-31T00:00:00.000Z'),
+    //       start_time: '09:00:00',
+    //       end_time: '17:00:00'
+    //     };
+
+    //     await expect(service.create(dto, adminId)).rejects.toThrow(
+    //       new HttpException(
+    //         { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
+    //         HttpStatus.BAD_REQUEST,
+    //       )
+    //     );
+    //   });
   });
 });

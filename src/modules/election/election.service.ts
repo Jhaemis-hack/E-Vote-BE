@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -6,19 +7,18 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
+import { Vote } from '../votes/entities/votes.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
+import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
-import { ElectionResultsDto } from './dto/results.dto';
 
 interface ElectionResultsDownload {
   filename: string;
@@ -39,17 +39,73 @@ export class ElectionService {
     const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
       createElectionDto;
 
+    const currentDate = new Date();
+
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+
+    // First validate the dates as you've been doing
+    if (startDate < currentDate) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (startDate > endDate) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // If start_time and end_time are provided
+    if (start_time && end_time) {
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+
+      const startDateTime = new Date(`${startDateStr}T${start_time}`);
+      const endDateTime = new Date(`${endDateStr}T${end_time}`);
+
+      // For same date elections, compare times directly
+      if (startDate.getTime() === endDate.getTime()) {
+        const [startHours, startMinutes] = start_time.split(':').map(Number);
+        const [endHours, endMinutes] = end_time.split(':').map(Number);
+
+        if (startHours > endHours || (startHours === endHours && startMinutes >= endMinutes)) {
+          throw new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+      // For different dates, use the full datetime comparison
+      else if (startDateTime >= endDateTime) {
+        throw new HttpException(
+          { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_END_TIME, data: null },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (startDateTime < currentDate) {
+        throw new HttpException(
+          { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
     const election = this.electionRepository.create({
       title,
       description,
-      start_date: start_date,
-      end_date: end_date,
+      start_date: startDate,
+      end_date: endDate,
       type: election_type,
       vote_id: randomUUID(),
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
-      max_choices: election_type === ElectionType.MULTICHOICE ? max_choices : undefined,
+      max_choices: election_type === ElectionType.MULTIPLECHOICE ? max_choices : undefined,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -387,8 +443,8 @@ export class ElectionService {
       let electionType: ElectionType;
       if (election.type === 'singlechoice') {
         electionType = ElectionType.SINGLECHOICE;
-      } else if (election.type === 'multichoice') {
-        electionType = ElectionType.MULTICHOICE;
+      } else if (election.type === 'multiplechoice') {
+        electionType = ElectionType.MULTIPLECHOICE;
       } else {
         console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
         electionType = ElectionType.SINGLECHOICE;
@@ -423,8 +479,8 @@ export class ElectionService {
     let electionType: ElectionType;
     if (election.type === 'singlechoice') {
       electionType = ElectionType.SINGLECHOICE;
-    } else if (election.type === 'multichoice') {
-      electionType = ElectionType.MULTICHOICE;
+    } else if (election.type === 'multiplechoice') {
+      electionType = ElectionType.MULTIPLECHOICE;
     } else {
       console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
       electionType = ElectionType.SINGLECHOICE;
