@@ -468,7 +468,6 @@ export class ElectionService {
         election_type: electionType,
         candidates:
           election.candidates.map(candidate => {
-            console.log('candidate', candidate);
             return {
               candidate_id: candidate.id,
               name: candidate.name,
