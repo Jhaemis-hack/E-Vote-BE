@@ -354,22 +354,25 @@ export class ElectionService {
     const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
-    // Transform the election response
-    const mappedElection = this.transformElectionResponse(election);
-
+    let newStatus: ElectionStatus;
     let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
-    // Simple datetime comparison
     if (now < startDateTime) {
-      mappedElection.status = 'upcoming';
-      // mappedElection.message = "Election has not started.";
-    } else if (now > endDateTime) {
-      mappedElection.status = 'completed';
-      message = 'Election has ended.';
-    } else {
-      mappedElection.status = 'ongoing';
+      newStatus = ElectionStatus.UPCOMING;
+    } else if (now >= startDateTime && now <= endDateTime) {
+      newStatus = ElectionStatus.ONGOING;
       message = 'Election is live. Vote now!';
+    } else {
+      newStatus = ElectionStatus.COMPLETED;
+      message = 'Election has ended.';
     }
 
+    // If the status has changed, update it in the database
+    if (election.status !== newStatus) {
+      election.status = newStatus;
+      await this.electionRepository.update(election.id, { status: newStatus });
+    }
+
+    const mappedElection = this.transformElectionResponse(election);
     return {
       status_code: HttpStatus.OK,
       message: message,
@@ -464,10 +467,12 @@ export class ElectionService {
         max_choices: election.max_choices,
         election_type: electionType,
         candidates:
-          election.candidates.map(candidate => ({
-            candidate_id: candidate.id,
-            name: candidate.name,
-          })) || [],
+          election.candidates.map(candidate => {
+            return {
+              candidate_id: candidate.id,
+              name: candidate.name,
+            };
+          }) || [],
       };
     } else {
       console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
