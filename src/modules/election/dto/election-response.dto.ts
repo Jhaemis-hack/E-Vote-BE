@@ -14,10 +14,10 @@ export class ElectionResponseDto {
   })
   description: string;
 
-  @ApiProperty({ description: 'The start date of the election', example: '2023-10-01T00:00:00.000Z' })
+  @ApiProperty({ description: 'The start date of the election', example: '2023-10-01' })
   start_date: Date;
 
-  @ApiProperty({ description: 'The end date of the election', example: '2023-10-31T23:59:59.000Z' })
+  @ApiProperty({ description: 'The end date of the election', example: '2023-10-31' })
   end_date: Date;
 
   @ApiProperty({ description: 'This uuid is used to acesss this election by a voter.' })

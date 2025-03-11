@@ -26,13 +26,13 @@ export class CreateElectionDto {
   @IsString()
   description: string;
 
-  @ApiProperty({ example: '2025-06-01T00:00:00Z' })
+  @ApiProperty({ example: '2025-06-01' })
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
   start_date: Date;
 
-  @ApiProperty({ example: '2025-06-02T00:00:00Z' })
+  @ApiProperty({ example: '2025-06-02' })
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)

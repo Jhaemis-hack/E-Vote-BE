@@ -12,7 +12,7 @@ export enum ElectionStatus {
 
 export enum ElectionType {
   SINGLECHOICE = 'singlechoice',
-  MULTICHOICE = 'multichoice',
+  MULTIPLECHOICE = 'multiplechoice',
 }
 
 @Entity({ name: 'elections' })
