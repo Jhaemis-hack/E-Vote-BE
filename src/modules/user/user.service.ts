@@ -211,7 +211,7 @@ export class UserService {
     };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string; data: null }> {
     const { email } = forgotPasswordDto;
 
     const user = await this.userRepository.findOne({ where: { email } });
@@ -238,6 +238,7 @@ export class UserService {
     await this.forgotPasswordRepository.save(forgotPasswordToken);
     return {
       message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
+      data: null,
     };
   }
 }

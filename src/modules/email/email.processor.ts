@@ -29,7 +29,6 @@ export class EmailProcessor {
       const {
         data: { mail },
       } = job;
-      console.log('mail in job', mail);
       await this.mailerService.sendMail({
         ...mail,
         subject: 'Reset Password',
