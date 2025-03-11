@@ -337,21 +337,21 @@ export class ElectionService {
       });
     }
 
-    if (election.status === ElectionStatus.UPCOMING) {
-      throw new ForbiddenException({
-        status_code: HttpStatus.FORBIDDEN,
-        message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
-        data: null,
-      });
-    }
+    // if (election.status === ElectionStatus.UPCOMING) {
+    //   throw new ForbiddenException({
+    //     status_code: HttpStatus.FORBIDDEN,
+    //     message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
+    //     data: null,
+    //   });
+    // }
 
-    if (election.status === ElectionStatus.COMPLETED) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_HAS_ENDED,
-        data: null,
-      });
-    }
+    // if (election.status === ElectionStatus.COMPLETED) {
+    //   throw new NotFoundException({
+    //     status_code: HttpStatus.NOT_FOUND,
+    //     message: SYS_MSG.ELECTION_HAS_ENDED,
+    //     data: null,
+    //   });
+    // }
 
     // TODO
     // if (election?.status === ElectionStatus.COMPLETED) {
