@@ -10,10 +10,10 @@ export enum ElectionStatus {
   COMPLETED = 'completed',
 }
 
-//TODO:
-// export enum ElectionType {
-//   SINGLECHOICE = 'singlechoice',
-// }
+export enum ElectionType {
+  SINGLECHOICE = 'singlechoice',
+  MULTIPLECHOICE = 'multiplechoice',
+}
 
 @Entity({ name: 'elections' })
 export class Election extends AbstractBaseEntity {
@@ -45,8 +45,11 @@ export class Election extends AbstractBaseEntity {
   })
   status: ElectionStatus;
 
-  // @Column({ type: 'enum', enum: ElectionType, default: ElectionType.SINGLECHOICE })
-  // type: ElectionType;
+  @Column({ type: 'enum', enum: ElectionType, default: ElectionType.SINGLECHOICE })
+  type: ElectionType;
+
+  @Column({ nullable: true })
+  max_choices?: number;
 
   @ManyToOne(() => User, user => user.created_elections)
   @JoinColumn({ name: 'created_by' })

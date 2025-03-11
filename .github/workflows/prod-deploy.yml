@@ -1,12 +1,10 @@
-name: Deployment
+name: Production Deployment
 
 on:
-  workflow_run:
-    workflows: ['Node.js CI Test']
-    types:
-      - completed
+  push:
     branches:
-      - dev
+      - prod
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -25,14 +23,15 @@ jobs:
         with:
           node-version: '23'
 
-      - name: Deploy to Staging
+      - name: Deploy to Production
         run: |
           sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << 'EOF'
-            cd ~/evote-backend/staging
+            cd ~/evote-backend/production
             git reset --hard
-            pm2 stop evote_staging
-            git pull origin dev
+            pm2 stop evote-be-production
+            git checkout prod
+            git pull
             pnpm install
             pnpm build
-            pm2 restart evote_staging --update-env
+            pm2 start evote-be-production --update-env
           EOF
