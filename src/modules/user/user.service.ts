@@ -210,20 +210,14 @@ export class UserService {
     };
   }
 
-  async forgotPassword(id: string, forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
     const { email } = forgotPasswordDto;
 
-    const user = await this.userRepository.findOne({ where: { email, id } });
+    const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new NotFoundException({
         status_code: HttpStatus.NOT_FOUND,
         message: SYS_MSG.USER_NOT_FOUND,
-      });
-    }
-    if (user.id !== id) {
-      throw new UnauthorizedException({
-        status_code: HttpStatus.UNAUTHORIZED,
-        message: SYS_MSG.UNAUTHORIZED_USER,
       });
     }
 

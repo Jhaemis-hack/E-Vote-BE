@@ -104,27 +104,17 @@ export class UserController {
   }
 
   @Post('forgot-password')
-  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request a password reset link' })
   @ApiResponse({ status: 200, description: 'Password reset link has been sent to your email.' })
   @ApiResponse({ status: 404, description: 'User with this email does not exist.' })
   async forgotPassword(
-    @Req() req: any,
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     forgotPasswordDto: ForgotPasswordDto,
-  ) {
-    try {
-      const user_id = req.user.sub;
-      await this.userService.forgotPassword(user_id, forgotPasswordDto);
-      return {
-        message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
-      };
-    } catch (error) {
-      throw new UnauthorizedException({
-        status_code: HttpStatus.UNAUTHORIZED,
-        message: SYS_MSG.UNAUTHORIZED_ACCESS,
-      });
-    }
+  ): Promise<{ message: string }> {
+    await this.userService.forgotPassword(forgotPasswordDto);
+    return {
+      message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
+    };
   }
 }

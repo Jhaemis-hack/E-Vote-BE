@@ -413,7 +413,6 @@ describe('UserService', () => {
   });
   describe('forgotPassword', () => {
     const email = 'test@example.com';
-    const user_id = '12345';
     const forgotPasswordDto: ForgotPasswordDto = {
       email,
     };
@@ -421,19 +420,19 @@ describe('UserService', () => {
     it('should throw NotFoundException if user does not exist', async () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(userService.forgotPassword(user_id, forgotPasswordDto)).rejects.toThrow(
+      await expect(userService.forgotPassword(forgotPasswordDto)).rejects.toThrow(
         new NotFoundException({
           status_code: 404,
           message: SYS_MSG.USER_NOT_FOUND,
         }),
       );
       expect(userRepository.findOne).toHaveBeenCalledWith({
-        where: { email: forgotPasswordDto.email, id: user_id },
+        where: { email: forgotPasswordDto.email },
       });
     });
 
     it('should create and save a ForgotPasswordToken if user exists', async () => {
-      const user = { id: user_id, email } as User;
+      const user = { email } as User;
 
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(user);
 
@@ -444,10 +443,10 @@ describe('UserService', () => {
       } as ForgotPasswordToken;
       jest.spyOn(forgotPasswordRepository, 'create').mockReturnValue(mockForgotPasswordToken);
       jest.spyOn(forgotPasswordRepository, 'save').mockResolvedValue(mockForgotPasswordToken);
-      await userService.forgotPassword(user_id, forgotPasswordDto);
+      await userService.forgotPassword(forgotPasswordDto);
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
-        where: { email: forgotPasswordDto.email, id: user_id },
+        where: { email: forgotPasswordDto.email },
       });
 
       expect(forgotPasswordRepository.create).toHaveBeenCalledWith({
