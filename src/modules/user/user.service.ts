@@ -17,6 +17,7 @@ import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { exist, string } from 'joi';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,7 @@ export class UserService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -49,10 +51,20 @@ export class UserService {
       is_verified: false,
     });
 
-    await this.userRepository.save(newAdmin);
-
     const credentials = { email: newAdmin.email, sub: newAdmin.id };
     const token = this.jwtService.sign(credentials);
+
+    try {
+      await this.emailService.sendVerificationMail(newAdmin.email, token);
+      await this.userRepository.save(newAdmin);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+        data: null,
+      };
+    }
+
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.SIGNUP_MESSAGE,
@@ -69,13 +81,29 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND);
     }
 
-    // if (userExist.is_verified === false) {
-    //   throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED);
-    // }
-
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
+    }
+
+    if (!userExist.is_verified) {
+      const credentials = { email: userExist.email, sub: userExist.id };
+      const token = this.jwtService.sign(credentials);
+
+      try {
+        await this.emailService.sendVerificationMail(userExist.email, token);
+        return {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.EMAIL_NOT_VERIFIED,
+          data: null,
+        };
+      } catch (error) {
+        return {
+          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+          data: null,
+        };
+      }
     }
 
     const { password, ...admin } = userExist;
