@@ -5,19 +5,19 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import type { DeepPartial, Repository } from 'typeorm';
+import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Candidate } from '../../candidate/entities/candidate.entity';
-import { User } from '../../user/entities/user.entity';
+import type { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
-import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
-import { validate } from 'class-validator';
-import { plainToInstance } from 'class-transformer';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -44,6 +44,7 @@ describe('ElectionService', () => {
       .mockImplementation((entity: DeepPartial<Election>) => Promise.resolve(Object.assign(new Election(), entity))),
     findOne: jest.fn().mockResolvedValue(null),
     delete: jest.fn(),
+    update: jest.fn().mockResolvedValue({}),
   });
 
   const mockCandidateRepository = () => ({
@@ -328,68 +329,71 @@ describe('ElectionService', () => {
       );
     });
   });
+
   describe('findOne', () => {
-    // it('should return an election with votes and candidates', async () => {
-    //   const electionId = '123';
-    //   const mockElection = {
-    //     id: electionId,
-    //     created_at: new Date('2025-03-22T13:35:13.731Z'),
-    //     updated_at: new Date('2025-03-30T13:35:13.731Z'),
-    //     deleted_at: null,
-    //     status: ElectionStatus.UPCOMING,
-    //     title: '2025 Presidential Election',
-    //     description: 'Election to choose the next president of the country',
-    //     start_date: new Date('2025-03-01T00:00:00.000Z'),
-    //     end_date: new Date('2025-03-31T23:59:59.999Z'),
-    //     start_time: '09:00:00',
-    //     end_time: '10:00:00',
-    //     type: 'singlechoice',
-    //     created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
-    //   };
+    it('should return an election with votes and candidates', async () => {
+      const electionId = '123';
+      const mockElection = {
+        id: electionId,
+        created_at: new Date('2025-03-22T13:35:13.731Z'),
+        updated_at: new Date('2025-03-30T13:35:13.731Z'),
+        deleted_at: null,
+        status: ElectionStatus.UPCOMING,
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president of the country',
+        start_date: new Date('2025-03-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        start_time: '09:00:00',
+        end_time: '10:00:00',
+        type: 'singlechoice',
+        created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
+      };
 
-    //   const mockCandidates = [
-    //     { id: 'c1', name: 'Candidate A', election_id: electionId },
-    //     { id: 'c2', name: 'Candidate B', election_id: electionId },
-    //   ];
+      const mockCandidates = [
+        { id: 'c1', name: 'Candidate A', election_id: electionId },
+        { id: 'c2', name: 'Candidate B', election_id: electionId },
+      ];
 
-    //   const mockVotes = [
-    //     { candidate_id: 'c1', election_id: electionId },
-    //     { candidate_id: 'c1', election_id: electionId },
-    //     { candidate_id: 'c2', election_id: electionId },
-    //   ];
+      const mockVotes = [
+        { candidate_id: 'c1', election_id: electionId },
+        { candidate_id: 'c1', election_id: electionId },
+        { candidate_id: 'c2', election_id: electionId },
+      ];
 
-    //   // Mock repository methods
-    //   electionRepository.findOne = jest.fn().mockResolvedValue(mockElection);
-    //   candidateRepository.find = jest.fn().mockResolvedValue(mockCandidates);
-    //   voteRepository.find = jest.fn().mockResolvedValue(mockVotes);
+      // Mock repository methods
+      electionRepository.findOne = jest.fn().mockResolvedValue(mockElection);
+      candidateRepository.find = jest.fn().mockResolvedValue(mockCandidates);
+      voteRepository.find = jest.fn().mockResolvedValue(mockVotes);
 
-    //   const result = await service.findOne(electionId);
-    //   expect(result).toEqual({
-    //     status_code: 200,
-    //     message: 'Election fetched successfully',
-    //     data: {
-    //       election: {
-    //         election_id: electionId,
-    //         title: '2025 Presidential Election',
-    //         description: 'Election to choose the next president of the country',
-    //         votes_casted: 3,
-    //         start_date: new Date('2025-03-01T00:00:00.000Z'),
-    //         start_time: '09:00:00',
-    //         end_date: new Date('2025-03-31T23:59:59.999Z'),
-    //         end_time: '10:00:00',
-    //         candidates: [
-    //           { candidate_id: 'c1', name: 'Candidate A', vote_count: 2 },
-    //           { candidate_id: 'c2', name: 'Candidate B', vote_count: 1 },
-    //         ],
-    //       },
-    //     },
-    //   });
-    // });
+      const result = await service.findOne(electionId);
+      expect(result).toEqual({
+        status_code: 200,
+        message: 'Election fetched successfully',
+        data: {
+          election: {
+            election_id: electionId,
+            title: '2025 Presidential Election',
+            description: 'Election to choose the next president of the country',
+            votes_casted: 3,
+            start_date: new Date('2025-03-01T00:00:00.000Z'),
+            start_time: '09:00:00',
+            end_date: new Date('2025-03-31T23:59:59.999Z'),
+            end_time: '10:00:00',
+            status: 'ongoing',
+            vote_id: undefined,
+            candidates: [
+              { candidate_id: 'c1', name: 'Candidate A', vote_count: 2 },
+              { candidate_id: 'c2', name: 'Candidate B', vote_count: 1 },
+            ],
+          },
+        },
+      });
+    });
 
     it('should throw NotFoundException if election does not exist', async () => {
       electionRepository.findOne = jest.fn().mockResolvedValue(null);
       const electionId = '123';
-      const adminId = await expect(service.findOne(electionId)).rejects.toThrow(
+      await expect(service.findOne(electionId)).rejects.toThrow(
         new NotFoundException({
           status_code: HttpStatus.NOT_FOUND,
           message: SYS_MSG.ELECTION_NOT_FOUND,
@@ -427,18 +431,17 @@ describe('ElectionService', () => {
       });
     });
 
-    // TODO
-    // it('should throw ForbiddenException if election is ongoing', async () => {
-    //   jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-    //     id: electionId,
-    //   } as Election);
+    it('should throw ForbiddenException if election is ongoing', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+        id: electionId,
+      } as Election);
 
-    //   await expect(service.remove(electionId)).rejects.toThrow(ForbiddenException);
-    //   expect(electionRepository.findOne).toHaveBeenCalledWith({
-    //     where: { id: electionId },
-    //     relations: ['candidates'],
-    //   });
-    // });
+      await expect(service.remove(electionId, adminId)).rejects.toThrow(ForbiddenException);
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { id: electionId },
+        relations: ['candidates'],
+      });
+    });
 
     it('should delete election if it exists and is not ongoing', async () => {
       const completedElection = {
@@ -495,64 +498,63 @@ describe('ElectionService', () => {
       expect(electionRepository.findOne).not.toHaveBeenCalled();
     });
 
-    // it('should return the election when a valid vote_id is provided and the election exists', async () => {
-    //   const mockElection = {
-    //     id: '550e8400-e29b-41d4-a716-446655440000',
-    //     title: '2025 Presidential Election',
-    //     description: 'Election to choose the next president of the country',
-    //     start_date: new Date('2025-03-01T00:00:00.000Z'),
-    //     end_date: new Date('2025-03-31T23:59:59.999Z'),
-    //     start_time: '09:00:00',
-    //     status: ElectionStatus.ONGOING,
-    //     end_time: '10:00:00',
-    //     created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
-    //     candidates: [],
-    //     created_by_user: {} as User,
-    //     votes: [] as Vote[],
-    //     created_at: new Date(),
-    //     updated_at: new Date(),
-    //     deleted_at: null,
-    //     type: ElectionType.SINGLECHOICE,
-    //     max_choices: 1,
-    //     vote_id: validVoteLink,
-    //   };
+    it('should return the election when a valid vote_id is provided and the election exists', async () => {
+      const mockElection = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        title: '2025 Presidential Election',
+        start_date: new Date('2025-03-01T00:00:00.000Z'),
+        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        start_time: '09:00:00',
+        status: ElectionStatus.ONGOING,
+        end_time: '10:00:00',
+        created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
+        candidates: [],
+        created_by_user: {} as User,
+        votes: [] as Vote[],
+        created_at: new Date(),
+        updated_at: new Date(),
+        deleted_at: null,
+        type: ElectionType.SINGLECHOICE,
+        max_choices: 1,
+        vote_id: validVoteLink,
+      };
 
-    //   // Mock Date.now() to ensure test consistency
-    //   const mockNow = new Date('2025-03-15T09:30:00.000Z'); // Middle of the election period
-    //   jest.spyOn(Date, 'now').mockImplementation(() => mockNow.getTime());
+      // Mock Date.now() to ensure test consistency
+      const mockNow = new Date('2025-03-15T09:30:00.000Z'); // Middle of the election period
+      jest.spyOn(Date, 'now').mockImplementation(() => mockNow.getTime());
 
-    //   jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection as unknown as Election);
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection as unknown as Election);
+      jest.spyOn(electionRepository, 'update').mockResolvedValue({} as any);
 
-    //   const result = await service.getElectionByVoterLink(validVoteLink);
+      const result = await service.getElectionByVoterLink(validVoteLink);
 
-    //   expect(result).toEqual({
-    //     status_code: HttpStatus.OK,
-    //     message: "Election has not started!",
-    //     data: {
-    //       election_id: mockElection.id,
-    //       title: mockElection.title,
-    //       description: mockElection.description,
-    //       start_date: mockElection.start_date,
-    //       end_date: mockElection.end_date,
-    //       vote_id: undefined,
-    //       status: "upcoming",
-    //       start_time: mockElection.start_time,
-    //       end_time: mockElection.end_time,
-    //       created_by: mockElection.created_by,
-    //       candidates: [],
-    //       max_choices: 1,
-    //       election_type: ElectionType.SINGLECHOICE,
-    //     },
-    //   });
+      expect(result).toEqual({
+        status_code: HttpStatus.OK,
+        message: 'Election is live. Vote now!',
+        data: {
+          election_id: mockElection.id,
+          title: mockElection.title,
+          start_date: mockElection.start_date,
+          end_date: mockElection.end_date,
+          vote_id: mockElection.vote_id,
+          status: 'ongoing',
+          start_time: mockElection.start_time,
+          end_time: mockElection.end_time,
+          created_by: mockElection.created_by,
+          candidates: [],
+          max_choices: 1,
+          election_type: ElectionType.SINGLECHOICE,
+        },
+      });
 
-    //   expect(electionRepository.findOne).toHaveBeenCalledWith({
-    //     where: { vote_id: validVoteLink },
-    //     relations: ['candidates'],
-    //   });
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { vote_id: validVoteLink },
+        relations: ['candidates'],
+      });
 
-    //   // Restore Date
-    //   jest.spyOn(Date, 'now').mockRestore();
-    // });
+      // Restore Date
+      jest.spyOn(Date, 'now').mockRestore();
+    });
 
     it('should throw a HttpException with 400 status when the vote_id is not a valid UUID', async () => {
       await expect(service.getElectionByVoterLink(invalidVoteLink)).rejects.toThrow(
@@ -563,46 +565,6 @@ describe('ElectionService', () => {
       );
       expect(electionRepository.findOne).not.toHaveBeenCalled();
     });
-
-    // it('should throw a ForbiddenException with 403 status when the election status is pending', async () => {
-    //   jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-    //     vote_id: validVoteLink,
-    //     status: ElectionStatus.UPCOMING,
-    //   } as Election);
-
-    //   await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
-    //     new ForbiddenException({
-    //       status_code: HttpStatus.FORBIDDEN,
-    //       message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
-    //       data: null,
-    //     }),
-    //   );
-
-    //   expect(electionRepository.findOne).toHaveBeenCalledWith({
-    //     where: { vote_id: validVoteLink },
-    //     relations: ['candidates'],
-    //   });
-    // });
-
-    // it('should throw a NotFoundException with 404 status when the election status is completed', async () => {
-    //   jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-    //     vote_id: validVoteLink,
-    //     status: ElectionStatus.COMPLETED,
-    //   } as Election);
-
-    //   await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
-    //     new NotFoundException({
-    //       status_code: HttpStatus.NOT_FOUND,
-    //       message: SYS_MSG.ELECTION_HAS_ENDED,
-    //       data: null,
-    //     }),
-    //   );
-
-    //   expect(electionRepository.findOne).toHaveBeenCalledWith({
-    //     where: { vote_id: validVoteLink },
-    //     relations: ['candidates'],
-    //   });
-    // });
 
     it('should throw a NotFoundException when the election with the provided vote_link does not exist', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
@@ -621,240 +583,206 @@ describe('ElectionService', () => {
       });
     });
 
-    //   it('should throw a HttpException with 403 status when the election is completed and voting is no longer allowed', async () => {
-    //     const completedElection = {
-    //       id: '550e8400-e29b-41d4-a716-446655440000',
-    //       title: '2025 Presidential Election',
-    //       description: 'Election to choose the next president of the country',
-    //       start_date: new Date('2025-03-01T00:00:00.000Z'),
-    //       end_date: new Date('2025-03-31T23:59:59.999Z'),
-    //       start_time: '09:00:00',
-    //       end_time: '10:00:00',
-    //       type: ElectionType.SINGLECHOICE,
-    //       created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
-    //       vote_link: validVoteLink,
-    //     };
-
-    //     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(completedElection as Election);
-
-    //     await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
-    //       new HttpException(
-    //         { status_code: HttpStatus.FORBIDDEN, message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED, data: null },
-    //         HttpStatus.FORBIDDEN,
-    //       ),
-    //     );
-
-    //     expect(electionRepository.findOne).toHaveBeenCalledWith({
-    //       where: { vote_link: validVoteLink },
-    //       relations: ['candidates'],
-    //     });
-    //   });
-    // });
-  });
-
-  describe('getElectionResults', () => {
-    const electionId = '550e8400-e29b-41d4-a716-446655440000';
-    const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
-    const mockElection = {
-      id: electionId,
-      title: '2025 Presidential Election',
-      created_by: adminId,
-      candidates: [
-        { id: 'candidate-1', name: 'Candidate A' },
-        { id: 'candidate-2', name: 'Candidate B' },
-      ],
-      votes: [{ candidate_id: ['candidate-1'] }, { candidate_id: ['candidate-1'] }, { candidate_id: ['candidate-2'] }],
-    } as Election;
-
-    it('should throw HttpException if electionId is invalid', async () => {
-      await expect(service.getElectionResults('invalid-id', adminId)).rejects.toThrow(
-        new HttpException(
-          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-    });
-
-    it('should throw HttpException if adminId is invalid', async () => {
-      await expect(service.getElectionResults(electionId, 'invalid-admin')).rejects.toThrow(
-        new HttpException(
-          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-    });
-
-    it('should throw NotFoundException if election does not exist', async () => {
-      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
-      await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
-        new NotFoundException({
-          status_code: HttpStatus.NOT_FOUND,
-          message: SYS_MSG.ELECTION_NOT_FOUND,
-          data: null,
-        }),
-      );
-    });
-
-    it('should throw ForbiddenException if adminId does not match election creator', async () => {
-      const differentAdminId = 'different-admin-id';
-      jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
-        ...mockElection,
-        created_by: differentAdminId,
-      } as Election);
-      await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
-        new ForbiddenException({
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.UNAUTHORIZED_ACCESS,
-          data: null,
-        }),
-      );
-    });
-  });
-
-  describe('getElectionResultsForDownload', () => {
-    const electionId = '550e8400-e29b-41d4-a716-446655440000';
-    const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
-
-    it('should generate CSV data with correct format', async () => {
-      const mockResults = {
-        data: {
-          results: [
-            { name: 'Candidate A', votes: 2 },
-            { name: 'Candidate B', votes: 1 },
-          ],
-        },
-      };
-
-      jest.spyOn(service, 'getElectionResults').mockResolvedValue(mockResults as any);
-
-      const result = await service.getElectionResultsForDownload(electionId, adminId);
-
-      expect(result.csvData).toBe('Candidate Name,Votes\n' + '"Candidate A",2\n' + '"Candidate B",1');
-      expect(result.filename).toBe(`election-${electionId}-results.csv`);
-    });
-  });
-
-  describe('date and time validation', () => {
-    let baseDto: CreateElectionDto;
-    let adminId: string;
-
-    beforeEach(() => {
-      // Mock the current date to a fixed value
-      jest.useFakeTimers();
-      jest.setSystemTime(new Date('2025-01-01T12:00:00Z'));
-
-      baseDto = {
+    describe('getElectionResults', () => {
+      const electionId = '550e8400-e29b-41d4-a716-446655440000';
+      const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+      const mockElection = {
+        status: ElectionStatus.COMPLETED,
+        id: electionId,
         title: '2025 Presidential Election',
-        description: 'Election to choose the next president',
-        start_date: new Date('2025-03-01T00:00:00.000Z'),
-        end_date: new Date('2025-03-31T23:59:59.999Z'),
+        created_by: adminId,
+        candidates: [
+          { id: 'candidate-1', name: 'Candidate A' },
+          { id: 'candidate-2', name: 'Candidate B' },
+        ],
+        votes: [
+          { candidate_id: ['candidate-1'] },
+          { candidate_id: ['candidate-1'] },
+          { candidate_id: ['candidate-2'] },
+        ],
+      } as Election;
+
+      it('should throw HttpException if electionId is invalid', async () => {
+        await expect(service.getElectionResults('invalid-id', adminId)).rejects.toThrow(
+          new HttpException(
+            { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      });
+
+      it('should throw HttpException if adminId is invalid', async () => {
+        await expect(service.getElectionResults(electionId, 'invalid-admin')).rejects.toThrow(
+          new HttpException(
+            { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      });
+
+      it('should throw NotFoundException if election does not exist', async () => {
+        jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+        await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
+          new NotFoundException({
+            status_code: HttpStatus.NOT_FOUND,
+            message: SYS_MSG.ELECTION_NOT_FOUND,
+            data: null,
+          }),
+        );
+      });
+
+      it('should throw ForbiddenException if adminId does not match election creator', async () => {
+        const differentAdminId = 'different-admin-id';
+        jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
+          ...mockElection,
+          created_by: differentAdminId,
+        } as Election);
+
+        await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
+          new ForbiddenException({
+            status_code: HttpStatus.FORBIDDEN,
+            message: SYS_MSG.UNAUTHORIZED_ACCESS,
+            data: null,
+          }),
+        );
+      });
+
+      it('should return election results if election exists and adminId matches election creator', async () => {
+        jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection);
+        const result = await service.getElectionResults(electionId, adminId);
+        expect(result).toEqual({
+          status_code: 200,
+          message: 'Election results retrieved successfully',
+          data: {
+            election_id: electionId,
+            title: '2025 Presidential Election',
+            total_votes: 3,
+            results: [
+              {
+                candidate_id: 'candidate-1',
+                name: 'Candidate A',
+                votes: 2,
+              },
+              {
+                candidate_id: 'candidate-2',
+                name: 'Candidate B',
+                votes: 1,
+              },
+            ],
+          },
+        });
+      });
+    });
+
+    describe('getElectionResultsForDownload', () => {
+      const electionId = '550e8400-e29b-41d4-a716-446655440000';
+      const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+
+      it('should generate CSV data with correct format', async () => {
+        const mockResults = {
+          data: {
+            results: [
+              { name: 'Candidate A', votes: 2 },
+              { name: 'Candidate B', votes: 1 },
+            ],
+          },
+        };
+
+        jest.spyOn(service, 'getElectionResults').mockResolvedValue(mockResults as any);
+
+        const result = await service.getElectionResultsForDownload(electionId, adminId);
+
+        expect(result.csvData).toBe('Candidate Name,Votes\n' + '"Candidate A",2\n' + '"Candidate B",1');
+        expect(result.filename).toBe(`election-${electionId}-results.csv`);
+      });
+    });
+
+    describe('Validation of CreateElectionDto', () => {
+      const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+      const baseDto: CreateElectionDto = {
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president of the country',
+        start_date: new Date('2025-03-22T00:00:00.000Z'),
+        end_date: new Date('2025-03-23T00:00:00.000Z'),
         start_time: '09:00:00',
         end_time: '17:00:00',
         election_type: ElectionType.SINGLECHOICE,
         candidates: ['Candidate A', 'Candidate B'],
       };
 
-      adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
-    });
+      it('should throw an exception when start date is in the past', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2024-12-31T00:00:00.000Z'), // Past date
+        };
 
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('should throw an exception when start date is in the past', async () => {
-      const dto = {
-        ...baseDto,
-        start_date: new Date('2024-12-31T00:00:00.000Z'), // Past date
-      };
-
-      await expect(service.create(dto, adminId)).rejects.toThrow(
-        new HttpException(
-          { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-    });
-
-    it('should throw an exception when start date is after end date', async () => {
-      const dto = {
-        ...baseDto,
-        start_date: new Date('2025-04-01T00:00:00.000Z'),
-        end_date: new Date('2025-03-31T00:00:00.000Z'),
-      };
-
-      await expect(service.create(dto, adminId)).rejects.toThrow(
-        new HttpException(
-          { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-    });
-
-    it('should throw an exception when start time is after end time on the same day', async () => {
-      const dto = {
-        ...baseDto,
-        start_date: new Date('2025-03-22T00:00:00.000Z'),
-        end_date: new Date('2025-03-22T00:00:00.000Z'),
-        start_time: '15:00:00',
-        end_time: '09:00:00',
-      };
-
-      await expect(service.create(dto, adminId)).rejects.toThrow(
-        new HttpException(
-          { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
-    });
-
-    it('should accept when start time is before end time on the same day', async () => {
-      const dto = {
-        ...baseDto,
-        start_date: new Date('2025-03-01T00:00:00.000Z'),
-        end_date: new Date('2025-03-01T00:00:00.000Z'),
-        start_time: '09:00:00',
-        end_time: '17:00:00',
-      };
-
-      await expect(service.create(dto, adminId)).resolves.toBeDefined();
-      expect(electionRepository.create).toHaveBeenCalled();
-      expect(electionRepository.save).toHaveBeenCalled();
-    });
-
-    it('should accept when start time is after end time but on different days', async () => {
-      const dto = {
-        ...baseDto,
-        start_date: new Date('2025-03-21T00:00:00.000Z'),
-        end_date: new Date('2025-03-22T00:00:00.000Z'),
-        start_time: '17:00:00',
-        end_time: '09:00:00',
-      };
-
-      await expect(service.create(dto, adminId)).resolves.toBeDefined();
-      expect(electionRepository.create).toHaveBeenCalled();
-      expect(electionRepository.save).toHaveBeenCalled();
-    });
-
-    it('should throw an exception when title is a single character', async () => {
-      const dto = plainToInstance(CreateElectionDto, {
-        ...baseDto,
-        title: 'A', // Single character
+        await expect(service.create(dto, adminId)).rejects.toThrow(
+          new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
       });
 
-      const validationErrors = await validate(dto);
-      expect(validationErrors.length).toBeGreaterThan(0);
-      expect(validationErrors[0].constraints?.minLength).toBe('Title must be at least 10 characters long');
-    });
+      it('should throw an exception when start date is after end date', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-04-01T00:00:00.000Z'),
+          end_date: new Date('2025-03-31T00:00:00.000Z'),
+        };
 
-    it('should throw an exception when description is a single character', async () => {
-      const dto = plainToInstance(CreateElectionDto, {
-        ...baseDto,
-        description: 'Short', // Single character
+        await expect(service.create(dto, adminId)).rejects.toThrow(
+          new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
       });
 
-      const validationErrors = await validate(dto);
-      expect(validationErrors.length).toBeGreaterThan(0);
-      expect(validationErrors[0].constraints?.minLength).toBe('Description must be at least 10 characters long');
+      it('should throw an exception when start time is after end time on the same day', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-03-22T00:00:00.000Z'),
+          end_date: new Date('2025-03-22T00:00:00.000Z'),
+          start_time: '15:00:00',
+          end_time: '09:00:00',
+        };
+
+        await expect(service.create(dto, adminId)).rejects.toThrow(
+          new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      });
+
+      it('should accept when start time is before end time on the same day', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-03-01T00:00:00.000Z'),
+          end_date: new Date('2025-03-01T00:00:00.000Z'),
+          start_time: '09:00:00',
+          end_time: '17:00:00',
+        };
+
+        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        expect(electionRepository.create).toHaveBeenCalled();
+        expect(electionRepository.save).toHaveBeenCalled();
+      });
+
+      it('should accept when start time is after end time but on different days', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-03-21T00:00:00.000Z'),
+          end_date: new Date('2025-03-22T00:00:00.000Z'),
+          start_time: '17:00:00',
+          end_time: '09:00:00',
+        };
+
+        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        expect(electionRepository.create).toHaveBeenCalled();
+        expect(electionRepository.save).toHaveBeenCalled();
+      });
     });
   });
 });

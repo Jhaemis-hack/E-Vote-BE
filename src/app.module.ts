@@ -3,16 +3,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './modules/user/user.module';
 import { ElectionModule } from './modules/election/election.module';
+import { UserModule } from './modules/user/user.module';
 // import * as Joi from 'joi';
-import { join } from 'path';
-import dataSource from './migrations/migration.config';
-import authConfig from './config/auth.config';
-import { VoteModule } from './modules/votes/votes.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { join } from 'path';
+import authConfig from './config/auth.config';
+import dataSource from './migrations/migration.config';
+import { VoteModule } from './modules/votes/votes.module';
 // import dataSource from './migrations/migration.config';
-
+import { EmailModule } from './modules/email/email.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -38,6 +38,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ElectionModule,
     VoteModule,
     ScheduleModule.forRoot(),
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

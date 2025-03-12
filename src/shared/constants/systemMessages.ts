@@ -12,6 +12,7 @@ export const INVALID_EMAIL_FORMAT = 'Invalid email format';
 export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
+export const PASSWORD_RESET_LINK_SENT = 'Email sent successfully';
 export const INCORRECT_UUID = 'Not a valid uuid';
 export const VOTELINK_CREATED = 'Vote link creation successful';
 export const ELECTION_CREATED = 'Election creation successful';
@@ -44,3 +45,9 @@ export const ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME =
   'End time must be greater than start time for elections on the same day.';
 export const ERROR_VOTER_ACCESS = 'You are not allowed to vote currently.';
 export const ERROR_TOTAL_CANDIDATES = 'Total candidates must exceed the maximum choices.';
+export const PASSWORD_RESET_REQUEST_NOT_FOUND = 'pasword reset request not found';
+export const PASSWORD_UPDATED_SUCCESSFULLY = 'Admin Password Updated Successfully,please proceed to login';
+export const EMAIL_VERIFICATION_SUCCESS = 'Email has been verified';
+export const EMAIL_ALREADY_VERIFIED = 'Email already verified';
+export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
+export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';

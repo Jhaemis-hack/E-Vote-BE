@@ -15,15 +15,19 @@ import {
   ValidationPipe,
   BadRequestException,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
-import { AuthGuard } from 'src/guards/auth.guard';
+import { AuthGuard } from '../../guards/auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { STATUS_CODES } from 'http';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -98,5 +102,40 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found.' })
   deactivateUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.deactivateUser(id);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request a password reset link' })
+  @ApiResponse({ status: 200, description: 'Password reset link has been sent to your email.' })
+  @ApiResponse({ status: 404, description: 'User with this email does not exist.' })
+  async forgotPassword(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    forgotPasswordDto: ForgotPasswordDto,
+  ) {
+    return await this.userService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset user password using a valid reset token' })
+  @ApiResponse({ status: 200, description: 'Admin Password Updated Successfully,please proceed to login.' })
+  @ApiResponse({ status: 404, description: 'User with this email does not exist.' })
+  @ApiResponse({ status: 404, description: 'Password reset request not found.' })
+  async resetPasssword(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    resetPasswordDto: ResetPasswordDto,
+  ) {
+    return await this.userService.resetPassword(resetPasswordDto);
+  }
+
+  @Get('/verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify user email' })
+  @ApiQuery({ name: 'token', required: true, type: String, description: 'Verification token' })
+  @ApiResponse({ status: 200, description: 'Account has been verified' })
+  @ApiResponse({ status: 400, description: 'Invalid token' })
+  async verifyEmail(@Query('token') token: string) {
+    return this.userService.verifyEmail(token);
   }
 }
