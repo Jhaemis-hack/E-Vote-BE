@@ -615,17 +615,16 @@ describe('UserService', () => {
     let userService: UserService;
     let jwtService: JwtService;
     let userRepository: any;
-    let forgotPasswordTokenRepository: any; // Mocked repository
-    let someService: any; // Mocked dependency
-    let configService: any; // Mocked dependency
+    let forgotPasswordTokenRepository: any;
+    let someService: any;
+    let configService: any;
 
     const mockToken = 'valid.jwt.token';
-    const mockPayload = { email: 'test@example.com', sub: '123' }; // Ensure `sub` exists
+    const mockPayload = { email: 'test@example.com', sub: '123' };
 
     beforeEach(() => {
       jest.clearAllMocks();
 
-      // Mock all dependencies
       userRepository = {
         findOne: jest.fn(),
         save: jest.fn(),
@@ -639,13 +638,12 @@ describe('UserService', () => {
       jwtService = new JwtService();
       jest.spyOn(jwtService, 'verify').mockReturnValue(mockPayload);
 
-      someService = {}; // Mocked service
-      configService = {}; // Mocked service
+      someService = {};
+      configService = {};
 
-      // Instantiate UserService with all required dependencies
       userService = new UserService(
         userRepository,
-        forgotPasswordTokenRepository, // Pass the mocked repository here
+        forgotPasswordTokenRepository,
         jwtService,
         someService,
         configService,
@@ -668,8 +666,8 @@ describe('UserService', () => {
         status_code: HttpStatus.OK,
         message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
         data: {
-          id: '123', // Include this
-          email: 'test@example.com', // Include this
+          id: '123',
+          email: 'test@example.com',
           is_verified: true,
         },
       });
@@ -707,7 +705,7 @@ describe('UserService', () => {
 
     it('❌ should throw BadRequestException for invalid token', async () => {
       jest.spyOn(jwtService, 'verify').mockImplementation(() => {
-        throw { name: 'JsonWebTokenError' }; // Match the error structure
+        throw { name: 'JsonWebTokenError' };
       });
 
       await expect(userService.verifyEmail(mockToken)).rejects.toThrow(
@@ -722,7 +720,7 @@ describe('UserService', () => {
 
     it('❌ should throw BadRequestException for expired token', async () => {
       jest.spyOn(jwtService, 'verify').mockImplementation(() => {
-        throw { name: 'TokenExpiredError' }; // Match the error structure
+        throw { name: 'TokenExpiredError' };
       });
 
       await expect(userService.verifyEmail(mockToken)).rejects.toThrow(
