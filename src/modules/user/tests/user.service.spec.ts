@@ -735,6 +735,7 @@ describe('UserService', () => {
         jwtService,
         someService,
         configService,
+        emailService,
       );
     });
 
