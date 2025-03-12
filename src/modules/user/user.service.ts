@@ -180,10 +180,12 @@ export class UserService {
   }
 
   private validatePassword(password: string) {
-    if (password.length < 8) {
+    if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
       throw new BadRequestException({
         message: SYS_MSG.INVALID_PASSWORD_FORMAT,
-        data: { password: 'Password must be at least 8 characters long' },
+        data: {
+          password: 'Password must be at least 8 characters long and contain at least one special character and number',
+        },
         status_code: HttpStatus.BAD_REQUEST,
       });
     }
