@@ -1,10 +1,5 @@
-import {
-  BadRequestException,
-  HttpStatus,
-  UnauthorizedException,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -33,8 +28,8 @@ describe('UserService', () => {
   let userRepository: Repository<User>;
   let jwtService: JwtService;
   let configService: ConfigService;
-  let emailService: EmailService;
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
+  let emailService: EmailService;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -58,6 +53,7 @@ describe('UserService', () => {
     };
     const mockEmailService = {
       sendForgotPasswordMail: jest.fn().mockResolvedValue(undefined),
+      sendVerificationMail: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -90,7 +86,6 @@ describe('UserService', () => {
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
-    emailService = module.get<EmailService>(EmailService);
     forgotPasswordRepository = module.get<Repository<ForgotPasswordToken>>(getRepositoryToken(ForgotPasswordToken));
     emailService = module.get<EmailService>(EmailService);
   });
@@ -113,6 +108,7 @@ describe('UserService', () => {
       userRepository.create = jest.fn().mockReturnValue(adminDto as User);
       userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
       jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+      jest.spyOn(emailService, 'sendVerificationMail').mockResolvedValueOnce(undefined);
 
       const result = await userService.registerAdmin(adminDto);
 
@@ -124,6 +120,34 @@ describe('UserService', () => {
           email: adminDto.email,
           token: 'mockedToken',
         },
+      });
+    });
+
+    it('❌ should handle error when sending verification email fails during registration', async () => {
+      const adminDto: CreateUserDto = {
+        id: randomUUID(),
+        email: 'admin@example.com',
+        password: 'StrongPass1!',
+        is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
+      const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
+        ReturnType<(key: string) => Promise<string>>,
+        Parameters<(key: string) => Promise<string>>
+      >;
+      hashSpy.mockResolvedValueOnce('hashedPassword');
+      userRepository.create = jest.fn().mockReturnValue(adminDto as User);
+      userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
+      jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+      jest.spyOn(emailService, 'sendVerificationMail').mockRejectedValueOnce(new Error('Email sending failed'));
+
+      const result = await userService.registerAdmin(adminDto);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+        data: null,
       });
     });
 
@@ -165,44 +189,56 @@ describe('UserService', () => {
       );
     });
 
-    it('should throw an error if email sending fails', async () => {
-      const userDto: CreateUserDto = {
-        email: 'admin@example.com',
-        password: 'weakpass',
-        is_verified: false,
+    it('❌ should throw BadRequestException for password without number', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        password: 'password!',
+      };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(null);
-      jest.spyOn(emailService, 'sendVerificationMail').mockRejectedValue(new Error('Email sending failed'));
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
 
-      await expect(userService.registerAdmin(userDto)).rejects.toThrow(
-        new ForbiddenException(SYS_MSG.EMAIL_VERIFICATION_FAILED),
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
+        }),
       );
     });
 
-    it('should save the user and return the correct response if email is sent successfully', async () => {
-      const adminDto: CreateUserDto = {
-        id: randomUUID(),
-        email: 'admin@example.com',
-        password: 'StrongPass1!',
-        is_verified: false,
+    it('❌ should throw BadRequestException for password without special character', async () => {
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = {
+        password: 'pass1234',
+      };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        password: 'hashedPassword',
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(null);
-      jest.spyOn(userRepository, 'save').mockResolvedValue(new User());
-      jest.spyOn(emailService, 'sendVerificationMail').mockResolvedValue();
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
 
-      const result = await userService.registerAdmin(adminDto);
-
-      expect(result).toEqual({
-        status_code: HttpStatus.CREATED,
-        message: SYS_MSG.SIGNUP_MESSAGE,
-        data: {
-          id: adminDto.id,
-          email: adminDto.email,
-          token: 'mockedToken',
-        },
-      });
+      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
+        }),
+      );
     });
   });
 
@@ -267,7 +303,7 @@ describe('UserService', () => {
       await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD));
     });
 
-    it('should throw an error if user is not verified', async () => {
+    it('❌ should return forbidden if email is not verified and send verification email', async () => {
       const loginDto: LoginDto = {
         email: 'user@example.com',
         password: 'CorrectPass1!',
@@ -281,10 +317,47 @@ describe('UserService', () => {
         is_verified: false,
       };
 
-      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser as User);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => true);
+      jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+      jest.spyOn(emailService, 'sendVerificationMail').mockResolvedValueOnce(undefined);
 
-      await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED));
+      const result = await userService.login(loginDto);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.EMAIL_NOT_VERIFIED,
+        data: null,
+      });
+      expect(emailService.sendVerificationMail).toHaveBeenCalledWith(loginDto.email, 'mockedToken');
+    });
+
+    it('❌ should handle error when sending verification email fails during login', async () => {
+      const loginDto: LoginDto = {
+        email: 'user@example.com',
+        password: 'CorrectPass1!',
+      };
+
+      const hashedPassword = await bcrypt.hash(loginDto.password, 10);
+      const mockUser: Partial<User> = {
+        id: randomUUID(),
+        email: loginDto.email,
+        password: hashedPassword,
+        is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser as User);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => true);
+      jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+      jest.spyOn(emailService, 'sendVerificationMail').mockRejectedValueOnce(new Error('Email sending failed'));
+
+      const result = await userService.login(loginDto);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+        data: null,
+      });
     });
   });
 
