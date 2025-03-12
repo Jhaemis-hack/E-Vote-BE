@@ -1,17 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsDate,
   IsEnum,
+  IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
-  ArrayMinSize,
+  MaxLength,
   Min,
-  IsOptional,
-  IsInt,
+  MinLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 import { ElectionStatus, ElectionType } from '../entities/election.entity';
 
@@ -19,11 +21,15 @@ export class CreateElectionDto {
   @ApiProperty({ example: 'Presidential Election 2025' })
   @IsNotEmpty()
   @IsString()
+  @MinLength(10, { message: 'Title must be at least 10 characters long' })
+  @MaxLength(100, { message: 'Title must not be more than 150 characters long.' })
   title: string;
 
   @ApiProperty({ example: 'Election to choose the next president.' })
   @IsNotEmpty()
   @IsString()
+  @MinLength(10, { message: 'Description must be at least 10 characters long' })
+  @MaxLength(1000, { message: 'Description must not be more than 500 charaacters long.' })
   description: string;
 
   @ApiProperty({ example: '2025-06-01' })

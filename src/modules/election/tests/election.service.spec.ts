@@ -16,6 +16,8 @@ import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -833,24 +835,26 @@ describe('ElectionService', () => {
       expect(electionRepository.save).toHaveBeenCalled();
     });
 
-    //   it('should throw an exception when start datetime is in the past', async () => {
+    it('should throw an exception when title is a single character', async () => {
+      const dto = plainToInstance(CreateElectionDto, {
+        ...baseDto,
+        title: 'A', // Single character
+      });
 
-    //     jest.setSystemTime(new Date('2025-03-01T00:00:00Z'));
+      const validationErrors = await validate(dto);
+      expect(validationErrors.length).toBeGreaterThan(0);
+      expect(validationErrors[0].constraints?.minLength).toBe('Title must be at least 10 characters long');
+    });
 
-    //     const dto = {
-    //       ...baseDto,
-    //       start_date: new Date('2025-03-01T00:00:00.000Z'),
-    //       end_date: new Date('2025-03-31T00:00:00.000Z'),
-    //       start_time: '09:00:00',
-    //       end_time: '17:00:00'
-    //     };
+    it('should throw an exception when description is a single character', async () => {
+      const dto = plainToInstance(CreateElectionDto, {
+        ...baseDto,
+        description: 'Short', // Single character
+      });
 
-    //     await expect(service.create(dto, adminId)).rejects.toThrow(
-    //       new HttpException(
-    //         { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
-    //         HttpStatus.BAD_REQUEST,
-    //       )
-    //     );
-    //   });
+      const validationErrors = await validate(dto);
+      expect(validationErrors.length).toBeGreaterThan(0);
+      expect(validationErrors[0].constraints?.minLength).toBe('Description must be at least 10 characters long');
+    });
   });
 });
