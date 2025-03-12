@@ -35,7 +35,6 @@ describe('UserService', () => {
   let configService: ConfigService;
   let emailService: EmailService;
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
-  let emailService: EmailService;
 
   beforeEach(async () => {
     const mockUserRepository = {
