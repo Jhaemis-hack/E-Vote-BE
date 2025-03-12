@@ -287,7 +287,7 @@ export class UserService {
       }
 
       if (user.is_verified) {
-        throw new BadRequestException('Email already verified');
+        throw new BadRequestException(SYS_MSG.EMAIL_ALREADY_VERIFIED);
       }
 
       user.is_verified = true;
