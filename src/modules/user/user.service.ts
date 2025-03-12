@@ -17,13 +17,18 @@ import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { exist, string } from 'joi';
+import { EmailService } from '../email/email.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private readonly mailService: EmailService, // Inject your mail service
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -205,64 +210,5 @@ export class UserService {
       status_code: HttpStatus.OK,
       message: SYS_MSG.DELETE_USER,
     };
-  }
-
-  async verifyEmail(token: string) {
-    try {
-      // Verify the JWT token
-      const payload = this.jwtService.verify(token);
-
-      // Extract the user ID from the payload
-      const userId = payload.sub;
-
-      // Find the user by ID
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-
-      if (!user) {
-        throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
-      }
-
-      // If the user is already verified, return appropriate message
-      if (user.is_verified) {
-        return {
-          status_code: HttpStatus.OK,
-          message: SYS_MSG.EMAIL_ALREADY_VERIFIED,
-          data: {
-            ...user,
-            password: undefined,
-            is_verified: true,
-          },
-        };
-      }
-
-      // Update the user's verification status
-      user.is_verified = true;
-      await this.userRepository.save(user);
-
-      // Return success response
-      return {
-        status_code: HttpStatus.OK,
-        message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
-        data: {
-          ...user,
-          password: undefined,
-          is_verified: true,
-        },
-      };
-    } catch (error) {
-      if (error.name === 'JsonWebTokenError') {
-        throw new BadRequestException({
-          message: SYS_MSG.INVALID_VERIFICATION_TOKEN,
-          status_code: HttpStatus.BAD_REQUEST,
-        });
-      }
-      if (error.name === 'TokenExpiredError') {
-        throw new BadRequestException({
-          message: SYS_MSG.VERIFICATION_TOKEN_EXPIRED,
-          status_code: HttpStatus.BAD_REQUEST,
-        });
-      }
-      throw error;
-    }
   }
 }

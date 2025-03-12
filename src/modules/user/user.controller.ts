@@ -15,6 +15,7 @@ import {
   ValidationPipe,
   BadRequestException,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,6 +25,8 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { STATUS_CODES } from 'http';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -98,17 +101,5 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found.' })
   deactivateUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.deactivateUser(id);
-  }
-
-  @Get('verify-email')
-  @ApiOperation({ summary: 'Verify admin email using the token sent to their inbox' })
-  @ApiResponse({ status: 200, description: 'Account has been verified', type: User })
-  @ApiResponse({ status: 400, description: 'Bad Request.' })
-  async verifyEmail(@Query('token') token: string) {
-    if (!token) {
-      throw new BadRequestException('Token is required');
-    }
-
-    return this.userService.verifyEmail(token);
   }
 }
