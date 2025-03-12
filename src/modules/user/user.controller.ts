@@ -102,4 +102,14 @@ export class UserController {
   deactivateUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.deactivateUser(id);
   }
+
+  @Get('/verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify user email' })
+  @ApiQuery({ name: 'token', required: true, type: String, description: 'Verification token' })
+  @ApiResponse({ status: 200, description: 'Account has been verified' })
+  @ApiResponse({ status: 400, description: 'Invalid token' })
+  async verifyEmail(@Query('token') token: string) {
+    return this.userService.verifyEmail(token);
+  }
 }

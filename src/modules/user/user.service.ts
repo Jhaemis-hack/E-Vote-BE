@@ -211,4 +211,63 @@ export class UserService {
       message: SYS_MSG.DELETE_USER,
     };
   }
+
+  async verifyEmail(token: string) {
+    try {
+      // Verify the JWT token
+      const payload = this.jwtService.verify(token);
+
+      // Extract the user ID from the payload
+      const userId = payload.sub;
+
+      // Find the user by ID
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+
+      if (!user) {
+        throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+      }
+
+      // If the user is already verified, return appropriate message
+      if (user.is_verified) {
+        return {
+          status_code: HttpStatus.OK,
+          message: 'Account is already verified',
+          data: {
+            ...user,
+            password: undefined,
+            is_verified: true,
+          },
+        };
+      }
+
+      // Update the user's verification status
+      user.is_verified = true;
+      await this.userRepository.save(user);
+
+      // Return success response
+      return {
+        status_code: HttpStatus.OK,
+        message: 'Account has been verified',
+        data: {
+          ...user,
+          password: undefined,
+          is_verified: true,
+        },
+      };
+    } catch (error) {
+      if (error.name === 'JsonWebTokenError') {
+        throw new BadRequestException({
+          message: 'Invalid verification token',
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      if (error.name === 'TokenExpiredError') {
+        throw new BadRequestException({
+          message: 'Verification token has expired',
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      throw error;
+    }
+  }
 }
