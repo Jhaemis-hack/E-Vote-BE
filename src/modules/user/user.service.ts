@@ -247,15 +247,7 @@ export class UserService {
       }
 
       if (user.is_verified) {
-        return {
-          status_code: HttpStatus.OK,
-          message: 'Account is already verified',
-          data: {
-            ...user,
-            password: undefined,
-            is_verified: true,
-          },
-        };
+        throw new BadRequestException('Email already verified');
       }
 
       user.is_verified = true;
@@ -265,8 +257,8 @@ export class UserService {
         status_code: HttpStatus.OK,
         message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
         data: {
-          ...user,
-          password: undefined,
+          id: user.id,
+          email: user.email,
           is_verified: true,
         },
       };
