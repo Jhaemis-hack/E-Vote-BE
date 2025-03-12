@@ -21,6 +21,7 @@ import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class UserService {
@@ -238,6 +239,33 @@ export class UserService {
     await this.forgotPasswordRepository.save(forgotPasswordToken);
     return {
       message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
+      data: null,
+    };
+  }
+  async resetPassword(resetPassword: ResetPasswordDto): Promise<{ message: string; data: null }> {
+    const { email, reset_token, password } = resetPassword;
+    const resetPasswordRequestExist = this.forgotPasswordRepository.findOne({ where: { reset_token } });
+    if (!resetPasswordRequestExist) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.PASSWORD_RESET_REQUEST_NOT_FOUND,
+      });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const adminExist = await this.userRepository.findOne({
+      where: { email },
+    });
+    if (!adminExist) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+    adminExist.password = hashedPassword;
+    await this.userRepository.save(adminExist);
+    await this.forgotPasswordRepository.delete({ reset_token });
+    return {
+      message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
       data: null,
     };
   }

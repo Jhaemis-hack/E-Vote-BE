@@ -43,3 +43,5 @@ export const ERROR_START_TIME_AFTER_END_TIME = 'Start time must be before the en
 export const ERROR_START_TIME_PAST = 'Start time cannot be in the past.';
 export const ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME =
   'End time must be greater than start time for elections on the same day.';
+export const PASSWORD_RESET_REQUEST_NOT_FOUND = 'pasword resset request not found';
+export const PASSWORD_UPDATED_SUCCESSFULLY = 'Admin Password Updated Successfully,please proceed to login';
