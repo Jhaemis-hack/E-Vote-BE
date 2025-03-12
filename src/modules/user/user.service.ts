@@ -244,14 +244,15 @@ export class UserService {
   }
   async resetPassword(resetPassword: ResetPasswordDto): Promise<{ message: string; data: null }> {
     const { email, reset_token, password } = resetPassword;
-    const resetPasswordRequestExist = this.forgotPasswordRepository.findOne({ where: { reset_token } });
+    const resetPasswordRequestExist = await this.forgotPasswordRepository.findOne({ where: { reset_token } });
+
     if (!resetPasswordRequestExist) {
       throw new NotFoundException({
         status_code: HttpStatus.NOT_FOUND,
         message: SYS_MSG.PASSWORD_RESET_REQUEST_NOT_FOUND,
       });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+
     const adminExist = await this.userRepository.findOne({
       where: { email },
     });
@@ -261,6 +262,7 @@ export class UserService {
         message: SYS_MSG.USER_NOT_FOUND,
       });
     }
+    const hashedPassword = await bcrypt.hash(password, 10);
     adminExist.password = hashedPassword;
     await this.userRepository.save(adminExist);
     await this.forgotPasswordRepository.delete({ reset_token });
