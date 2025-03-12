@@ -214,20 +214,16 @@ export class UserService {
 
   async verifyEmail(token: string) {
     try {
-      // Verify the JWT token
       const payload = this.jwtService.verify(token);
 
-      // Extract the user ID from the payload
       const userId = payload.sub;
 
-      // Find the user by ID
       const user = await this.userRepository.findOne({ where: { id: userId } });
 
       if (!user) {
         throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
       }
 
-      // If the user is already verified, return appropriate message
       if (user.is_verified) {
         return {
           status_code: HttpStatus.OK,
@@ -240,14 +236,12 @@ export class UserService {
         };
       }
 
-      // Update the user's verification status
       user.is_verified = true;
       await this.userRepository.save(user);
 
-      // Return success response
       return {
         status_code: HttpStatus.OK,
-        message: 'Account has been verified',
+        message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
         data: {
           ...user,
           password: undefined,
@@ -257,13 +251,13 @@ export class UserService {
     } catch (error) {
       if (error.name === 'JsonWebTokenError') {
         throw new BadRequestException({
-          message: 'Invalid verification token',
+          message: SYS_MSG.INVALID_VERIFICATION_TOKEN,
           status_code: HttpStatus.BAD_REQUEST,
         });
       }
       if (error.name === 'TokenExpiredError') {
         throw new BadRequestException({
-          message: 'Verification token has expired',
+          message: SYS_MSG.VERIFICATION_TOKEN_EXPIRED,
           status_code: HttpStatus.BAD_REQUEST,
         });
       }
