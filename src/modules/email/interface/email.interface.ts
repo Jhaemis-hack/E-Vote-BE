@@ -10,5 +10,5 @@ export interface MailInterface {
 
 export interface EmailSender {
   mail: MailInterface;
-  template: 'verify-email';
+  template: 'verify-email' | 'reset-password';
 }

@@ -27,6 +27,7 @@ import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { STATUS_CODES } from 'http';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -111,11 +112,21 @@ export class UserController {
   async forgotPassword(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<{ message: string }> {
-    await this.userService.forgotPassword(forgotPasswordDto);
-    return {
-      message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
-    };
+  ) {
+    return await this.userService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset user password using a valid reset token' })
+  @ApiResponse({ status: 200, description: 'Admin Password Updated Successfully,please proceed to login.' })
+  @ApiResponse({ status: 404, description: 'User with this email does not exist.' })
+  @ApiResponse({ status: 404, description: 'Password reset request not found.' })
+  async resetPasssword(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    resetPasswordDto: ResetPasswordDto,
+  ) {
+    return await this.userService.resetPassword(resetPasswordDto);
   }
 
   @Get('/verify-email')
