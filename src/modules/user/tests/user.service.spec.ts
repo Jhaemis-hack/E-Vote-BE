@@ -17,7 +17,9 @@ import { UserService } from '../user.service';
 import { randomUUID } from 'crypto';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { EmailService } from 'src/modules/email/email.service';
+import { ForgotPasswordToken } from '../entities/forgot-password.entity';
+import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { EmailService } from '../../email/email.service';
 
 interface CreateUserDto {
   id?: string;
@@ -32,6 +34,7 @@ describe('UserService', () => {
   let jwtService: JwtService;
   let configService: ConfigService;
   let emailService: EmailService;
+  let forgotPasswordRepository: Repository<ForgotPasswordToken>;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -41,12 +44,20 @@ describe('UserService', () => {
       softRemove: jest.fn(),
     };
 
+    const mockForgotPasswordTokenRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+
     const mockJwtService = {
       sign: jest.fn(),
     };
 
     const mockConfigService = {
       get: jest.fn().mockReturnValue('mocked-secret-key'),
+    };
+    const mockEmailService = {
+      sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -65,10 +76,12 @@ describe('UserService', () => {
           useValue: mockConfigService,
         },
         {
+          provide: getRepositoryToken(ForgotPasswordToken),
+          useValue: mockForgotPasswordTokenRepository,
+        },
+        {
           provide: EmailService,
-          useValue: {
-            sendVerificationMail: jest.fn(),
-          },
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -78,6 +91,7 @@ describe('UserService', () => {
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
     emailService = module.get<EmailService>(EmailService);
+    forgotPasswordRepository = module.get<Repository<ForgotPasswordToken>>(getRepositoryToken(ForgotPasswordToken));
   });
 
   describe('registerAdmin', () => {
@@ -328,7 +342,7 @@ describe('UserService', () => {
     });
   });
   describe('update', () => {
-    it('✅ should update a user successfully', async () => {
+    it('should update a user successfully', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -354,7 +368,7 @@ describe('UserService', () => {
       });
     });
 
-    it('❌ should throw UnauthorizedException if currentUser is not provided', async () => {
+    it('should throw UnauthorizedException if currentUser is not provided', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -368,7 +382,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw NotFoundException if user does not exist', async () => {
+    it('should throw NotFoundException if user does not exist', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -388,7 +402,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw UnauthorizedException if a non-admin tries to update another user', async () => {
+    it('should throw UnauthorizedException if a non-admin tries to update another user', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
@@ -413,7 +427,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw BadRequestException for an invalid password', async () => {
+    it('should throw BadRequestException for an invalid password', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         password: 'short',
@@ -439,7 +453,7 @@ describe('UserService', () => {
       );
     });
 
-    it('❌ should throw BadRequestException for an invalid email', async () => {
+    it('should throw BadRequestException for an invalid email', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'invalid-email',
@@ -463,6 +477,53 @@ describe('UserService', () => {
           data: null,
         }),
       );
+    });
+  });
+  describe('forgotPassword', () => {
+    const email = 'test@example.com';
+    const forgotPasswordDto: ForgotPasswordDto = {
+      email,
+    };
+
+    it('should throw NotFoundException if user does not exist', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.forgotPassword(forgotPasswordDto)).rejects.toThrow(
+        new NotFoundException({
+          status_code: 404,
+          message: SYS_MSG.USER_NOT_FOUND,
+        }),
+      );
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { email: forgotPasswordDto.email },
+      });
+    });
+
+    it('should create and save a ForgotPasswordToken if user exists', async () => {
+      const user = { email } as User;
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(user);
+
+      const mockForgotPasswordToken = {
+        email: user.email,
+        reset_token: process.env.PASSWORD_RESET_TOKEN_SECRET,
+        token_expiry: new Date(Date.now() + 86400000),
+      } as ForgotPasswordToken;
+      jest.spyOn(forgotPasswordRepository, 'create').mockReturnValue(mockForgotPasswordToken);
+      jest.spyOn(forgotPasswordRepository, 'save').mockResolvedValue(mockForgotPasswordToken);
+      await userService.forgotPassword(forgotPasswordDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { email: forgotPasswordDto.email },
+      });
+
+      expect(forgotPasswordRepository.create).toHaveBeenCalledWith({
+        email: user.email,
+        reset_token: process.env.PASSWORD_RESET_TOKEN_SECRET,
+        token_expiry: expect.any(Date),
+      });
+
+      expect(forgotPasswordRepository.save).toHaveBeenCalledWith(mockForgotPasswordToken);
     });
   });
 });
