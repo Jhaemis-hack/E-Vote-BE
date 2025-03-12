@@ -42,3 +42,8 @@ export const ERROR_START_TIME_AFTER_END_TIME = 'Start time must be before the en
 export const ERROR_START_TIME_PAST = 'Start time cannot be in the past.';
 export const ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME =
   'End time must be greater than start time for elections on the same day.';
+// Add these to your SYS_MSG constants
+export const EMAIL_VERIFICATION_SUCCESS = 'Account has been verified';
+export const EMAIL_ALREADY_VERIFIED = 'Account is already verified';
+export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
+export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';
