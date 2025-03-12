@@ -114,6 +114,7 @@ export class UserService {
     const { password, ...admin } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };
     const token = this.jwtService.sign(credentials);
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
