@@ -14,6 +14,8 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { ForgotPasswordToken } from '../entities/forgot-password.entity';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { EmailService } from '../../email/email.service';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { DeleteResult } from 'typeorm';
 
 interface CreateUserDto {
   id?: string;
@@ -41,6 +43,8 @@ describe('UserService', () => {
     const mockForgotPasswordTokenRepository = {
       create: jest.fn(),
       save: jest.fn(),
+      findOne: jest.fn(), // Add this line
+      delete: jest.fn(),
     };
 
     const mockJwtService = {
@@ -208,6 +212,100 @@ describe('UserService', () => {
           data: null,
         }),
       );
+    });
+  });
+  describe('resetPassword', () => {
+    const resetPasswordDto: ResetPasswordDto = {
+      email: 'test@example.com',
+      reset_token: 'valid_token',
+      password: 'NewPassword123!',
+    };
+
+    it('should throw NotFoundException if reset request does not exist', async () => {
+      jest.spyOn(forgotPasswordRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.resetPassword(resetPasswordDto)).rejects.toThrow(
+        new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.PASSWORD_RESET_REQUEST_NOT_FOUND,
+        }),
+      );
+
+      expect(forgotPasswordRepository.findOne).toHaveBeenCalledWith({
+        where: { reset_token: resetPasswordDto.reset_token },
+      });
+    });
+
+    it('should throw NotFoundException if user does not exist', async () => {
+      jest.spyOn(forgotPasswordRepository, 'findOne').mockResolvedValue({
+        id: '1',
+        email: resetPasswordDto.email,
+        reset_token: resetPasswordDto.reset_token,
+        token_expiry: new Date(Date.now() + 3600000), // 1 hour validity
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as ForgotPasswordToken);
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.resetPassword(resetPasswordDto)).rejects.toThrow(
+        new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.USER_NOT_FOUND,
+        }),
+      );
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { email: resetPasswordDto.email } });
+    });
+    it('should throw NotFoundException if user does not exist', async () => {
+      jest.spyOn(forgotPasswordRepository, 'findOne').mockResolvedValue({
+        id: '1',
+        email: resetPasswordDto.email,
+        reset_token: resetPasswordDto.reset_token,
+        token_expiry: new Date(Date.now() + 3600000), // 1 hour validity
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as ForgotPasswordToken);
+
+      // Simulate that the user does not exist
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(userService.resetPassword(resetPasswordDto)).rejects.toThrow(
+        new NotFoundException({
+          status_code: HttpStatus.NOT_FOUND,
+          message: SYS_MSG.USER_NOT_FOUND,
+        }),
+      );
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { email: resetPasswordDto.email } });
+    });
+
+    it('should hash password, update user, and delete reset request on success', async () => {
+      const mockUser = { id: '1', email: resetPasswordDto.email, password: 'oldHashedPassword' } as User;
+      const mockResetRequest = { reset_token: resetPasswordDto.reset_token } as ForgotPasswordToken;
+
+      jest.spyOn(forgotPasswordRepository, 'findOne').mockResolvedValue(mockResetRequest);
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+
+      const hashedPassword = 'hashedPassword';
+      const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
+        ReturnType<(key: string) => Promise<string>>,
+        Parameters<(key: string) => Promise<string>>
+      >;
+      hashSpy.mockResolvedValueOnce('hashedPassword');
+      jest.spyOn(userRepository, 'save').mockResolvedValue({ ...mockUser, password: hashedPassword });
+      jest.spyOn(forgotPasswordRepository, 'delete').mockResolvedValue({ affected: 1 } as DeleteResult);
+
+      const result = await userService.resetPassword(resetPasswordDto);
+
+      expect(bcrypt.hash).toHaveBeenCalledWith(resetPasswordDto.password, 10);
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          password: hashedPassword,
+        }),
+      );
+      expect(forgotPasswordRepository.delete).toHaveBeenCalledWith({ reset_token: resetPasswordDto.reset_token });
+      expect(result).toEqual({ message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY, data: null });
     });
   });
 
