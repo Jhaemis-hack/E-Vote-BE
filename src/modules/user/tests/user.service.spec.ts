@@ -1,4 +1,10 @@
-import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  UnauthorizedException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -11,6 +17,7 @@ import { UserService } from '../user.service';
 import { randomUUID } from 'crypto';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { EmailService } from 'src/modules/email/email.service';
 
 interface CreateUserDto {
   id?: string;
@@ -24,6 +31,7 @@ describe('UserService', () => {
   let userRepository: Repository<User>;
   let jwtService: JwtService;
   let configService: ConfigService;
+  let emailService: EmailService;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -56,6 +64,12 @@ describe('UserService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: EmailService,
+          useValue: {
+            sendVerificationMail: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -63,6 +77,7 @@ describe('UserService', () => {
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
+    emailService = module.get<EmailService>(EmailService);
   });
 
   describe('registerAdmin', () => {
@@ -134,6 +149,46 @@ describe('UserService', () => {
         ),
       );
     });
+
+    it('should throw an error if email sending fails', async () => {
+      const userDto: CreateUserDto = {
+        email: 'admin@example.com',
+        password: 'weakpass',
+        is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
+      jest.spyOn(emailService, 'sendVerificationMail').mockRejectedValue(new Error('Email sending failed'));
+
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(
+        new ForbiddenException(SYS_MSG.EMAIL_VERIFICATION_FAILED),
+      );
+    });
+
+    it('should save the user and return the correct response if email is sent successfully', async () => {
+      const adminDto: CreateUserDto = {
+        id: randomUUID(),
+        email: 'admin@example.com',
+        password: 'StrongPass1!',
+        is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
+      jest.spyOn(userRepository, 'save').mockResolvedValue(new User());
+      jest.spyOn(emailService, 'sendVerificationMail').mockResolvedValue();
+
+      const result = await userService.registerAdmin(adminDto);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.CREATED,
+        message: SYS_MSG.SIGNUP_MESSAGE,
+        data: {
+          id: adminDto.id,
+          email: adminDto.email,
+          token: 'mockedToken',
+        },
+      });
+    });
   });
 
   describe('login', () => {
@@ -195,6 +250,26 @@ describe('UserService', () => {
       jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => false);
 
       await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD));
+    });
+
+    it('should throw an error if user is not verified', async () => {
+      const loginDto: LoginDto = {
+        email: 'user@example.com',
+        password: 'CorrectPass1!',
+      };
+
+      const hashedPassword = await bcrypt.hash(loginDto.password, 10);
+      const mockUser: Partial<User> = {
+        id: randomUUID(),
+        email: loginDto.email,
+        password: hashedPassword,
+        is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+
+      await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED));
     });
   });
 

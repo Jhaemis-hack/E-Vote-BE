@@ -1,6 +1,4 @@
 {
-    "cSpell.words": [
-        "multichoice",
-        "votelink"
-    ]
+  "cSpell.words": ["multichoice", "votelink"],
+  "postman.settings.dotenv-detection-notification-visibility": false
 }

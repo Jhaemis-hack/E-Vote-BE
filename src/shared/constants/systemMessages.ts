@@ -26,6 +26,7 @@ export const ELECTION_ACTIVE_CANNOT_DELETE = 'Election is active and cannot be d
 export const EEROR_DELETING_ELECTION = 'Error occured while deleting election';
 export const UNAUTHORIZED_USER = 'Authorization is required to access this route.';
 export const EMAIL_NOT_VERIFIED = 'Email not verified. Verify email and try again.';
+export const EMAIL_VERIFICATION_FAILED = 'Email verification failed. Please try again.';
 export const VOTE_CREATION_MESSAGE = 'Thank you for voting! Your vote has been recorded.';
 export const CANDIDATE_NOT_FOUND = 'Candidate not found';
 export const ELECTION_START_DATE_BEFORE_END_DATE = 'start_date must be before end_date';
