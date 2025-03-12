@@ -21,6 +21,7 @@ import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class UserService {
@@ -270,5 +271,79 @@ export class UserService {
       message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
       data: null,
     };
+  }
+  async resetPassword(resetPassword: ResetPasswordDto): Promise<{ message: string; data: null }> {
+    const { email, reset_token, password } = resetPassword;
+    const resetPasswordRequestExist = await this.forgotPasswordRepository.findOne({ where: { reset_token } });
+
+    if (!resetPasswordRequestExist) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.PASSWORD_RESET_REQUEST_NOT_FOUND,
+      });
+    }
+
+    const adminExist = await this.userRepository.findOne({
+      where: { email },
+    });
+    if (!adminExist) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    adminExist.password = hashedPassword;
+    await this.userRepository.save(adminExist);
+    await this.forgotPasswordRepository.delete({ reset_token });
+    return {
+      message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
+      data: null,
+    };
+  }
+
+  async verifyEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+
+      const userId = payload.sub;
+
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+
+      if (!user) {
+        throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+      }
+
+      if (user.is_verified) {
+        throw new BadRequestException(SYS_MSG.EMAIL_ALREADY_VERIFIED);
+      }
+
+      user.is_verified = true;
+      await this.userRepository.save(user);
+
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
+        data: {
+          id: user.id,
+          email: user.email,
+          is_verified: true,
+        },
+      };
+    } catch (error) {
+      if (error.name === 'JsonWebTokenError') {
+        throw new BadRequestException({
+          message: SYS_MSG.INVALID_VERIFICATION_TOKEN,
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      if (error.name === 'TokenExpiredError') {
+        throw new BadRequestException({
+          message: SYS_MSG.VERIFICATION_TOKEN_EXPIRED,
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      throw error;
+    }
   }
 }
