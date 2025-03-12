@@ -90,7 +90,7 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
     }
 
-    if (!userExist.is_verified) {
+    if (userExist.is_verified === false) {
       const credentials = { email: userExist.email, sub: userExist.id };
       const token = this.jwtService.sign(credentials);
 
