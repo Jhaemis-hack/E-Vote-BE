@@ -45,3 +45,7 @@ export const ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME =
   'End time must be greater than start time for elections on the same day.';
 export const PASSWORD_RESET_REQUEST_NOT_FOUND = 'pasword reset request not found';
 export const PASSWORD_UPDATED_SUCCESSFULLY = 'Admin Password Updated Successfully,please proceed to login';
+export const EMAIL_VERIFICATION_SUCCESS = 'Email has been verified';
+export const EMAIL_ALREADY_VERIFIED = 'Email already verified';
+export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
+export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';

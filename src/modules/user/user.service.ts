@@ -76,9 +76,9 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND);
     }
 
-    // if (userExist.is_verified === false) {
-    //   throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED);
-    // }
+    if (userExist.is_verified === false) {
+      throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED);
+    }
 
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
@@ -272,5 +272,50 @@ export class UserService {
       message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
       data: null,
     };
+  }
+
+  async verifyEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+
+      const userId = payload.sub;
+
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+
+      if (!user) {
+        throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+      }
+
+      if (user.is_verified) {
+        throw new BadRequestException(SYS_MSG.EMAIL_ALREADY_VERIFIED);
+      }
+
+      user.is_verified = true;
+      await this.userRepository.save(user);
+
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
+        data: {
+          id: user.id,
+          email: user.email,
+          is_verified: true,
+        },
+      };
+    } catch (error) {
+      if (error.name === 'JsonWebTokenError') {
+        throw new BadRequestException({
+          message: SYS_MSG.INVALID_VERIFICATION_TOKEN,
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      if (error.name === 'TokenExpiredError') {
+        throw new BadRequestException({
+          message: SYS_MSG.VERIFICATION_TOKEN_EXPIRED,
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      throw error;
+    }
   }
 }
