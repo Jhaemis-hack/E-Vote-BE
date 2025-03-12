@@ -35,6 +35,7 @@ describe('UserService', () => {
   let configService: ConfigService;
   let emailService: EmailService;
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
+  let emailService: EmailService;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -57,7 +58,7 @@ describe('UserService', () => {
       get: jest.fn().mockReturnValue('mocked-secret-key'),
     };
     const mockEmailService = {
-      sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+      sendForgotPasswordMail: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -92,6 +93,7 @@ describe('UserService', () => {
     configService = module.get<ConfigService>(ConfigService);
     emailService = module.get<EmailService>(EmailService);
     forgotPasswordRepository = module.get<Repository<ForgotPasswordToken>>(getRepositoryToken(ForgotPasswordToken));
+    emailService = module.get<EmailService>(EmailService);
   });
 
   describe('registerAdmin', () => {
@@ -500,30 +502,29 @@ describe('UserService', () => {
     });
 
     it('should create and save a ForgotPasswordToken if user exists', async () => {
-      const user = { email } as User;
+      const mockUser = { id: '1', email: 'test@example.com' } as User;
+      const reset_token = '1234567';
 
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(user);
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
 
       const mockForgotPasswordToken = {
-        email: user.email,
-        reset_token: process.env.PASSWORD_RESET_TOKEN_SECRET,
+        reset_token: reset_token,
         token_expiry: new Date(Date.now() + 86400000),
       } as ForgotPasswordToken;
+
       jest.spyOn(forgotPasswordRepository, 'create').mockReturnValue(mockForgotPasswordToken);
       jest.spyOn(forgotPasswordRepository, 'save').mockResolvedValue(mockForgotPasswordToken);
-      await userService.forgotPassword(forgotPasswordDto);
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        where: { email: forgotPasswordDto.email },
-      });
+      const sendMailSpy = jest.spyOn(emailService, 'sendForgotPasswordMail');
 
-      expect(forgotPasswordRepository.create).toHaveBeenCalledWith({
-        email: user.email,
-        reset_token: process.env.PASSWORD_RESET_TOKEN_SECRET,
-        token_expiry: expect.any(Date),
-      });
+      await userService.forgotPassword({ email: mockUser.email });
 
-      expect(forgotPasswordRepository.save).toHaveBeenCalledWith(mockForgotPasswordToken);
+      expect(sendMailSpy).toHaveBeenCalledWith(
+        mockUser.email,
+        'Admin',
+        `${process.env.FRONTEND_URL}/reset-password`,
+        expect.any(String),
+      );
     });
   });
 });
