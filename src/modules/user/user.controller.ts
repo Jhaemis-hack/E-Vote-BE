@@ -111,10 +111,7 @@ export class UserController {
   async forgotPassword(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<{ message: string }> {
-    await this.userService.forgotPassword(forgotPasswordDto);
-    return {
-      message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
-    };
+  ) {
+    return await this.userService.forgotPassword(forgotPasswordDto);
   }
 }

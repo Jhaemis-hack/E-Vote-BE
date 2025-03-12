@@ -11,7 +11,7 @@ import dataSource from './migrations/migration.config';
 import authConfig from './config/auth.config';
 import { VoteModule } from './modules/votes/votes.module';
 // import dataSource from './migrations/migration.config';
-
+import { EmailModule } from './modules/email/email.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -36,6 +36,7 @@ import { VoteModule } from './modules/votes/votes.module';
     UserModule,
     ElectionModule,
     VoteModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

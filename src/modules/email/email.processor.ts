@@ -22,4 +22,21 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - SendVerifyEmailError: ${SendVerifyEmailError.message}`);
     }
   }
+
+  @Process('reset-password')
+  async sendResetPasswordEmailJob(job: Job<MailInterface>) {
+    try {
+      const {
+        data: { mail },
+      } = job;
+      await this.mailerService.sendMail({
+        ...mail,
+        subject: 'Reset Password',
+        template: 'Reset-Password-Template',
+      });
+      this.logger.log(`Reset password email sent successfully to ${mail.to}`);
+    } catch (sendResetPasswordEmailJobError) {
+      this.logger.error(`EmailProcessor - sendResetPasswordEmailJobError: ${sendResetPasswordEmailJobError}`);
+    }
+  }
 }
