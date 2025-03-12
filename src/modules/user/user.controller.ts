@@ -15,6 +15,7 @@ import {
   ValidationPipe,
   BadRequestException,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,6 +26,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { STATUS_CODES } from 'http';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -102,7 +104,6 @@ export class UserController {
   }
 
   @Post('forgot-password')
-  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request a password reset link' })
   @ApiResponse({ status: 200, description: 'Password reset link has been sent to your email.' })
@@ -110,14 +111,10 @@ export class UserController {
   async forgotPassword(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     forgotPasswordDto: ForgotPasswordDto,
-  ) {
-    try {
-      await this.userService.forgotPassword(forgotPasswordDto);
-      return {
-        message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
+  ): Promise<{ message: string }> {
+    await this.userService.forgotPassword(forgotPasswordDto);
+    return {
+      message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
+    };
   }
 }
