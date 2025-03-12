@@ -212,6 +212,28 @@ export class UserService {
     };
   }
 
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+
+    const resetToken = process.env.PASSWORD_RESET_TOKEN_SECRET;
+    const resetTokenExpiry = new Date(Date.now() + 86400000);
+
+    const forgotPasswordToken = this.forgotPasswordRepository.create({
+      email: user.email,
+      reset_token: resetToken,
+      token_expiry: resetTokenExpiry,
+    });
+    await this.forgotPasswordRepository.save(forgotPasswordToken);
+  }
+
   async verifyEmail(token: string) {
     try {
       const payload = this.jwtService.verify(token);

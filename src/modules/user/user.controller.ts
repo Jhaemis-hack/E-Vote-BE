@@ -103,6 +103,21 @@ export class UserController {
     return this.userService.deactivateUser(id);
   }
 
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request a password reset link' })
+  @ApiResponse({ status: 200, description: 'Password reset link has been sent to your email.' })
+  @ApiResponse({ status: 404, description: 'User with this email does not exist.' })
+  async forgotPassword(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    await this.userService.forgotPassword(forgotPasswordDto);
+    return {
+      message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
+    };
+  }
+
   @Get('/verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify user email' })
