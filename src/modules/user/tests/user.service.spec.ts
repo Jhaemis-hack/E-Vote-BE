@@ -44,6 +44,7 @@ describe('UserService', () => {
 
     const mockJwtService = {
       sign: jest.fn(),
+      verify: jest.fn(),
     };
 
     const mockConfigService = {
@@ -508,6 +509,131 @@ describe('UserService', () => {
       });
 
       expect(forgotPasswordRepository.save).toHaveBeenCalledWith(mockForgotPasswordToken);
+    });
+  });
+
+  describe('UserService - verifyEmail', () => {
+    let userService: UserService;
+    let jwtService: JwtService;
+    let userRepository: any;
+    let forgotPasswordTokenRepository: any; // Mocked repository
+    let someService: any; // Mocked dependency
+    let configService: any; // Mocked dependency
+
+    const mockToken = 'valid.jwt.token';
+    const mockPayload = { email: 'test@example.com', sub: '123' }; // Ensure `sub` exists
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+
+      // Mock all dependencies
+      userRepository = {
+        findOne: jest.fn(),
+        save: jest.fn(),
+      };
+
+      forgotPasswordTokenRepository = {
+        findOne: jest.fn(),
+        save: jest.fn(),
+      };
+
+      jwtService = new JwtService();
+      jest.spyOn(jwtService, 'verify').mockReturnValue(mockPayload);
+
+      someService = {}; // Mocked service
+      configService = {}; // Mocked service
+
+      // Instantiate UserService with all required dependencies
+      userService = new UserService(
+        userRepository,
+        forgotPasswordTokenRepository, // Pass the mocked repository here
+        jwtService,
+        someService,
+        configService,
+      );
+    });
+
+    it('✅ should verify email successfully', async () => {
+      const mockUser = {
+        id: '123',
+        email: 'test@example.com',
+        is_verified: false,
+      };
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      userRepository.save.mockResolvedValue({ ...mockUser, is_verified: true });
+
+      const result = await userService.verifyEmail(mockToken);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
+        data: {
+          id: '123', // Include this
+          email: 'test@example.com', // Include this
+          is_verified: true,
+        },
+      });
+
+      expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: mockPayload.sub } });
+      expect(userRepository.save).toHaveBeenCalledWith({ ...mockUser, is_verified: true });
+    });
+
+    it('❌ should throw NotFoundException if user does not exist', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(userService.verifyEmail(mockToken)).rejects.toThrow(new NotFoundException(SYS_MSG.USER_NOT_FOUND));
+
+      expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: mockPayload.sub } });
+    });
+
+    it('❌ should throw BadRequestException if email is already verified', async () => {
+      const mockUser = {
+        id: '123',
+        email: 'test@example.com',
+        is_verified: true,
+      };
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+
+      await expect(userService.verifyEmail(mockToken)).rejects.toThrow(
+        new BadRequestException('Email already verified'),
+      );
+
+      expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: mockPayload.sub } });
+    });
+
+    it('❌ should throw BadRequestException for invalid token', async () => {
+      jest.spyOn(jwtService, 'verify').mockImplementation(() => {
+        throw { name: 'JsonWebTokenError' }; // Match the error structure
+      });
+
+      await expect(userService.verifyEmail(mockToken)).rejects.toThrow(
+        new BadRequestException({
+          message: SYS_MSG.INVALID_VERIFICATION_TOKEN,
+          status_code: HttpStatus.BAD_REQUEST,
+        }),
+      );
+
+      expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
+    });
+
+    it('❌ should throw BadRequestException for expired token', async () => {
+      jest.spyOn(jwtService, 'verify').mockImplementation(() => {
+        throw { name: 'TokenExpiredError' }; // Match the error structure
+      });
+
+      await expect(userService.verifyEmail(mockToken)).rejects.toThrow(
+        new BadRequestException({
+          message: SYS_MSG.VERIFICATION_TOKEN_EXPIRED,
+          status_code: HttpStatus.BAD_REQUEST,
+        }),
+      );
+
+      expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
     });
   });
 });
