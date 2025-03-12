@@ -99,4 +99,16 @@ export class UserController {
   deactivateUser(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.deactivateUser(id);
   }
+
+  @Get('verify-email')
+  @ApiOperation({ summary: 'Verify admin email using the token sent to their inbox' })
+  @ApiResponse({ status: 200, description: 'Account has been verified', type: User })
+  @ApiResponse({ status: 400, description: 'Bad Request.' })
+  async verifyEmail(@Query('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Token is required');
+    }
+
+    return this.userService.verifyEmail(token);
+  }
 }
