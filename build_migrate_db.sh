@@ -14,9 +14,6 @@ log_info "Removing existing dist directory..."
 rm -rf dist
 rm -rf tsconfig.build.tsbuildinfo
 
-log_info "Building the project..."
-npm run build
-
 log_info "Running migration:generate..."
 npm run migration:generate
 generate_exit_code=$?
