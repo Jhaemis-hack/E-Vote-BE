@@ -60,9 +60,17 @@ export class UserService {
     const token = this.jwtService.sign(credentials);
 
     try {
-      await this.mailService.sendVerificationMail(newAdmin.email, token);
       await this.mailService.sendWelcomeMail(newAdmin.email);
-      await this.userRepository.save(newAdmin);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.WELCOME_EMAIL_FAILED,
+        data: null,
+      };
+    }
+
+    try {
+      await this.mailService.sendVerificationMail(newAdmin.email, token);
     } catch (err) {
       return {
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -70,6 +78,8 @@ export class UserService {
         data: null,
       };
     }
+
+    await this.userRepository.save(newAdmin);
 
     return {
       status_code: HttpStatus.CREATED,
@@ -98,6 +108,8 @@ export class UserService {
 
       try {
         await this.mailService.sendVerificationMail(userExist.email, token);
+
+        // Restricts the user from logging in until their email is verified
         return {
           status_code: HttpStatus.FORBIDDEN,
           message: SYS_MSG.EMAIL_NOT_VERIFIED,
