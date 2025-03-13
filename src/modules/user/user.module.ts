@@ -5,8 +5,9 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { User } from './entities/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { EmailModule } from '../email/email.module';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, ForgotPasswordToken]),
