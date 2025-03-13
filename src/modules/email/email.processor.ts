@@ -39,4 +39,21 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - sendResetPasswordEmailJobError: ${sendResetPasswordEmailJobError}`);
     }
   }
+
+  @Process('welcome-email')
+  async sendWelcomeEmailJob(job: Job<MailInterface>) {
+    try {
+      const {
+        data: { mail },
+      } = job;
+      await this.mailerService.sendMail({
+        ...mail,
+        subject: 'Welcome to our platform',
+        template: 'welcome-email',
+      });
+      this.logger.log(`Welcome email sent successfully to ${mail.to}`);
+    } catch (sendWelcomeEmailJobError) {
+      this.logger.error(`EmailProcessor - sendWelcomeEmailJobError: ${sendWelcomeEmailJobError}`);
+    }
+  }
 }

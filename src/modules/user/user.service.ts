@@ -30,7 +30,6 @@ export class UserService {
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private emailService: EmailService,
     private readonly mailService: EmailService, // Inject your mail service
   ) {}
 
@@ -54,14 +53,15 @@ export class UserService {
     const newAdmin = this.userRepository.create({
       email,
       password: hashedPassword,
-      is_verified: false,
+      is_verified: true,
     });
 
     const credentials = { email: newAdmin.email, sub: newAdmin.id };
     const token = this.jwtService.sign(credentials);
 
     try {
-      await this.emailService.sendVerificationMail(newAdmin.email, token);
+      await this.mailService.sendVerificationMail(newAdmin.email, token);
+      await this.mailService.sendWelcomeMail(newAdmin.email);
       await this.userRepository.save(newAdmin);
     } catch (err) {
       return {
@@ -97,7 +97,7 @@ export class UserService {
       const token = this.jwtService.sign(credentials);
 
       try {
-        await this.emailService.sendVerificationMail(userExist.email, token);
+        await this.mailService.sendVerificationMail(userExist.email, token);
         return {
           status_code: HttpStatus.FORBIDDEN,
           message: SYS_MSG.EMAIL_NOT_VERIFIED,
@@ -272,6 +272,7 @@ export class UserService {
       data: null,
     };
   }
+
   async resetPassword(resetPassword: ResetPasswordDto): Promise<{ message: string; data: null }> {
     const { email, reset_token, password } = resetPassword;
     const resetPasswordRequestExist = await this.forgotPasswordRepository.findOne({ where: { reset_token } });
@@ -305,11 +306,8 @@ export class UserService {
   async verifyEmail(token: string) {
     try {
       const payload = this.jwtService.verify(token);
-
       const userId = payload.sub;
-
       const user = await this.userRepository.findOne({ where: { id: userId } });
-
       if (!user) {
         throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
       }
