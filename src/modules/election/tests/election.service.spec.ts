@@ -338,7 +338,7 @@ describe('ElectionService', () => {
         created_at: new Date('2025-03-22T13:35:13.731Z'),
         updated_at: new Date('2025-03-30T13:35:13.731Z'),
         deleted_at: null,
-        status: ElectionStatus.UPCOMING,
+        status: ElectionStatus.ONGOING,
         title: '2025 Presidential Election',
         description: 'Election to choose the next president of the country',
         start_date: new Date('2025-03-01T00:00:00.000Z'),
@@ -347,6 +347,7 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         type: 'singlechoice',
         created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
+        candidates: [],
       };
 
       const mockCandidates = [
@@ -759,8 +760,8 @@ describe('ElectionService', () => {
       it('should accept when start time is before end time on the same day', async () => {
         const dto = {
           ...baseDto,
-          start_date: new Date('2025-03-01T00:00:00.000Z'),
-          end_date: new Date('2025-03-01T00:00:00.000Z'),
+          start_date: new Date('2025-03-23T00:00:00.000Z'),
+          end_date: new Date('2025-03-23T00:00:00.000Z'),
           start_time: '09:00:00',
           end_time: '17:00:00',
         };
