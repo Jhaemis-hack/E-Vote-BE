@@ -94,32 +94,38 @@ describe('UserService', () => {
   });
 
   describe('registerAdmin', () => {
-    it('✅ should register an admin successfully', async () => {
+    it('✅ should register an admin successfully and send welcome email', async () => {
       const adminDto: CreateUserDto = {
-        id: randomUUID(),
         email: 'admin@example.com',
         password: 'StrongPass1!',
         is_verified: false,
       };
 
       userRepository.findOne = jest.fn().mockResolvedValue(null);
-      const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
-        ReturnType<(key: string) => Promise<string>>,
-        Parameters<(key: string) => Promise<string>>
-      >;
-      hashSpy.mockResolvedValueOnce('hashedPassword');
-      userRepository.create = jest.fn().mockReturnValue(adminDto as User);
-      userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
+
+      const hashedPassword = 'hashedPassword';
+      // Cast the spy to the proper mock type to avoid the "never" type issue.
+      const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<Promise<string>, [string, number]>;
+      hashSpy.mockResolvedValue(hashedPassword);
+
+      const newAdmin = { ...adminDto, id: 'some-uuid', password: hashedPassword, is_verified: true };
+      userRepository.create = jest.fn().mockReturnValue(newAdmin);
+      userRepository.save = jest.fn().mockResolvedValue(newAdmin);
+
+      emailService.sendWelcomeMail = jest.fn().mockResolvedValue(undefined);
+
       jwtService.sign = jest.fn().mockReturnValue('mockedToken');
 
       const result = await userService.registerAdmin(adminDto);
+
+      expect(emailService.sendWelcomeMail).toHaveBeenCalledWith('admin@example.com');
 
       expect(result).toEqual({
         status_code: HttpStatus.CREATED,
         message: SYS_MSG.SIGNUP_MESSAGE,
         data: {
-          id: adminDto.id,
-          email: adminDto.email,
+          id: newAdmin.id,
+          email: newAdmin.email,
           token: 'mockedToken',
         },
       });

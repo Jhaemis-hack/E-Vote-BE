@@ -53,10 +53,19 @@ export class UserService {
     const newAdmin = this.userRepository.create({
       email,
       password: hashedPassword,
-      is_verified: false,
+      is_verified: true,
     });
 
-    await this.userRepository.save(newAdmin);
+    try {
+      await this.mailService.sendWelcomeMail(email);
+      await this.userRepository.save(newAdmin);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.WELCOME_EMAIL_FAILED,
+        data: null,
+      };
+    }
 
     const credentials = { email: newAdmin.email, sub: newAdmin.id };
     const token = this.jwtService.sign(credentials);

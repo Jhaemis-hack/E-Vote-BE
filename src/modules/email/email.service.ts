@@ -33,4 +33,7 @@ export class EmailService {
 
     await this.emailQueue.sendEmail({ mail: mailPayload, template: 'reset-password' });
   }
+  async sendWelcomeMail(email: string) {
+    await this.sendEmail(email, 'Welcome to Resolve.vote', 'welcome-email', { email });
+  }
 }
