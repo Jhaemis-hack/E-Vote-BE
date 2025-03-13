@@ -1,0 +1,30 @@
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Unique } from 'typeorm';
+import { AbstractBaseEntity } from '../../../entities/base.entity';
+import { Election } from '../../election/entities/election.entity';
+import { Vote } from '../../votes/entities/votes.entity';
+
+@Entity({ name: 'voters' })
+@Unique(['email', 'election_id'])
+export class Voter extends AbstractBaseEntity {
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column({ default: false })
+  is_verified: boolean;
+
+  @Column({ nullable: true })
+  verification_token: string;
+
+  @Column()
+  election_id: string;
+
+  @ManyToOne(() => Election, election => election.voters, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'election_id' })
+  election: Election;
+
+  @OneToMany(() => Vote, vote => vote.voter)
+  votes: Vote[];
+}
