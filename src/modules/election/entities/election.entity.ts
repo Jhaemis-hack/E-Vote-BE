@@ -48,8 +48,8 @@ export class Election extends AbstractBaseEntity {
   @Column({ type: 'enum', enum: ElectionType, default: ElectionType.SINGLECHOICE })
   type: ElectionType;
 
-  @Column({ nullable: true })
-  max_choices?: number;
+  @Column({ default: 1 })
+  max_choices: number;
 
   @ManyToOne(() => User, user => user.created_elections)
   @JoinColumn({ name: 'created_by' })

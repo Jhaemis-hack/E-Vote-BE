@@ -11,7 +11,9 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
+import * as moment from 'moment';
 import { Repository } from 'typeorm';
+import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { Vote } from '../votes/entities/votes.entity';
@@ -19,9 +21,6 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
-// import { add, isPast, isAfter, isSameDay, parseISO, format, parse, startOfDay } from 'date-fns';
-import * as moment from 'moment';
-
 interface ElectionResultsDownload {
   filename: string;
   csvData: string;
@@ -35,6 +34,7 @@ export class ElectionService {
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
+    private electionStatusUpdaterService: ElectionStatusUpdaterService,
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
@@ -42,16 +42,11 @@ export class ElectionService {
       createElectionDto;
 
     const currentDate = moment().utc();
-    console.log('Current Date (UTC): ', currentDate.format('YYYY-MM-DD HH:mm:ss'));
 
     const currentDateStartOfDay = moment.utc().startOf('day');
-    console.log('Current Date Start of Day (UTC): ', currentDateStartOfDay.format('YYYY-MM-DD HH:mm:ss'));
 
     const startDate = moment.utc(start_date);
     const endDate = moment.utc(end_date);
-
-    console.log('Start Date (UTC): ', startDate.format('YYYY-MM-DD HH:mm:ss'));
-    console.log('End Date (UTC): ', endDate.format('YYYY-MM-DD HH:mm:ss'));
 
     // Validate start_date and end_date
     if (startDate.isBefore(currentDateStartOfDay)) {
@@ -85,12 +80,23 @@ export class ElectionService {
 
       // Validate startDateTime against currentDate and startTime
       const startDateTime = moment.utc(`${startDate.format('YYYY-MM-DD')}T${start_time}`);
-      if (startDateTime.isBefore(currentDate)) {
+      if (startDateTime.isBefore(currentDate.add(1, 'hour'))) {
         throw new HttpException(
           { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
           HttpStatus.BAD_REQUEST,
         );
       }
+    }
+
+    if (election_type === ElectionType.MULTIPLECHOICE && candidates.length <= max_choices!) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.ERROR_TOTAL_CANDIDATES,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const election = this.electionRepository.create({
@@ -117,6 +123,8 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
+
+    await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
       status_code: HttpStatus.CREATED,
@@ -249,19 +257,6 @@ export class ElectionService {
 
     // Transform the election response
     const mappedElection = this.transformElectionResponse(election);
-
-    let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
-    // Simple datetime comparison
-    if (now < startDateTime) {
-      mappedElection.status = 'upcoming';
-      // mappedElection.message = "Election has not started.";
-    } else if (now > endDateTime) {
-      mappedElection.status = 'completed';
-      message = 'Election has ended.';
-    } else {
-      mappedElection.status = 'ongoing';
-      message = 'Election is live. Vote now!';
-    }
 
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
@@ -493,19 +488,6 @@ export class ElectionService {
 
         // Transform the election response
         const mappedElection = this.transformElectionResponse(election);
-
-        let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
-        // Simple datetime comparison
-        if (now < startDateTime) {
-          mappedElection.status = 'upcoming';
-          // mappedElection.message = "Election has not started.";
-        } else if (now > endDateTime) {
-          mappedElection.status = 'completed';
-          message = 'Election has ended.';
-        } else {
-          mappedElection.status = 'ongoing';
-          message = 'Election is live. Vote now!';
-        }
 
         return {
           election_id: election.id,

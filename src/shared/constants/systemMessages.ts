@@ -44,6 +44,8 @@ export const ERROR_START_TIME_AFTER_END_TIME = 'Start time must be before the en
 export const ERROR_START_TIME_PAST = 'Start time cannot be in the past.';
 export const ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME =
   'End time must be greater than start time for elections on the same day.';
+export const ERROR_VOTER_ACCESS = 'You are not allowed to vote currently.';
+export const ERROR_TOTAL_CANDIDATES = 'Total candidates must exceed the maximum choices.';
 export const PASSWORD_RESET_REQUEST_NOT_FOUND = 'pasword reset request not found';
 export const PASSWORD_UPDATED_SUCCESSFULLY = 'Admin Password Updated Successfully,please proceed to login';
 export const EMAIL_VERIFICATION_SUCCESS = 'Email has been verified';

@@ -7,13 +7,14 @@ import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
 import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UpdateElectionDto } from '../dto/update-election.dto';
-import { max } from 'class-validator';
+import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
 
 describe('ElectionService - update', () => {
   let service: ElectionService;
   let electionRepository: Repository<Election>;
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
+  let electionStatusUpdaterService: ElectionStatusUpdaterService;
 
   beforeEach(() => {
     electionRepository = {
@@ -24,7 +25,18 @@ describe('ElectionService - update', () => {
     candidateRepository = {} as Repository<Candidate>;
     voteRepository = {} as Repository<Vote>;
 
-    service = new ElectionService(electionRepository, candidateRepository, voteRepository);
+    // Mock the ElectionStatusUpdaterService
+    electionStatusUpdaterService = {
+      scheduleElectionUpdates: jest.fn(),
+    } as unknown as ElectionStatusUpdaterService;
+
+    // Provide all 4 arguments to the ElectionService constructor
+    service = new ElectionService(
+      electionRepository,
+      candidateRepository,
+      voteRepository,
+      electionStatusUpdaterService, // Add the mocked service
+    );
   });
 
   it('should update an election successfully including election_type', async () => {
