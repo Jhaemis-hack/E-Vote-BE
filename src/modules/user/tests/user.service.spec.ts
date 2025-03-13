@@ -59,6 +59,7 @@ describe('UserService', () => {
     const mockEmailService = {
       sendForgotPasswordMail: jest.fn().mockResolvedValue(undefined),
       sendVerificationMail: jest.fn().mockResolvedValue(undefined),
+      sendWelcomeMail: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -96,7 +97,7 @@ describe('UserService', () => {
   });
 
   describe('registerAdmin', () => {
-    it('✅ should register an admin successfully and send welcome email', async () => {
+    it('✅ should register an admin successfully and send welcome and verification email', async () => {
       const adminDto: CreateUserDto = {
         email: 'admin@example.com',
         password: 'StrongPass1!',
@@ -122,6 +123,7 @@ describe('UserService', () => {
       const result = await userService.registerAdmin(adminDto);
 
       expect(emailService.sendWelcomeMail).toHaveBeenCalledWith('admin@example.com');
+      expect(emailService.sendVerificationMail).toHaveBeenCalledWith('admin@example.com', 'mockedToken');
 
       expect(result).toEqual({
         status_code: HttpStatus.CREATED,
@@ -131,6 +133,34 @@ describe('UserService', () => {
           email: newAdmin.email,
           token: 'mockedToken',
         },
+      });
+    });
+
+    it('❌ should handle error when sending welcome email fails during registration', async () => {
+      const adminDto: CreateUserDto = {
+        id: randomUUID(),
+        email: 'admin@example.com',
+        password: 'StrongPass1!',
+        is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(null);
+      const hashSpy = jest.spyOn(bcrypt, 'hash') as unknown as jest.Mock<
+        ReturnType<(key: string) => Promise<string>>,
+        Parameters<(key: string) => Promise<string>>
+      >;
+      hashSpy.mockResolvedValueOnce('hashedPassword');
+      userRepository.create = jest.fn().mockReturnValue(adminDto as User);
+      userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
+      jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+      jest.spyOn(emailService, 'sendWelcomeMail').mockRejectedValueOnce(new Error('Email sending failed'));
+
+      const result = await userService.registerAdmin(adminDto);
+
+      expect(result).toEqual({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.WELCOME_EMAIL_FAILED,
+        data: null,
       });
     });
 
@@ -151,6 +181,7 @@ describe('UserService', () => {
       userRepository.create = jest.fn().mockReturnValue(adminDto as User);
       userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
       jwtService.sign = jest.fn().mockReturnValue('mockedToken');
+      jest.spyOn(emailService, 'sendWelcomeMail').mockResolvedValueOnce(undefined);
       jest.spyOn(emailService, 'sendVerificationMail').mockRejectedValueOnce(new Error('Email sending failed'));
 
       const result = await userService.registerAdmin(adminDto);
