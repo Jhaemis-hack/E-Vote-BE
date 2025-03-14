@@ -88,6 +88,17 @@ export class ElectionService {
       }
     }
 
+    if (election_type === ElectionType.SINGLECHOICE && max_choices !== 1) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.ERROR_MAX_CHOICES,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     if (election_type === ElectionType.MULTIPLECHOICE && candidates.length <= max_choices!) {
       throw new HttpException(
         {
