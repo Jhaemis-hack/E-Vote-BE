@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EmailQueue } from './email.queue';
 import { MailInterface } from './interface/email.interface';
+import { randomUUID } from 'crypto';
 @Injectable()
 export class EmailService {
   constructor(private emailQueue: EmailQueue) {}
@@ -44,8 +45,22 @@ export class EmailService {
     await this.sendEmail(email, 'Welcome to Resolve.vote', 'welcome-email', { email });
   }
 
-  async sendVotingLink(email: string, votingLinkId: string): Promise<void> {
+  async sendVotingLink(
+    email: string,
+    start_date: Date,
+    start_time: string,
+    end_date: Date,
+    end_time: string,
+  ): Promise<void> {
+    const votingLinkId = randomUUID();
     const votingLink = `${process.env.FRONTEND_URL}/vote/${votingLinkId}`;
-    await this.sendEmail(email, 'Here is your voting link', 'voting-link', { votingLink });
+    await this.sendEmail(email, 'Here is your voting link', 'voting-link', {
+      email,
+      votingLink,
+      start_date,
+      start_time,
+      end_date,
+      end_time,
+    });
   }
 }

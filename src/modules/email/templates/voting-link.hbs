@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resolve Election Invitation</title>
+  <style type="text/css">
+    /* Reset styles for email clients */
+    body, p, h1, h2, h3, h4, h5, h6, ul, ol, li {
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.4;
+      color: #000000;
+    }
+    /* Email container */
+    .email-container {
+      max-width: 420px;
+      border: 1px solid #cccccc;
+      margin: 10px auto;
+    }
+    /* Links */
+    a {
+      color: #7FB4F1;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+      <td align="center">
+        <table class="email-container" cellpadding="0" cellspacing="0" border="0" width="420" style="border: 1px solid #cccccc; font-family: Arial, sans-serif;">
+          <!-- Header -->
+          <tr>
+            <td bgcolor="#002347" height="87" style="height: 87px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="50%" align="left" style="padding-left: 20px;">
+                    <img src="https://resolve.vote/assets/logo.png" alt="Resolve Logo" width="109" height="27" style="display: block;">
+                  </td>
+                  <td width="50%" align="right" style="padding-right: 20px;">
+                    <span style="color: #cccccc; font-size: 10px;">https://resolve.vote/</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Banner -->
+          <tr>
+            <td bgcolor="#EEEDF8" height="86" style="height: 86px; padding: 0 20px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="70%" valign="middle">
+                    <h2 style="font-size: 13px; font-weight: 600; color: #000000; max-width: 236px;">Resolve it all—easy elections, trusted results</h2>
+                    <p style="font-size: 8px; color: #1F2124; width: 220px;">If you have any questions or need assistance, contact our support team at info.resolvevote@gmail.com.</p>
+                  </td>
+                  <td width="30%" valign="middle" align="right">
+                    <img src="https://resolve.vote/assets/vote.png" alt="Vote" width="50" style="display: block; margin-left: auto;">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 20px;">
+              <h2 style="padding: 10px 0; font-size: 15px; font-weight: 600;">Your Vote Matters: Cast Your Vote with Resolve Today</h2>
+              <p style="font-size: 14px;">Hi {{email}},</p>
+              <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Your election is now live! The Admin has set up an online election using Resolve, our secure digital voting platform.</p>
+              
+              <!-- Features -->
+              <h3 style="margin-top: 15px; font-size: 12px; font-weight: 600;">What you Need to do:</h3>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 5px;">
+                <tr>
+                  <td width="20" valign="top" style="padding-top: 5px;">
+                    <div style="background-color: #90B5FF; border-radius: 50%; width: 13px; height: 13px; display: inline-block; text-align: center;">
+                      <span style="color: #ffffff; font-size: 8px; line-height: 13px;">✓</span>
+                    </div>
+                  </td>
+                  <td valign="top" style="padding-top: 5px;">
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Click the link below to access your ballot: <a href="{{votingLink}}" style="color: #7FB4F1;">Vote here</a></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="20" valign="top" style="padding-top: 5px;">
+                    <div style="background-color: #90B5FF; border-radius: 50%; width: 13px; height: 13px; display: inline-block; text-align: center;">
+                      <span style="color: #ffffff; font-size: 8px; line-height: 13px;">✓</span>
+                    </div>
+                  </td>
+                  <td valign="top" style="padding-top: 5px;">
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Sign In with No registration required.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="20" valign="top" style="padding-top: 5px;">
+                    <div style="background-color: #90B5FF; border-radius: 50%; width: 13px; height: 13px; display: inline-block; text-align: center;">
+                      <span style="color: #ffffff; font-size: 8px; line-height: 13px;">✓</span>
+                    </div>
+                  </td>
+                  <td valign="top" style="padding-top: 5px;">
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Cast Your Vote by following the simple on-screen instructions.</p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="padding: 8px 0; font-size: 10px; color: #1F2124; margin-top: 10px;">Your vote is safe and your voice counts. Please cast your ballot before the election ends {{ end_time }} on {{ end_date }}.</p>
+              <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Thank you for participating!</p>
+              <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">
+                <span style="display: block;">Best regards,</span> The Resolve Team
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td bgcolor="#002347" style="padding: 20px; color: #ffffff;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="50%">
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td>
+                          <img src="https://resolve.vote/assets/logo.png" alt="Resolve Logo" width="57" height="13" style="display: block;">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <span style="font-size: 8px; color: #cccccc;">Secure Elections, <br> Trusted Results</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td width="50%" align="right">
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td>
+                          <table cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td width="20">
+                                <div style="background-color: #808080; border-radius: 50%; width: 17px; height: 17px; text-align: center;">
+                                  <img src="https://resolve.vote/assets/instagram.png" alt="Instagram" width="10" height="10" style="margin-top: 3px;">
+                                </div>
+                              </td>
+                              <td width="20">
+                                <div style="background-color: #808080; border-radius: 50%; width: 17px; height: 17px; text-align: center;">
+                                  <img src="https://resolve.vote/assets/facebook.png" alt="Facebook" width="10" height="10" style="margin-top: 3px;">
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding: 10px 0;">
+                    <div style="height: 1px; background-color: rgba(203, 213, 225, 0.1);"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="50%" valign="top">
+                    <p style="font-size: 10px; color: #cccccc; width: 164px; margin-top: 10px;">Start with Resolve: Create, manage, and monitor your elections effortlessly.</p>
+                  </td>
+                  <td width="50%" valign="top" align="right">
+                    <p style="font-size: 8px; color: #cccccc; margin-top: 10px;">© Resolve Rights Reserved 2024</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

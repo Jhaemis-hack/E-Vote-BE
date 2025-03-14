@@ -63,8 +63,8 @@ export class EmailProcessor {
         template: 'voting-link',
       });
       this.logger.log(`Voting link has been sent sucessfully to ${mail.to}`);
-    } catch (SendVerifyEmailError) {
-      this.logger.error(`EmailProcessor - sendVotingLinkJobError: ${SendVerifyEmailError.message}`);
+    } catch (sendVotingLinkJobError) {
+      this.logger.error(`EmailProcessor - sendVotingLinkJobError: ${sendVotingLinkJobError.message}`);
     }
   }
 }

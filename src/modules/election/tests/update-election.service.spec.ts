@@ -8,6 +8,9 @@ import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UpdateElectionDto } from '../dto/update-election.dto';
 import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
+import { EmailService } from 'src/modules/email/email.service';
+import { Voter } from 'src/modules/voter/entities/voter.entity';
+import { VoterService } from 'src/modules/voter/voter.service';
 
 describe('ElectionService - update', () => {
   let service: ElectionService;
@@ -15,6 +18,9 @@ describe('ElectionService - update', () => {
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
   let electionStatusUpdaterService: ElectionStatusUpdaterService;
+  let emailService: EmailService;
+  let voterRepository: Repository<Voter>;
+  let voterService: VoterService;
 
   beforeEach(() => {
     electionRepository = {
@@ -24,18 +30,28 @@ describe('ElectionService - update', () => {
 
     candidateRepository = {} as Repository<Candidate>;
     voteRepository = {} as Repository<Vote>;
+    voterRepository = {} as Repository<Voter>;
 
     // Mock the ElectionStatusUpdaterService
     electionStatusUpdaterService = {
       scheduleElectionUpdates: jest.fn(),
     } as unknown as ElectionStatusUpdaterService;
 
+    emailService = {
+      sendEmail: jest.fn(),
+    } as unknown as EmailService;
+
+    voterService = {} as VoterService;
+
     // Provide all 4 arguments to the ElectionService constructor
     service = new ElectionService(
       electionRepository,
       candidateRepository,
       voteRepository,
-      electionStatusUpdaterService, // Add the mocked service
+      voterRepository,
+      electionStatusUpdaterService,
+      emailService,
+      voterService,
     );
   });
 

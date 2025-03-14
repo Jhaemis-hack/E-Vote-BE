@@ -21,6 +21,10 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+import { EmailService } from '../email/email.service';
+import { Voter } from '../voter/entities/voter.entity';
+import { VoterService } from '../voter/voter.service';
+
 interface ElectionResultsDownload {
   filename: string;
   csvData: string;
@@ -34,7 +38,10 @@ export class ElectionService {
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
+    @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
+    private emailService: EmailService,
+    private voterService: VoterService,
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
@@ -125,6 +132,38 @@ export class ElectionService {
     savedElection.candidates = savedCandidates;
 
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
+
+    // Send Voting link to all voters
+    try {
+      const voters_response = await this.voterService.findAllVoters();
+      const voters = voters_response.data;
+      const election_voters = voters.filter(voter => voter.election.id === savedElection.id);
+      this.logger.log('Voters:', election_voters);
+
+      voters.forEach(async voter => {
+        try {
+          await this.emailService.sendVotingLink(
+            voter.email,
+            savedElection.start_date,
+            savedElection.start_time,
+            savedElection.end_date,
+            savedElection.end_time,
+          );
+        } catch (emailError) {
+          // this.logger.error(SYS_MSG.FAILED_TO_SEND_VOTING_LINK);
+          return {
+            status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
+          };
+        }
+      });
+    } catch (err) {
+      // this.logger.error(`Failed to retrieve voters: ${err.message}`);
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.FAILED_TO_RETRIEVE_VOTERS,
+      };
+    }
 
     return {
       status_code: HttpStatus.CREATED,
