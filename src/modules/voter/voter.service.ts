@@ -1,4 +1,10 @@
-import { BadRequestException, HttpCode, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Express } from 'express';
 import * as csv from 'csv-parser';
 import * as xlsx from 'xlsx';
@@ -62,6 +68,7 @@ export class VoterService {
             .map(([email, rows]) => ({ email, rows }));
 
           if (duplicates.length > 0) {
+            console.log(duplicates);
             return reject(
               new BadRequestException({
                 status_code: HttpStatus.BAD_REQUEST,
@@ -128,6 +135,7 @@ export class VoterService {
         .map(([email, rows]) => ({ email, rows }));
 
       if (duplicates.length > 0) {
+        console.log(duplicates);
         throw new BadRequestException({
           status_code: HttpStatus.BAD_REQUEST,
           message: `Duplicate emails found: ${JSON.stringify(duplicates, null, 2)}`,
