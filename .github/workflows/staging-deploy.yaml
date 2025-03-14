@@ -34,5 +34,5 @@ jobs:
             git pull origin dev
             pnpm install
             pnpm build
-            pm2 restart evote_staging --update-env
+            pm2 restart evote_be_staging --update-env
           EOF
