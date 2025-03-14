@@ -72,8 +72,7 @@ export class VoterService {
             return reject(
               new BadRequestException({
                 status_code: HttpStatus.BAD_REQUEST,
-                message: `Duplicate emails found: ${JSON.stringify(duplicates, null, 2)}`,
-                data: null,
+                message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
               }),
             );
           }
@@ -138,7 +137,7 @@ export class VoterService {
         console.log(duplicates);
         throw new BadRequestException({
           status_code: HttpStatus.BAD_REQUEST,
-          message: `Duplicate emails found: ${JSON.stringify(duplicates, null, 2)}`,
+          message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
           data: null,
         });
       }

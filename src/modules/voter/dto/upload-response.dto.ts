@@ -26,18 +26,13 @@ export class VoterUploadErrorDto {
 }
 
 export class DuplicateEmailsErrorDto {
-  @ApiProperty({ description: 'HTTP status code of the response', example: 409 })
+  @ApiProperty({ description: 'HTTP status code of the response', example: 400 })
   status_code: number;
 
-  @ApiProperty({ description: 'Error message detailing the issue', example: 'Duplicate emails found' })
-  message: string;
-
   @ApiProperty({
-    description: 'List of duplicate emails with the rows they appear in',
-    example: [
-      { email: 'user@example.com', rows: [2, 5] },
-      { email: 'test@example.com', rows: [3, 6] },
-    ],
+    description: 'Error message detailing the duplicate emails found',
+    example:
+      'Oops! The following emails are already in use: johndoe@example.com, janesmith@example.com, alice@example.com, bobw@example.com, charlie.b@example.com, davidc@example.com, emmaw@example.com, frankh@example.com, gracel@example.com, henrys@example.com. Please use unique emails.',
   })
-  data: { email: string; rows: number[] }[];
+  message: string;
 }
