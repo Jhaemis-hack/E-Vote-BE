@@ -4,15 +4,20 @@ import { MailInterface } from './interface/email.interface';
 @Injectable()
 export class EmailService {
   constructor(private emailQueue: EmailQueue) {}
-  async sendEmail(email: string, subject: string, template: string, context: Record<string, any>): Promise<void> {
+  async sendEmail(
+    email: string,
+    subject: string,
+    template: 'verify-email' | 'reset-password' | 'welcome-email' | 'voting-link',
+    context: Record<string, any>,
+  ): Promise<void> {
     await this.emailQueue.sendEmail({
       mail: {
         to: email,
         subject,
-        context,
         template,
+        context,
       },
-      template: 'verify-email',
+      template,
     });
   }
 
@@ -37,5 +42,10 @@ export class EmailService {
 
   async sendWelcomeMail(email: string) {
     await this.sendEmail(email, 'Welcome to Resolve.vote', 'welcome-email', { email });
+  }
+
+  async sendVotingLink(email: string, votingLinkId: string): Promise<void> {
+    const votingLink = `${process.env.FRONTEND_URL}/vote/${votingLinkId}`;
+    await this.sendEmail(email, 'Here is your voting link', 'voting-link', { votingLink });
   }
 }
