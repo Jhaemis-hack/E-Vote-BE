@@ -16,13 +16,17 @@ import { VoterService } from './voter.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AuthGuard } from '../../guards/auth.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { ApiFile } from './dto/upload-file.schema';
 
 @Controller('voters')
 export class VoterController {
   constructor(private readonly voterService: VoterService) {}
 
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upload voters via CSV or Excel file' })
+  @ApiConsumes('multipart/form-data')
+  @ApiFile()
   @Post('/:electionId/uploads')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
