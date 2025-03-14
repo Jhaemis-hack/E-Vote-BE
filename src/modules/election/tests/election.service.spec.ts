@@ -97,6 +97,7 @@ describe('ElectionService', () => {
         start_time: '09:00:00',
         end_time: '10:00:00',
         election_type: ElectionType.SINGLECHOICE,
+        max_choices: 1,
         candidates: ['Candidate A', 'Candidate B'],
       };
 
@@ -147,6 +148,7 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         // vote_link: '7284fdbc-a1b9-45ad-a586-72edae14526d',
         election_type: ElectionType.SINGLECHOICE,
+        max_choices: 1,
         candidates: ['Candidate A', 'Candidate B'],
       };
 
@@ -710,6 +712,7 @@ describe('ElectionService', () => {
         start_time: '09:00:00',
         end_time: '17:00:00',
         election_type: ElectionType.SINGLECHOICE,
+        max_choices: 1,
         candidates: ['Candidate A', 'Candidate B'],
       };
 
