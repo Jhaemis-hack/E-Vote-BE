@@ -21,6 +21,13 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+import * as multer from 'multer';
+import * as fs from 'fs';
+import * as path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+
 interface ElectionResultsDownload {
   filename: string;
   csvData: string;
@@ -155,6 +162,49 @@ export class ElectionService {
         candidates: savedElection.candidates.map(candidate => candidate.name),
       },
     };
+  }
+
+  async validatePhotoUrl(photoUrl: string, file: Express.Multer.File): Promise<void> {
+    if (!file) {
+      throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+    }
+
+    // Validate file type
+    const allowedMimeTypes = ['image/jpeg', 'image/png'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new HttpException('Invalid file type. Only JPEG and PNG are allowed.', HttpStatus.BAD_REQUEST);
+    }
+
+    // Validate file size (limit: 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      throw new HttpException('File size exceeds 2MB limit.', HttpStatus.BAD_REQUEST);
+    }
+
+    // Optional: Validate URL format
+    if (!photoUrl.match(/\.(jpeg|jpg|png)(\?.*)?$/i)) {
+      throw new HttpException('Invalid photo URL format.', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async uploadImage(file: Express.Multer.File): Promise<string> {
+    const bucket = process.env.SUPABASE_BUCKET!;
+    if (!bucket) {
+      throw new Error('Supabase bucket name is not defined in environment variables.');
+    }
+    const filePath = `uploads/${Date.now()}_${file.originalname}`;
+
+    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file.buffer);
+
+    if (error) {
+      throw new HttpException(`Supabase upload failed: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Get public URL
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    return publicUrl;
   }
 
   async findAll(
