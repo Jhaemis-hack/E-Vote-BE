@@ -68,7 +68,6 @@ export class VoterService {
             .map(([email, rows]) => ({ email, rows }));
 
           if (duplicates.length > 0) {
-            console.log(duplicates);
             return reject(
               new BadRequestException({
                 status_code: HttpStatus.BAD_REQUEST,
@@ -134,7 +133,6 @@ export class VoterService {
         .map(([email, rows]) => ({ email, rows }));
 
       if (duplicates.length > 0) {
-        console.log(duplicates);
         throw new BadRequestException({
           status_code: HttpStatus.BAD_REQUEST,
           message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,

@@ -27,10 +27,6 @@ describe('VoterService', () => {
     voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
   describe('processFile', () => {
     it('should process CSV file successfully', async () => {
       const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,jane@example.com');
