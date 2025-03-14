@@ -54,3 +54,7 @@ export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
 export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';
 export const WELCOME_EMAIL_FAILED = 'Welcome email failed to send';
 export const ERROR_MAX_CHOICES = 'Maximum choices for single election must be 1';
+export const VALID_PHOTO_URL = 'Valid photo url';
+export const UPLOAD_FAILED = 'Upload failed';
+export const NO_PHOTO_URL = 'No photo url';
+export const INVALID_PHOTO_URL = 'Invalid photo url';
