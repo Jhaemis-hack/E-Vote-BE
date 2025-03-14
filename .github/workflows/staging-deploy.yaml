@@ -30,7 +30,7 @@ jobs:
           sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << 'EOF'
             cd ~/evote-backend/staging
             git reset --hard
-            pm2 stop evote_staging
+            pm2 stop evote-be-staging
             git pull origin dev
             pnpm install
             pnpm build
