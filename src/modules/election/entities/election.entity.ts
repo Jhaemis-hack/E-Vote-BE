@@ -3,6 +3,7 @@ import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
+import { Voter } from '../../voter/entities/voter.entity';
 
 export enum ElectionStatus {
   UPCOMING = 'upcoming',
@@ -63,4 +64,7 @@ export class Election extends AbstractBaseEntity {
 
   @OneToMany(() => Vote, vote => vote.election)
   votes: Vote[];
+
+  @OneToMany(() => Voter, voter => voter.election)
+  voters: Voter[];
 }

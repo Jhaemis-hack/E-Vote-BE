@@ -102,26 +102,26 @@ async function seed() {
   // Create votes
   const vote1 = new Vote();
   vote1.election = election;
-  vote1.candidate = candidate1;
+  // vote1.candidate = candidate1;
   vote1.candidate_id = [candidate1.id];
   await voteRepository.save(vote1);
 
   const vote2 = new Vote();
   vote2.election = election;
-  vote2.candidate = candidate2;
+  // vote2.candidate = candidate2;
   vote2.candidate_id = [candidate2.id];
   await voteRepository.save(vote2);
 
   // Create additional votes
   const vote3 = new Vote();
   vote3.election = election2;
-  vote3.candidate = candidate3;
+  // vote3.candidate = candidate3;
   vote3.candidate_id = [candidate3.id];
   await voteRepository.save(vote3);
 
   const vote4 = new Vote();
   vote4.election = election2;
-  vote4.candidate = candidate4;
+  // vote4.candidate = candidate4;
   vote4.candidate_id = [candidate4.id];
   await voteRepository.save(vote4);
 
