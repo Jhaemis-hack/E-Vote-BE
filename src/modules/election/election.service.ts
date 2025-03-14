@@ -137,10 +137,10 @@ export class ElectionService {
     try {
       const voters_response = await this.voterService.findAllVoters();
       const voters = voters_response.data;
-      const election_voters = voters.filter(voter => voter.election.id === savedElection.id);
-      this.logger.log('Voters:', election_voters);
+      const filteredVoters = voters.filter(voter => voter.election.id === savedElection.id);
+      // this.logger.log('Voters:', election_voters);
 
-      voters.forEach(async voter => {
+      filteredVoters.forEach(async voter => {
         try {
           await this.emailService.sendVotingLink(
             voter.email,

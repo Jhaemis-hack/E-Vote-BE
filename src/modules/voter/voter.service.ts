@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Voter } from './entities/voter.entity';
 import { Repository } from 'typeorm';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @Injectable()
 export class VoterService {
@@ -36,8 +37,8 @@ export class VoterService {
     });
 
     return {
-      status: 'success',
-      message: 'Retrieved voters successfully',
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.RETRIEVED_VOTERS_SUCCESSFULLY,
       data: voters,
     };
   }
