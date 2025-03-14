@@ -1,4 +1,4 @@
-import { BadRequestException, HttpCode, HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpCode, HttpStatus, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Express } from 'express';
 import * as csv from 'csv-parser';
 import * as xlsx from 'xlsx';
@@ -78,7 +78,15 @@ export class VoterService {
             data: null,
           });
         })
-        .on('error', error => reject(new BadRequestException(`CSV processing error: ${error.message}`)));
+        .on('error', error =>
+          reject(
+            new InternalServerErrorException({
+              status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+              message: `CSV processing error: ${error.message}`,
+              data: null,
+            }),
+          ),
+        );
     });
   }
 
@@ -86,48 +94,75 @@ export class VoterService {
     fileBuffer: Buffer,
     electionId: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
-    const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = xlsx.utils.sheet_to_json(sheet);
-    const emailOccurrences = new Map<string, number[]>();
-    const voters: { name: string; email: string; election: { id: string } }[] = [];
-
-    rows.forEach((row: any, index: number) => {
-      const name = row.name || row.Name || row.NAME;
-      const email = (row.email || row.Email || row.EMAIL)?.toLowerCase();
-
-      if (email) {
-        if (emailOccurrences.has(email)) {
-          emailOccurrences.get(email)!.push(index + 1);
-        } else {
-          emailOccurrences.set(email, [index + 1]);
-          voters.push({ name, email, election: { id: electionId } });
-        }
+    try {
+      const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      if (!sheet) {
+        throw new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: 'Invalid or empty Excel file',
+          data: null,
+        });
       }
-    });
 
-    const duplicates = Array.from(emailOccurrences.entries())
-      .filter(([_, rows]) => rows.length > 1)
-      .map(([email, rows]) => ({ email, rows }));
+      const rows = xlsx.utils.sheet_to_json(sheet);
+      const emailOccurrences = new Map<string, number[]>();
+      const voters: { name: string; email: string; election: { id: string } }[] = [];
 
-    if (duplicates.length > 0) {
-      throw new BadRequestException({
-        status_code: HttpStatus.BAD_REQUEST,
-        message: `Duplicate emails found: ${JSON.stringify(duplicates, null, 2)}`,
+      rows.forEach((row: any, index: number) => {
+        const name = row.name || row.Name || row.NAME;
+        const email = (row.email || row.Email || row.EMAIL)?.toLowerCase();
+
+        if (email) {
+          if (emailOccurrences.has(email)) {
+            emailOccurrences.get(email)!.push(index + 1);
+          } else {
+            emailOccurrences.set(email, [index + 1]);
+            voters.push({ name, email, election: { id: electionId } });
+          }
+        }
+      });
+
+      const duplicates = Array.from(emailOccurrences.entries())
+        .filter(([_, rows]) => rows.length > 1)
+        .map(([email, rows]) => ({ email, rows }));
+
+      if (duplicates.length > 0) {
+        throw new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: `Duplicate emails found: ${JSON.stringify(duplicates, null, 2)}`,
+          data: null,
+        });
+      }
+
+      await this.saveVoters(voters);
+
+      return {
+        status_code: HttpStatus.CREATED,
+        message: SYS_MSG.UPLOAD_VOTER_SUCCESS,
+        data: null,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: `Excel processing error`,
         data: null,
       });
     }
-
-    await this.saveVoters(voters);
-
-    return {
-      status_code: HttpStatus.CREATED,
-      message: SYS_MSG.UPLOAD_VOTER_SUCCESS,
-      data: null,
-    };
   }
 
   async saveVoters(data: { name: string; email: string; election: { id: string } }[]): Promise<any> {
-    const voter = await this.voterRepository.insert(data);
+    try {
+      await this.voterRepository.insert(data);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: `Error insertion voters`,
+        data: null,
+      });
+    }
   }
 }
