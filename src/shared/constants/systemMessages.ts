@@ -53,3 +53,4 @@ export const EMAIL_ALREADY_VERIFIED = 'Email already verified';
 export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
 export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';
 export const WELCOME_EMAIL_FAILED = 'Welcome email failed to send';
+export const UPLOAD_VOTER_SUCCESS = 'Voters uploaded successfully';
