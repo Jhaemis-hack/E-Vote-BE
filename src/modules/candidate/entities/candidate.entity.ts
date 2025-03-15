@@ -16,7 +16,7 @@ export class Candidate extends AbstractBaseEntity {
   @Column()
   election_id: string;
 
-  @Column()
+  @Column({ nullable: true })
   photo_url: string;
 
   @ManyToMany(() => Vote, vote => vote.candidate_id)
