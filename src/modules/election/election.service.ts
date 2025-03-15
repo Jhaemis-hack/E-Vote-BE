@@ -9,9 +9,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { createClient } from '@supabase/supabase-js';
 import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
+import { config } from 'dotenv';
 import * as moment from 'moment';
+import * as path from 'path';
 import { Repository } from 'typeorm';
 import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -21,28 +24,30 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
-import * as multer from 'multer';
-import * as fs from 'fs';
-import * as path from 'path';
-import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+config();
 
-interface ElectionResultsDownload {
-  filename: string;
-  csvData: string;
-}
+const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
 @Injectable()
 export class ElectionService {
   private readonly logger = new Logger(ElectionService.name);
+  private readonly supabase;
+  private readonly bucketName = process.env.SUPABASE_BUCKET;
 
   constructor(
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
-  ) {}
+  ) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
+      throw new Error('Supabase environment variables are not set.');
+    }
+
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    this.bucketName = process.env.SUPABASE_BUCKET;
+  }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
     const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
@@ -132,11 +137,12 @@ export class ElectionService {
 
     const savedElection = await this.electionRepository.save(election);
 
-    const candidateEntities: Candidate[] = candidates.map(name => {
-      const candidate = new Candidate();
-      candidate.name = name;
-      candidate.election = savedElection;
-      return candidate;
+    const candidateEntities: Candidate[] = candidates.map(candidate => {
+      const newCandidate = new Candidate();
+      newCandidate.name = candidate.name;
+      newCandidate.photo_url = candidate.photo_url;
+      newCandidate.election = savedElection;
+      return newCandidate;
     });
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
@@ -159,52 +165,77 @@ export class ElectionService {
         max_choices: savedElection.max_choices,
         election_type: savedElection.type,
         created_by: savedElection.created_by,
-        candidates: savedElection.candidates.map(candidate => candidate.name),
+        candidates: savedElection.candidates.map(candidate => ({
+          name: candidate.name,
+          photo_url: candidate.photo_url,
+        })),
       },
     };
   }
 
-  async validatePhotoUrl(photoUrl: string, file: Express.Multer.File): Promise<void> {
+  async uploadPhoto(file: Express.Multer.File, adminId: string) {
+    if (!adminId) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          data: null,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     if (!file) {
-      throw new HttpException('No file uploaded', HttpStatus.BAD_REQUEST);
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.DEFAULT_PROFILE_URL,
+        data: { profile_url: DEFAULT_PLACEHOLDER_PHOTO },
+      };
     }
 
     // Validate file type
-    const allowedMimeTypes = ['image/jpeg', 'image/png'];
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new HttpException('Invalid file type. Only JPEG and PNG are allowed.', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INVALID_FILE_TYPE, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     // Validate file size (limit: 2MB)
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 1 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
-      throw new HttpException('File size exceeds 2MB limit.', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.PHOTO_SIZE_LIMIT, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    // Optional: Validate URL format
-    if (!photoUrl.match(/\.(jpeg|jpg|png)(\?.*)?$/i)) {
-      throw new HttpException('Invalid photo URL format.', HttpStatus.BAD_REQUEST);
-    }
-  }
+    const { buffer, originalname, mimetype } = file;
+    const fileExt = path.extname(originalname);
+    const fileName = `${Date.now()}${fileExt}`;
 
-  async uploadImage(file: Express.Multer.File): Promise<string> {
-    const bucket = process.env.SUPABASE_BUCKET!;
-    if (!bucket) {
-      throw new Error('Supabase bucket name is not defined in environment variables.');
-    }
-    const filePath = `uploads/${Date.now()}_${file.originalname}`;
-
-    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file.buffer);
+    const { error } = await this.supabase.storage
+      .from(this.bucketName)
+      .upload(`resolve-vote/${fileName}`, buffer, { contentType: mimetype });
 
     if (error) {
-      throw new HttpException(`Supabase upload failed: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Supabase upload error:', error);
+      throw new HttpException(
+        { status_code: HttpStatus.INTERNAL_SERVER_ERROR, message: SYS_MSG.FAILED_PHOTO_UPLOAD, data: null },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(bucket).getPublicUrl(filePath);
-    return publicUrl;
+    const { data: publicUrlData } = this.supabase.storage
+      .from(this.bucketName)
+      .getPublicUrl(`resolve-vote/${fileName}`);
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_PROFILE_URL,
+      data: { profile_url: publicUrlData.publicUrl },
+    };
   }
 
   async findAll(
@@ -422,14 +453,6 @@ export class ElectionService {
         data: null,
       });
     }
-    // TODO
-    // if (election.status === ElectionStatus.ONGOING) {
-    //   throw new ForbiddenException({
-    //     status_code: HttpStatus.FORBIDDEN,
-    //     message: SYS_MSG.ELECTION_ACTIVE_CANNOT_DELETE,
-    //     data: null,
-    //   });
-    // }
 
     if (election.created_by !== adminId) {
       throw new ForbiddenException({
@@ -566,6 +589,7 @@ export class ElectionService {
             election.candidates.map(candidate => ({
               candidate_id: candidate.id,
               name: candidate.name,
+              photo_url: candidate.photo_url,
             })) || [],
         };
       })
@@ -625,6 +649,7 @@ export class ElectionService {
             return {
               candidate_id: candidate.id,
               name: candidate.name,
+              photo_url: candidate.photo_url,
             };
           }) || [],
       };
@@ -686,6 +711,7 @@ export class ElectionService {
       candidate_id: candidate.id,
       name: candidate.name,
       votes: voteCounts.get(candidate.id) || 0,
+      photo_url: candidate.photo_url,
     }));
 
     return {

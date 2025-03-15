@@ -1,13 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { CreateCandidateDto } from './dto/create-candidate.dto';
 import { UpdateCandidateDto } from './dto/update-candidate.dto';
 
 @Injectable()
 export class CandidateService {
-  create(createCandiateDto: CreateCandidateDto) {
-    return 'This action adds a new candidate';
-  }
-
   findAll() {
     return `This action returns all candidate`;
   }
