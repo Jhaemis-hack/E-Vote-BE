@@ -158,36 +158,7 @@ export class ElectionService {
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     // Send Voting link to all voters
-    try {
-      const voters_response = await this.voterService.findAllVoters();
-      const voters = voters_response.data;
-      const filteredVoters = voters.filter(voter => voter.election.id === savedElection.id);
-      // this.logger.log('Voters:', election_voters);
-
-      filteredVoters.forEach(async voter => {
-        try {
-          await this.emailService.sendVotingLink(
-            voter.email,
-            savedElection.start_date,
-            savedElection.start_time,
-            savedElection.end_date,
-            savedElection.end_time,
-          );
-        } catch (emailError) {
-          // this.logger.error(SYS_MSG.FAILED_TO_SEND_VOTING_LINK);
-          return {
-            status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-            message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
-          };
-        }
-      });
-    } catch (err) {
-      // this.logger.error(`Failed to retrieve voters: ${err.message}`);
-      return {
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.FAILED_TO_RETRIEVE_VOTERS,
-      };
-    }
+    await this.sendVotingLinkToVoters(savedElection);
 
     return {
       status_code: HttpStatus.CREATED,
@@ -210,6 +181,53 @@ export class ElectionService {
         })),
       },
     };
+  }
+
+  async sendVotingLinkToVoters(savedElection: Election) {
+    try {
+      const voters_response = await this.voterService.findAllVoters();
+      const voters = voters_response.data;
+      const filteredVoters = voters.filter(voter => voter.election.id === savedElection.id);
+      // this.logger.log('Voters:', voters);
+
+      const emailPromises = filteredVoters.map(async voter => {
+        try {
+          // this.logger.log('Sending voting link to: ', voter.email);
+          await this.emailService.sendVotingLink(
+            voter.email,
+            savedElection.start_date,
+            savedElection.start_time,
+            savedElection.end_date,
+            savedElection.end_time,
+          );
+        } catch (emailError) {
+          // this.logger.error(`Failed to send voting link to ${voter.email}: ${emailError.message}`);
+          throw new HttpException(
+            {
+              status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+              message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
+            },
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+      });
+
+      await Promise.all(emailPromises);
+
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
+      };
+    } catch (err) {
+      // this.logger.error(`Failed to retrieve voters: ${err.message}`);
+      throw new HttpException(
+        {
+          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: SYS_MSG.FAILED_TO_RETRIEVE_VOTERS,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async uploadPhoto(file: Express.Multer.File, adminId: string) {

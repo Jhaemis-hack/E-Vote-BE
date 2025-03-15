@@ -32,7 +32,7 @@ export class VoterService {
   // Get all voters without pagination
   async findAllVoters() {
     const voters = await this.voterRepository.find({
-      order: { created_at: 'DESC' },
+      // order: { created_at: 'DESC' },
       // select: ['id', 'email', 'created_at', 'election'],
     });
 

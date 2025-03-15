@@ -107,8 +107,53 @@
                   </td>
                 </tr>
               </table>
+
+              <!-- Features -->
+              <h3 style="margin-top: 15px; font-size: 12px; font-weight: 600;">Election Details:</h3>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 5px;">
+                <tr>
+                  <td width="20" valign="top" style="padding-top: 5px;">
+                    <div style="background-color: #90B5FF; border-radius: 50%; width: 13px; height: 13px; display: inline-block; text-align: center;">
+                      <span style="color: #ffffff; font-size: 8px; line-height: 13px;">✓</span>
+                    </div>
+                  </td>
+                  <td valign="top" style="padding-top: 5px;">
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Voting Start Date: {{ start_date }}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="20" valign="top" style="padding-top: 5px;">
+                    <div style="background-color: #90B5FF; border-radius: 50%; width: 13px; height: 13px; display: inline-block; text-align: center;">
+                      <span style="color: #ffffff; font-size: 8px; line-height: 13px;">✓</span>
+                    </div>
+                  </td>
+                  <td valign="top" style="padding-top: 5px;">
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Voting End Date: {{ end_time }}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="20" valign="top" style="padding-top: 5px;">
+                    <div style="background-color: #90B5FF; border-radius: 50%; width: 13px; height: 13px; display: inline-block; text-align: center;">
+                      <span style="color: #ffffff; font-size: 8px; line-height: 13px;">✓</span>
+                    </div>
+                  </td>
+                  <td valign="top" style="padding-top: 5px;">
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Voting Start Time: {{ start_time }}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td width="20" valign="top" style="padding-top: 5px;">
+                    <div style="background-color: #90B5FF; border-radius: 50%; width: 13px; height: 13px; display: inline-block; text-align: center;">
+                      <span style="color: #ffffff; font-size: 8px; line-height: 13px;">✓</span>
+                    </div>
+                  </td>
+                  <td valign="top" style="padding-top: 5px;">
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Voting End Time: {{ end_time }}</p>
+                  </td>
+                </tr>
+              </table>
               
-              <p style="padding: 8px 0; font-size: 10px; color: #1F2124; margin-top: 10px;">Your vote is safe and your voice counts. Please cast your ballot before the election ends {{ end_time }} on {{ end_date }}.</p>
+              <p style="padding: 8px 0; font-size: 10px; color: #1F2124; margin-top: 10px;">Your vote is safe and your voice counts. Please cast your ballot before the election ends by {{ end_time }} on {{ end_date }}.</p>
               <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Thank you for participating!</p>
               <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">
                 <span style="display: block;">Best regards,</span> The Resolve Team
