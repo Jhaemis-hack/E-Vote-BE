@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -19,6 +20,8 @@ import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
+import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
+import { stat } from 'fs';
 import e from 'express';
 
 describe('ElectionService', () => {
@@ -195,6 +198,7 @@ describe('ElectionService', () => {
           voters: [],
           max_choices: 1,
           type: ElectionType.SINGLECHOICE,
+          email_notification: false,
         },
         {
           id: '550e8400-e29b-41d4-a716-446655440001',
@@ -216,6 +220,7 @@ describe('ElectionService', () => {
           voters: [],
           max_choices: 1,
           type: ElectionType.SINGLECHOICE,
+          email_notification: false,
         },
       ];
 
@@ -593,6 +598,45 @@ describe('ElectionService', () => {
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { vote_id: validVoteLink },
         relations: ['candidates'],
+      });
+    });
+    describe('updateNotificationSettings', () => {
+      it('should update email_notification setting successfully', async () => {
+        const electionId = '84902582-8939-4231-804f-7bbe9ffc5bfe';
+        const settings: NotificationSettingsDto = { email_notification: true };
+
+        const election = new Election();
+        election.id = electionId;
+        election.email_notification = true;
+
+        jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
+        jest.spyOn(electionRepository, 'save').mockResolvedValue(election);
+
+        const result = await service.updateNotificationSettings(electionId, settings);
+
+        expect(result).toEqual({
+          status_code: HttpStatus.OK,
+          message: SYS_MSG.EMAIL_NOTIFICATION_ENABLED,
+          data: { electionId: electionId },
+        });
+        expect(electionRepository.findOne).toHaveBeenCalledWith({ where: { id: electionId } });
+        expect(electionRepository.save).toHaveBeenCalledWith(election);
+      });
+
+      it('should throw BadRequestException if id is not a valid UUID', async () => {
+        const invalidId = '1234';
+        const settings: NotificationSettingsDto = { email_notification: true };
+
+        await expect(service.updateNotificationSettings(invalidId, settings)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should throw NotFoundException if election is not found', async () => {
+        const electionId = '84902582-8939-4231-804f-7bbe9ffc5bfe';
+        const settings: NotificationSettingsDto = { email_notification: false };
+
+        jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+
+        await expect(service.updateNotificationSettings(electionId, settings)).rejects.toThrow(NotFoundException);
       });
     });
 

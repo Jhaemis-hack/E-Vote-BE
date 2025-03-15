@@ -30,7 +30,7 @@ export class UserService {
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private readonly mailService: EmailService, // Inject your mail service
+    private readonly mailService: EmailService,
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -84,7 +84,7 @@ export class UserService {
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.SIGNUP_MESSAGE,
-      data: { id: newAdmin.id, email: newAdmin.email, token },
+      data: { id: newAdmin.id, email: newAdmin.email },
     };
   }
 

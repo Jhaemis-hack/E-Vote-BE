@@ -56,6 +56,7 @@ describe('ElectionService - update', () => {
       end_time: '20:23:23',
       election_type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     };
 
     const existingElection = {
@@ -79,6 +80,7 @@ describe('ElectionService - update', () => {
       deleted_at: null,
       type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(existingElection);
@@ -174,6 +176,7 @@ describe('ElectionService - update', () => {
       deleted_at: null,
       type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(existingElection);
@@ -218,6 +221,7 @@ describe('ElectionService - update', () => {
       deleted_at: null,
       type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     });
     jest.spyOn(electionRepository, 'save').mockRejectedValue(new Error('Database connection failed'));
 
