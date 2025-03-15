@@ -53,6 +53,8 @@ export const EMAIL_ALREADY_VERIFIED = 'Email already verified';
 export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
 export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';
 export const WELCOME_EMAIL_FAILED = 'Welcome email failed to send';
+export const INVALID_NOTIFICATION_SETTINGS = 'Enable or Disable email notifications';
+export const EMAIL_NOTIFICATION_UPDATED = 'Email notification settings updated successfully';
 export const ERROR_MAX_CHOICES = 'Maximum choices for single election must be 1';
 export const UPLOAD_VOTER_SUCCESS = 'Voters uploaded successfully';
 export const VALID_PHOTO_URL = 'Valid photo url';
@@ -72,3 +74,5 @@ export const ERROR_EXCEL_INVALID = 'Invalid or empty Excel file';
 export const ERROR_EXCEL_PROCESSING =
   'EXCEL processing error: Failed to parse the excel file. Ensure the file contains valid data.';
 export const VOTER_INSERTION_ERROR = 'Error insertion voters';
+export const EMAIL_NOTIFICATION_ENABLED = 'Email notifications have been enabled for this election.';
+export const EMAIL_NOTIFICATION_DISABLED = 'Email notifications have been disabled for this election.';

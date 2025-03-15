@@ -30,7 +30,7 @@ export class UserService {
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private readonly mailService: EmailService, // Inject your mail service
+    private readonly mailService: EmailService,
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
