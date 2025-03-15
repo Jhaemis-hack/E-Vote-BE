@@ -51,8 +51,8 @@ export class EmailService {
     start_time: string,
     end_date: Date,
     end_time: string,
+    votingLinkId: string,
   ): Promise<void> {
-    const votingLinkId = randomUUID();
     const votingLink = `${process.env.FRONTEND_URL}/vote/${votingLinkId}`;
     await this.sendEmail(email, 'Here is your voting link', 'voting-link', {
       email,

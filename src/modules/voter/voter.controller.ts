@@ -56,7 +56,7 @@ export class VoterController {
   }
 
   @Get()
-  findAllVoters(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
+  async findAllVoters(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     // return this.voterService.findAllVoters(page, limit);
     return this.voterService.findAllVoters();
   }

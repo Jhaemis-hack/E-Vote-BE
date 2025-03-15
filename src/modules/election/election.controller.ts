@@ -56,6 +56,23 @@ export class ElectionController {
     return this.electionService.create(createElectionDto, adminId);
   }
 
+  // Used to test the sendVotingLinkToVoters function without creating a new election
+  // @Get('send-voting-links')
+  // async sendVotingLinks() {
+  //   try {
+  //     const savedElection = {
+  //       id: 'ba681483-0b3b-43a1-88d0-07d99f5fbf9a',
+  //       start_date: '2025-06-01T00:00:00Z',
+  //       start_time: '00:00:00',
+  //       end_date: '2025-06-01T23:59:59Z',
+  //       end_time: '23:59:59',
+  //     };
+  //     await this.electionService.sendVotingLinkToVoters(savedElection);
+  //   } catch (error) {
+  //     throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
+  //   }
+  // }
+
   @ApiBearerAuth()
   @Get()
   @UseGuards(AuthGuard)

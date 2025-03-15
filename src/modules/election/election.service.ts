@@ -192,13 +192,21 @@ export class ElectionService {
       const emailPromises = filteredVoters.map(async voter => {
         try {
           // this.logger.log('Sending voting link to: ', voter.email);
+          const votingLinkId = randomUUID();
+          voter.verification_token = votingLinkId;
+          // this.logger.log('Generated voting link ID:', votingLinkId);
+
           await this.emailService.sendVotingLink(
             voter.email,
             savedElection.start_date,
             savedElection.start_time,
             savedElection.end_date,
             savedElection.end_time,
+            votingLinkId,
           );
+
+          // Save voting link id to the voter
+          await this.voterRepository.save(voter);
         } catch (emailError) {
           // this.logger.error(`Failed to send voting link to ${voter.email}: ${emailError.message}`);
           throw new HttpException(
