@@ -349,7 +349,7 @@ export class ElectionService {
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
     // Transform the election response
-    const mappedElection = this.transformElectionResponse(election);
+    const mappedElection = this.transformElectionResponseFindOne(election);
 
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
@@ -367,6 +367,7 @@ export class ElectionService {
     const result = candidates.map(candidate => ({
       candidate_id: candidate.id,
       name: candidate.name,
+      photo_url: candidate.photo_url,
       vote_count: voteCounts.get(candidate.id) || 0,
     }));
 
@@ -653,6 +654,60 @@ export class ElectionService {
               photo_url: candidate.photo_url,
             };
           }) || [],
+      };
+    } else {
+      console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
+    }
+  }
+
+  private transformElectionResponseFindOne(election: any): any {
+    if (!election) {
+      return null;
+    }
+
+    let electionType: ElectionType;
+    if (election.type === 'singlechoice') {
+      electionType = ElectionType.SINGLECHOICE;
+    } else if (election.type === 'multiplechoice') {
+      electionType = ElectionType.MULTIPLECHOICE;
+    } else {
+      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      electionType = ElectionType.SINGLECHOICE;
+    }
+
+    if (election.status === ElectionStatus.UPCOMING) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.COMPLETED) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.ONGOING) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        vote_id: election.vote_id,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+        created_by: election.created_by,
+        max_choices: election.max_choices,
+        election_type: electionType,
       };
     } else {
       console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
