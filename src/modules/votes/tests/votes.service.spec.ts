@@ -95,6 +95,7 @@ describe('VoteService', () => {
           updated_at: new Date(),
           deleted_at: null,
           election: new Election(),
+          photo_url: 'https://www.example.com',
         },
       ];
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
@@ -130,6 +131,7 @@ describe('VoteService', () => {
           updated_at: new Date(),
           deleted_at: null,
           election: new Election(),
+          photo_url: 'https://www.example.com',
         },
       ];
 
