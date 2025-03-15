@@ -34,7 +34,9 @@ export class ElectionStatusUpdaterService {
       const startJob = new CronJob(startDateTime, async () => {
         this.logger.log(`Updating election ${id} from UPCOMING to ONGOING`);
         await this.electionRepository.update(id, { status: ElectionStatus.ONGOING });
-        await this.emailService.sendElectionStartEmails(election);
+        if (election.email_notification) {
+          await this.emailService.sendElectionStartEmails(election);
+        }
         this.schedulerRegistry.deleteCronJob(`start-${id}`);
       });
 
