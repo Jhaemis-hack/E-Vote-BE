@@ -85,8 +85,8 @@ export class VoterService {
 
     if (!admin_created_election) {
       throw new HttpException(
-        { status_code: 404, message: `No election associated with Admin ID: ${adminId} could be found.`, data: null },
-        HttpStatus.NOT_FOUND,
+        { status_code: 403, message: `No election associated with Admin ID: ${adminId} could be found.`, data: null },
+        HttpStatus.FORBIDDEN,
       );
     }
 
