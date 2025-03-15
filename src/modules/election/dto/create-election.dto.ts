@@ -75,4 +75,8 @@ export class CreateElectionDto {
   @IsString({ each: true, message: 'Each candidate must be a string' })
   @IsNotEmpty({ each: true, message: 'Each candidate must not be empty' })
   candidates: string[];
+
+  @ApiProperty({ example: false, description: 'Enable email notifications', required: true })
+  @IsNotEmpty()
+  email_notification?: boolean;
 }

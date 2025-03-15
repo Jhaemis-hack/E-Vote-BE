@@ -63,4 +63,7 @@ export class Election extends AbstractBaseEntity {
 
   @OneToMany(() => Vote, vote => vote.election)
   votes: Vote[];
+
+  @Column({ default: true })
+  email_notification: boolean;
 }

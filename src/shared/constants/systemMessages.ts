@@ -50,3 +50,5 @@ export const EMAIL_ALREADY_VERIFIED = 'Email already verified';
 export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
 export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';
 export const WELCOME_EMAIL_FAILED = 'Welcome email failed to send';
+export const INVALID_NOTIFICATION_SETTINGS = 'Enable or Disable email notifications';
+export const EMAIL_NOTIFICATION_UPDATED = 'Email notification settings updated successfully';
