@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -6,20 +7,20 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsUUID, isUUID } from 'class-validator';
+import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
+import * as moment from 'moment';
 import { Repository } from 'typeorm';
+import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { Vote } from '../votes/entities/votes.entity';
 import { Candidate } from '../candidate/entities/candidate.entity';
+import { Vote } from '../votes/entities/votes.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
-import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionStatus } from './entities/election.entity';
 import { ElectionResultsDto } from './dto/results.dto';
-
+import { UpdateElectionDto } from './dto/update-election.dto';
+import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 interface ElectionResultsDownload {
   filename: string;
   csvData: string;
@@ -33,20 +34,93 @@ export class ElectionService {
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
+    private electionStatusUpdaterService: ElectionStatusUpdaterService,
   ) {}
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, candidates, start_time, end_time } = createElectionDto;
+    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
+      createElectionDto;
+
+    const currentDate = moment().utc();
+
+    const currentDateStartOfDay = moment.utc().startOf('day');
+
+    const startDate = moment.utc(start_date);
+    const endDate = moment.utc(end_date);
+
+    // Validate start_date and end_date
+    if (startDate.isBefore(currentDateStartOfDay)) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (startDate.isAfter(endDate)) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // If start_time and end_time are provided
+    if (start_time && end_time) {
+      const startTime = moment.utc(start_time, 'HH:mm:ss');
+      const endTime = moment.utc(end_time, 'HH:mm:ss');
+
+      // For same-day elections, compare times directly
+      if (startDate.isSame(endDate, 'day')) {
+        if (startTime.isAfter(endTime) || startTime.isSame(endTime)) {
+          throw new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
+      // Validate startDateTime against currentDate and startTime
+      const startDateTime = moment.utc(`${startDate.format('YYYY-MM-DD')}T${start_time}`);
+      if (startDateTime.isBefore(currentDate.add(1, 'hour'))) {
+        throw new HttpException(
+          { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    if (election_type === ElectionType.SINGLECHOICE && max_choices !== 1) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.ERROR_MAX_CHOICES,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (election_type === ElectionType.MULTIPLECHOICE && candidates.length <= max_choices!) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.ERROR_TOTAL_CANDIDATES,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const election = this.electionRepository.create({
       title,
       description,
-      start_date: start_date,
-      end_date: end_date,
+      start_date: startDate.toDate(),
+      end_date: endDate.toDate(),
+      type: election_type,
       vote_id: randomUUID(),
       start_time: start_time,
       end_time: end_time,
       created_by: adminId,
+      max_choices: election_type === ElectionType.MULTIPLECHOICE ? max_choices : undefined,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -58,7 +132,10 @@ export class ElectionService {
       return candidate;
     });
 
-    savedElection.candidates = await this.candidateRepository.save(candidateEntities);
+    const savedCandidates = await this.candidateRepository.save(candidateEntities);
+    savedElection.candidates = savedCandidates;
+
+    await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
       status_code: HttpStatus.CREATED,
@@ -69,10 +146,11 @@ export class ElectionService {
         description: savedElection.description,
         start_date: savedElection.start_date,
         end_date: savedElection.end_date,
-        status: savedElection.status,
         start_time: savedElection.start_time,
         end_time: savedElection.end_time,
         vote_id: savedElection.vote_id,
+        max_choices: savedElection.max_choices,
+        election_type: savedElection.type,
         created_by: savedElection.created_by,
         candidates: savedElection.candidates.map(candidate => candidate.name),
       },
@@ -176,6 +254,21 @@ export class ElectionService {
 
     const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
 
+    // Check if election is active based on dates and times
+    const now = new Date();
+
+    const startDateTime = new Date(election.start_date);
+    const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+    startDateTime.setHours(startHour, startMinute, startSecond || 0);
+
+    // For end datetime
+    const endDateTime = new Date(election.end_date);
+    const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+    endDateTime.setHours(endHour, endMinute, endSecond || 0);
+
+    // Transform the election response
+    const mappedElection = this.transformElectionResponse(election);
+
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
       if (Array.isArray(vote.candidate_id)) {
@@ -206,7 +299,7 @@ export class ElectionService {
           description: election.description,
           votes_casted: totalVotesCast,
           start_date: election.start_date,
-          status: election.status,
+          status: mappedElection.status,
           start_time: election.start_time,
           end_date: election.end_date,
           end_time: election.end_time,
@@ -337,61 +430,134 @@ export class ElectionService {
       });
     }
 
-    if (election.status === ElectionStatus.PENDING) {
-      throw new ForbiddenException({
-        status_code: HttpStatus.FORBIDDEN,
-        message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
-        data: null,
-      });
+    // Check if election is active based on dates and times
+    const now = new Date();
+
+    const startDateTime = new Date(election.start_date);
+    const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+    startDateTime.setHours(startHour, startMinute, startSecond || 0);
+
+    // For end datetime
+    const endDateTime = new Date(election.end_date);
+    const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+    endDateTime.setHours(endHour, endMinute, endSecond || 0);
+
+    let newStatus: ElectionStatus;
+    let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
+    if (now < startDateTime) {
+      newStatus = ElectionStatus.UPCOMING;
+    } else if (now >= startDateTime && now <= endDateTime) {
+      newStatus = ElectionStatus.ONGOING;
+      message = 'Election is live. Vote now!';
+    } else {
+      newStatus = ElectionStatus.COMPLETED;
+      message = 'Election has ended.';
     }
 
-    if (election.status === ElectionStatus.COMPLETED) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_HAS_ENDED,
-        data: null,
-      });
+    // If the status has changed, update it in the database
+    if (election.status !== newStatus) {
+      election.status = newStatus;
+      await this.electionRepository.update(election.id, { status: newStatus });
     }
 
-    // TODO
-    // if (election?.status === ElectionStatus.COMPLETED) {
-    //   throw new HttpException(
-    //     {
-    //       status_code: HttpStatus.FORBIDDEN,
-    //       message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
-    //       data: null,
-    //     },
-    //     HttpStatus.FORBIDDEN,
-    //   );
-    // }
-
-    const mappedELection = this.transformElectionResponse(election);
-
+    const mappedElection = this.transformElectionResponse(election);
     return {
       status_code: HttpStatus.OK,
-      message: SYS_MSG.FETCH_ELECTION_BY_VOTER_LINK,
-      data: mappedELection,
+      message: message,
+      data: mappedElection,
     };
   }
 
   private mapElections(result: Election[]) {
-    return result.map(election => {
-      if (!election.created_by) {
-        console.warn(`Admin for election with ID ${election.id} not found.`);
-        return null;
-      }
+    return result
+      .map(election => {
+        if (!election.created_by) {
+          console.warn(`Admin for election with ID ${election.id} not found.`);
+          return null;
+        }
 
-      // TODO
-      // let electionType: ElectionType;
-      // if (election.type === 'singlechoice') {
-      //   electionType = ElectionType.SINGLECHOICE;
-      // } else if (election.type === 'multichoice') {
-      //   electionType = ElectionType.MULTICHOICE;
-      // } else {
-      //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-      //   electionType = ElectionType.SINGLECHOICE;
-      // }
+        let electionType: ElectionType;
+        if (election.type === 'singlechoice') {
+          electionType = ElectionType.SINGLECHOICE;
+        } else if (election.type === 'multiplechoice') {
+          electionType = ElectionType.MULTIPLECHOICE;
+        } else {
+          console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+          electionType = ElectionType.SINGLECHOICE;
+        }
+        // Check if election is active based on dates and times
+        const now = new Date();
 
+        const startDateTime = new Date(election.start_date);
+        const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+        startDateTime.setHours(startHour, startMinute, startSecond || 0);
+
+        // For end datetime
+        const endDateTime = new Date(election.end_date);
+        const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+        endDateTime.setHours(endHour, endMinute, endSecond || 0);
+
+        // Transform the election response
+        const mappedElection = this.transformElectionResponse(election);
+
+        return {
+          election_id: election.id,
+          title: election.title,
+          start_date: election.start_date,
+          end_date: election.end_date,
+          vote_id: election.vote_id,
+          status: mappedElection.status,
+          start_time: election.start_time,
+          end_time: election.end_time,
+          created_by: election.created_by,
+          max_choices: election.max_choices,
+          election_type: electionType,
+          candidates:
+            election.candidates.map(candidate => ({
+              candidate_id: candidate.id,
+              name: candidate.name,
+            })) || [],
+        };
+      })
+      .filter(election => election !== null);
+  }
+
+  private transformElectionResponse(election: any): any {
+    if (!election) {
+      return null;
+    }
+
+    let electionType: ElectionType;
+    if (election.type === 'singlechoice') {
+      electionType = ElectionType.SINGLECHOICE;
+    } else if (election.type === 'multiplechoice') {
+      electionType = ElectionType.MULTIPLECHOICE;
+    } else {
+      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      electionType = ElectionType.SINGLECHOICE;
+    }
+
+    if (election.status === ElectionStatus.UPCOMING) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.COMPLETED) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.ONGOING) {
       return {
         election_id: election.id,
         title: election.title,
@@ -402,67 +568,19 @@ export class ElectionService {
         start_time: election.start_time,
         end_time: election.end_time,
         created_by: election.created_by,
+        max_choices: election.max_choices,
+        election_type: electionType,
+        candidates:
+          election.candidates.map(candidate => {
+            return {
+              candidate_id: candidate.id,
+              name: candidate.name,
+            };
+          }) || [],
       };
-    });
-  }
-
-  private mergeDateTime(date, time) {
-    console.log(date, time);
-
-    return new Date(`${date}T${time}`);
-  }
-
-  private extract_present_time() {
-    return new Date().toLocaleTimeString().split(' ')[0];
-  }
-
-  private extract_date(date_obj) {
-    const date = new Date(date_obj);
-
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0];
+    } else {
+      console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
     }
-
-    return date.toISOString().split('T')[0];
-  }
-
-  private extract_present_date() {
-    return new Date().toISOString().split('T')[0];
-  }
-
-  private transformElectionResponse(election: any): any {
-    if (!election) {
-      return null;
-    }
-
-    //TODO
-    // let electionType: ElectionType;
-    // if (election.type === 'singlechoice') {
-    //   electionType = ElectionType.SINGLECHOICE;
-    // } else if (election.type === 'multichoice') {
-    //   electionType = ElectionType.MULTICHOICE;
-    // } else {
-    //   console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-    //   electionType = ElectionType.SINGLECHOICE;
-    // }
-
-    return {
-      election_id: election.id,
-      title: election.title,
-      description: election.description,
-      start_date: election.start_date,
-      end_date: election.end_date,
-      vote_id: election.vote_link,
-      start_time: election.start_time,
-      status: election.status,
-      end_time: election.end_time,
-      created_by: election.created_by,
-      candidates:
-        election.candidates.map(candidate => ({
-          candidate_id: candidate.id,
-          name: candidate.name,
-        })) || [],
-    };
   }
 
   async getElectionResults(electionId: string, adminId: string): Promise<ElectionResultsDto> {

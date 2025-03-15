@@ -17,7 +17,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { isUUID } from 'class-validator';
 import { AuthGuard } from '../../guards/auth.guard';
 import { CreateElectionDto } from './dto/create-election.dto';
@@ -25,7 +25,6 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
-
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 
@@ -49,7 +48,9 @@ export class ElectionController {
   @Get()
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get all elections' })
-  @ApiResponse({ status: 200, description: 'All ', type: [ElectionResponseDto] })
+  @ApiResponse({ status: 200, description: 'List of elections', type: [ElectionResponseDto] })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'page_size', required: false, example: 10, description: 'Number of items per page (default: 10)' })
   async findAll(
     @Query('page') page: number = 1,
     @Query('page_size') pageSize: number = 10,

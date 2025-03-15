@@ -3,17 +3,18 @@ import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
+import { Voter } from '../../voter/entities/voter.entity';
 
 export enum ElectionStatus {
-  PENDING = 'pending',
+  UPCOMING = 'upcoming',
   ONGOING = 'ongoing',
   COMPLETED = 'completed',
 }
 
-//TODO:
-// export enum ElectionType {
-//   SINGLECHOICE = 'singlechoice',
-// }
+export enum ElectionType {
+  SINGLECHOICE = 'singlechoice',
+  MULTIPLECHOICE = 'multiplechoice',
+}
 
 @Entity({ name: 'elections' })
 export class Election extends AbstractBaseEntity {
@@ -41,12 +42,15 @@ export class Election extends AbstractBaseEntity {
   @Column({
     type: 'enum',
     enum: ElectionStatus,
-    default: ElectionStatus.PENDING,
+    default: ElectionStatus.UPCOMING,
   })
   status: ElectionStatus;
 
-  // @Column({ type: 'enum', enum: ElectionType, default: ElectionType.SINGLECHOICE })
-  // type: ElectionType;
+  @Column({ type: 'enum', enum: ElectionType, default: ElectionType.SINGLECHOICE })
+  type: ElectionType;
+
+  @Column({ default: 1 })
+  max_choices: number;
 
   @ManyToOne(() => User, user => user.created_elections)
   @JoinColumn({ name: 'created_by' })
@@ -60,4 +64,7 @@ export class Election extends AbstractBaseEntity {
 
   @OneToMany(() => Vote, vote => vote.election)
   votes: Vote[];
+
+  @OneToMany(() => Voter, voter => voter.election)
+  voters: Voter[];
 }

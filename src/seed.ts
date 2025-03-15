@@ -61,7 +61,7 @@ async function seed() {
   election.end_date = new Date('2023-01-02');
   election.start_time = '09:00:00';
   election.end_time = '17:00:00';
-  election.vote_link = 'http://example.com/vote';
+  election.vote_id = 'http://example.com/vote';
   election.created_by_user = user;
   await electionRepository.save(election);
 
@@ -73,7 +73,7 @@ async function seed() {
   election2.end_date = new Date('2023-02-02');
   election2.start_time = '09:00:00';
   election2.end_time = '17:00:00';
-  election2.vote_link = 'http://example.com/vote2';
+  election2.vote_id = 'http://example.com/vote2';
   election2.created_by_user = user2;
   await electionRepository.save(election2);
 
@@ -102,26 +102,26 @@ async function seed() {
   // Create votes
   const vote1 = new Vote();
   vote1.election = election;
-  vote1.candidate = candidate1;
+  // vote1.candidate = candidate1;
   vote1.candidate_id = [candidate1.id];
   await voteRepository.save(vote1);
 
   const vote2 = new Vote();
   vote2.election = election;
-  vote2.candidate = candidate2;
+  // vote2.candidate = candidate2;
   vote2.candidate_id = [candidate2.id];
   await voteRepository.save(vote2);
 
   // Create additional votes
   const vote3 = new Vote();
   vote3.election = election2;
-  vote3.candidate = candidate3;
+  // vote3.candidate = candidate3;
   vote3.candidate_id = [candidate3.id];
   await voteRepository.save(vote3);
 
   const vote4 = new Vote();
   vote4.election = election2;
-  vote4.candidate = candidate4;
+  // vote4.candidate = candidate4;
   vote4.candidate_id = [candidate4.id];
   await voteRepository.save(vote4);
 

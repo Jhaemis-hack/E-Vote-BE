@@ -1,11 +1,11 @@
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateVoteDto } from './dto/create-votes.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Vote } from './entities/votes.entity';
+import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { isUUID } from 'class-validator';
-import { Election } from '../election/entities/election.entity';
+import { Election, ElectionStatus, ElectionType } from '../election/entities/election.entity';
+import { CreateVoteDto } from './dto/create-votes.dto';
+import { Vote } from './entities/votes.entity';
 
 @Injectable()
 export class VoteService {
@@ -46,6 +46,41 @@ export class VoteService {
     //     HttpStatus.FORBIDDEN,
     //   );
     // }
+
+    if (election.status === ElectionStatus.COMPLETED) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.ERROR_VOTER_ACCESS,
+          data: null,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    } else if (election.status === ElectionStatus.UPCOMING) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.ERROR_VOTER_ACCESS,
+          data: null,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    if (
+      election.type === ElectionType.MULTIPLECHOICE &&
+      createVoteDto.candidate_id.length > (election.max_choices ?? 0)
+    ) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: `You can select up to ${election.max_choices} candidates`,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const candidates = election.candidates.map(candidate => candidate.id);
     const invalid_candidates = createVoteDto.candidate_id.filter(id => !candidates.includes(id));
     if (invalid_candidates.length > 0) {

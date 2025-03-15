@@ -2,17 +2,19 @@ import { NotFoundException, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ElectionService } from '../election.service';
-import { Election, ElectionStatus } from '../entities/election.entity';
+import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
 import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UpdateElectionDto } from '../dto/update-election.dto';
+import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
 
 describe('ElectionService - update', () => {
   let service: ElectionService;
   let electionRepository: Repository<Election>;
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
+  let electionStatusUpdaterService: ElectionStatusUpdaterService;
 
   beforeEach(() => {
     electionRepository = {
@@ -23,7 +25,18 @@ describe('ElectionService - update', () => {
     candidateRepository = {} as Repository<Candidate>;
     voteRepository = {} as Repository<Vote>;
 
-    service = new ElectionService(electionRepository, candidateRepository, voteRepository);
+    // Mock the ElectionStatusUpdaterService
+    electionStatusUpdaterService = {
+      scheduleElectionUpdates: jest.fn(),
+    } as unknown as ElectionStatusUpdaterService;
+
+    // Provide all 4 arguments to the ElectionService constructor
+    service = new ElectionService(
+      electionRepository,
+      candidateRepository,
+      voteRepository,
+      electionStatusUpdaterService, // Add the mocked service
+    );
   });
 
   it('should update an election successfully including election_type', async () => {
@@ -38,6 +51,8 @@ describe('ElectionService - update', () => {
       candidates: ['candidate1', 'candidate2'],
       start_time: '20:25:22',
       end_time: '20:23:23',
+      election_type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     };
 
     const existingElection = {
@@ -54,10 +69,13 @@ describe('ElectionService - update', () => {
       status: ElectionStatus.ONGOING,
       vote_id: 'https://vote-link.com',
       start_time: '08:00:00',
+      voters: [],
       end_time: '17:00:00',
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(existingElection);
@@ -79,6 +97,8 @@ describe('ElectionService - update', () => {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     };
 
     jest.spyOn(electionRepository, 'save').mockResolvedValue(savedElection);
@@ -94,12 +114,14 @@ describe('ElectionService - update', () => {
     const electionId = 'non-existent-id';
     const updateElectionDto: UpdateElectionDto = {
       title: 'Updated Election Title',
-      election_status: ElectionStatus.PENDING,
+      election_status: ElectionStatus.UPCOMING,
       candidates: ['candidate1'],
       start_time: '08:00:00',
       end_time: '17:00:00',
       start_date: new Date('2023-11-01T00:00:00.000Z'),
       end_date: new Date('2023-11-30T23:59:59.000Z'),
+      election_type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
@@ -118,6 +140,8 @@ describe('ElectionService - update', () => {
       election_status: ElectionStatus.ONGOING,
       start_time: '08:00:00',
       end_time: '17:00:00',
+      election_type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     };
 
     const existingElection = {
@@ -131,6 +155,7 @@ describe('ElectionService - update', () => {
       created_by_user: {} as User,
       candidates: [] as Candidate[],
       votes: [] as Vote[],
+      voters: [],
       status: ElectionStatus.ONGOING,
       vote_id: 'https://vote-link.com',
       start_time: '08:00:00',
@@ -138,6 +163,8 @@ describe('ElectionService - update', () => {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(existingElection);
@@ -155,6 +182,8 @@ describe('ElectionService - update', () => {
       end_time: '17:00:00',
       start_date: new Date('2023-11-01T00:00:00.000Z'),
       end_date: new Date('2023-11-30T23:59:59.000Z'),
+      election_type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue({
@@ -167,6 +196,7 @@ describe('ElectionService - update', () => {
       created_by_user: {} as User,
       candidates: [] as Candidate[],
       votes: [] as Vote[],
+      voters: [],
       status: ElectionStatus.COMPLETED,
       vote_id: 'https://vote-link.com',
       start_time: '08:00:00',
@@ -174,6 +204,8 @@ describe('ElectionService - update', () => {
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: null,
+      type: ElectionType.SINGLECHOICE,
+      max_choices: 1,
     });
     jest.spyOn(electionRepository, 'save').mockRejectedValue(new Error('Database connection failed'));
 

@@ -1,0 +1,38 @@
+name: Staging Deployment
+
+on:
+  workflow_run:
+    workflows: ['Node.js CI Test']
+    types:
+      - completed
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: evote
+    env:
+      HOST: ${{ secrets.HOST }}
+      USERNAME: ${{ secrets.USERNAME }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+
+      - name: Deploy to Staging
+        run: |
+          sshpass -p $PASSWORD ssh -o StrictHostKeyChecking=no $USERNAME@$HOST << 'EOF'
+            cd ~/evote-backend/staging
+            git reset --hard
+            pm2 stop evote_staging
+            git pull origin dev
+            pnpm install
+            pnpm build
+            pm2 restart evote_be_staging --update-env
+          EOF

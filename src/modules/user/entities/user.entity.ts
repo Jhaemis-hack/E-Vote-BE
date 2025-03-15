@@ -17,6 +17,9 @@ export class User extends AbstractBaseEntity {
   @Column()
   password: string;
 
+  @Column({ default: false })
+  is_verified: boolean;
+
   @OneToMany(() => Election, election => election.created_by_user)
   created_elections: Election[];
 }

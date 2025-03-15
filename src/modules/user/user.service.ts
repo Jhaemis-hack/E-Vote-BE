@@ -17,13 +17,20 @@ import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { exist, string } from 'joi';
+import { EmailService } from '../email/email.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private readonly mailService: EmailService, // Inject your mail service
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -46,12 +53,34 @@ export class UserService {
     const newAdmin = this.userRepository.create({
       email,
       password: hashedPassword,
+      is_verified: true,
     });
-
-    await this.userRepository.save(newAdmin);
 
     const credentials = { email: newAdmin.email, sub: newAdmin.id };
     const token = this.jwtService.sign(credentials);
+
+    try {
+      await this.mailService.sendWelcomeMail(newAdmin.email);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.WELCOME_EMAIL_FAILED,
+        data: null,
+      };
+    }
+
+    try {
+      await this.mailService.sendVerificationMail(newAdmin.email, token);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+        data: null,
+      };
+    }
+
+    await this.userRepository.save(newAdmin);
+
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.SIGNUP_MESSAGE,
@@ -68,18 +97,37 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND);
     }
 
-    // if (userExist.is_verified === false) {
-    //   throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED);
-    // }
-
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
     }
 
+    if (userExist.is_verified === false) {
+      const credentials = { email: userExist.email, sub: userExist.id };
+      const token = this.jwtService.sign(credentials);
+
+      try {
+        await this.mailService.sendVerificationMail(userExist.email, token);
+
+        // Restricts the user from logging in until their email is verified
+        return {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.EMAIL_NOT_VERIFIED,
+          data: null,
+        };
+      } catch (error) {
+        return {
+          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+          data: null,
+        };
+      }
+    }
+
     const { password, ...admin } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };
     const token = this.jwtService.sign(credentials);
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
@@ -173,10 +221,12 @@ export class UserService {
   }
 
   private validatePassword(password: string) {
-    if (password.length < 8) {
+    if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
       throw new BadRequestException({
         message: SYS_MSG.INVALID_PASSWORD_FORMAT,
-        data: { password: 'Password must be at least 8 characters long' },
+        data: {
+          password: 'Password must be at least 8 characters long and contain at least one special character and number',
+        },
         status_code: HttpStatus.BAD_REQUEST,
       });
     }
@@ -202,5 +252,108 @@ export class UserService {
       status_code: HttpStatus.OK,
       message: SYS_MSG.DELETE_USER,
     };
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string; data: null }> {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+    const resetToken = uuidv4();
+    const resetTokenExpiry = new Date(Date.now() + 86400000);
+    const forgotPasswordToken = this.forgotPasswordRepository.create({
+      email: user.email,
+      reset_token: resetToken,
+      token_expiry: resetTokenExpiry,
+    });
+
+    await this.mailService.sendForgotPasswordMail(
+      user.email,
+      'Admin',
+      `${process.env.FRONTEND_URL}/reset-password`,
+      resetToken,
+    );
+    await this.forgotPasswordRepository.save(forgotPasswordToken);
+    return {
+      message: SYS_MSG.PASSWORD_RESET_LINK_SENT,
+      data: null,
+    };
+  }
+
+  async resetPassword(resetPassword: ResetPasswordDto): Promise<{ message: string; data: null }> {
+    const { email, reset_token, password } = resetPassword;
+    const resetPasswordRequestExist = await this.forgotPasswordRepository.findOne({ where: { reset_token } });
+
+    if (!resetPasswordRequestExist) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.PASSWORD_RESET_REQUEST_NOT_FOUND,
+      });
+    }
+
+    const adminExist = await this.userRepository.findOne({
+      where: { email },
+    });
+    if (!adminExist) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    adminExist.password = hashedPassword;
+    await this.userRepository.save(adminExist);
+    await this.forgotPasswordRepository.delete({ reset_token });
+    return {
+      message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
+      data: null,
+    };
+  }
+
+  async verifyEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      const userId = payload.sub;
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+      }
+
+      if (user.is_verified) {
+        throw new BadRequestException(SYS_MSG.EMAIL_ALREADY_VERIFIED);
+      }
+
+      user.is_verified = true;
+      await this.userRepository.save(user);
+
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.EMAIL_VERIFICATION_SUCCESS,
+        data: {
+          id: user.id,
+          email: user.email,
+          is_verified: true,
+        },
+      };
+    } catch (error) {
+      if (error.name === 'JsonWebTokenError') {
+        throw new BadRequestException({
+          message: SYS_MSG.INVALID_VERIFICATION_TOKEN,
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      if (error.name === 'TokenExpiredError') {
+        throw new BadRequestException({
+          message: SYS_MSG.VERIFICATION_TOKEN_EXPIRED,
+          status_code: HttpStatus.BAD_REQUEST,
+        });
+      }
+      throw error;
+    }
   }
 }
