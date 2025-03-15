@@ -4,6 +4,7 @@ import {
   HttpStatus,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -18,6 +19,7 @@ import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
+import e from 'express';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -797,6 +799,66 @@ describe('ElectionService', () => {
         await expect(service.create(dto, adminId)).resolves.toBeDefined();
         expect(electionRepository.create).toHaveBeenCalled();
         expect(electionRepository.save).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('verify voter', () => {
+    const mockElection = {
+      status: ElectionStatus.COMPLETED,
+      id: 'election_id',
+      vote_id: 'vote_id',
+      voters: [
+        { id: 'candidate-1', email: 'user@example.com' },
+        { id: 'candidate-2', email: 'test@example.com' },
+      ],
+    } as Election;
+
+    const verifyVoteDto = {
+      vote_id: 'vote_id',
+      email: 'user@example.com',
+    };
+    it('should throw NotFoundException if election does not exist', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+      await expect(service.verifyVoter(verifyVoteDto)).rejects.toThrow(
+        new HttpException(
+          { status_code: HttpStatus.NOT_FOUND, message: SYS_MSG.ELECTION_NOT_FOUND, data: null },
+          HttpStatus.NOT_FOUND,
+        ),
+      );
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { vote_id: verifyVoteDto.vote_id },
+        relations: ['voters'],
+      });
+    });
+    it('should throw UnauthorizedException if voter is not found in email list', async () => {
+      const verifyVoteDto = {
+        vote_id: 'vote_id',
+        email: 'voter@example.com',
+      };
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection);
+      await expect(service.verifyVoter(verifyVoteDto)).rejects.toThrow(
+        new UnauthorizedException({
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.VOTER_UNVERIFIED,
+          data: null,
+        }),
+      );
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { vote_id: verifyVoteDto.vote_id },
+        relations: ['voters'],
+      });
+    });
+    it('should return Httpstatus.Ok if voter is found', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection);
+      await expect(service.verifyVoter(verifyVoteDto)).resolves.toEqual({
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.VOTER_VERIFIED,
+        data: null,
+      });
+      expect(electionRepository.findOne).toHaveBeenCalledWith({
+        where: { vote_id: verifyVoteDto.vote_id },
+        relations: ['voters'],
       });
     });
   });
