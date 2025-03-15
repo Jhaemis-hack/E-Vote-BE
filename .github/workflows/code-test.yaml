@@ -20,6 +20,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up environment variables
+        run: |
+          echo "${{ secrets.ENV_SUPABASE }}" > .env
+        shell: bash
+
       - name: Install dependencies
         run: npm install
 
