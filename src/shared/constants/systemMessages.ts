@@ -63,4 +63,6 @@ export const FAILED_PHOTO_UPLOAD = 'Failed to upload photo to Supabase.';
 export const PHOTO_SIZE_LIMIT = 'File size exceeds 2MB limit.';
 export const INVALID_FILE_TYPE = 'Invalid file type. Only JPEG and PNG are allowed.';
 export const NO_FILE_UPLOADED = 'No file uploaded';
-export const DEFAULT_PROFILE_URL = 'default pfofile photo assigned';
+export const DEFAULT_PROFILE_URL = 'default profile photo assigned';
+export const VOTER_VERIFIED = 'Voter verified, proceed to cat your vote';
+export const VOTER_UNVERIFIED = 'Voter unverified, your not allowed to vote in this election';
