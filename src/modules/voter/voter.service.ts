@@ -29,7 +29,7 @@ export class VoterService {
     } else {
       throw new BadRequestException({
         status_code: HttpStatus.BAD_REQUEST,
-        message: 'Invalid file format',
+        message: SYS_MSG.INVALID_VOTER_FILE_UPLOAD,
         data: null,
       });
     }
@@ -87,7 +87,7 @@ export class VoterService {
           reject(
             new InternalServerErrorException({
               status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-              message: `CSV processing error: ${error.message}`,
+              message: SYS_MSG.ERROR_CSV_PROCESSING,
               data: null,
             }),
           ),
@@ -105,7 +105,7 @@ export class VoterService {
       if (!sheet) {
         throw new BadRequestException({
           status_code: HttpStatus.BAD_REQUEST,
-          message: 'Invalid or empty Excel file',
+          message: SYS_MSG.ERROR_EXCEL_INVALID,
           data: null,
         });
       }
@@ -153,7 +153,7 @@ export class VoterService {
       }
       throw new InternalServerErrorException({
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: `Excel processing error`,
+        message: SYS_MSG.ERROR_EXCEL_PROCESSING,
         data: null,
       });
     }
@@ -165,7 +165,7 @@ export class VoterService {
     } catch (error) {
       throw new InternalServerErrorException({
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: `Error insertion voters`,
+        message: SYS_MSG.VOTER_INSERTION_ERROR,
         data: null,
       });
     }

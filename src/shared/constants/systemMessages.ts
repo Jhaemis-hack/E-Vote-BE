@@ -65,3 +65,10 @@ export const PHOTO_SIZE_LIMIT = 'File size exceeds 2MB limit.';
 export const INVALID_FILE_TYPE = 'Invalid file type. Only JPEG and PNG are allowed.';
 export const NO_FILE_UPLOADED = 'No file uploaded';
 export const DEFAULT_PROFILE_URL = 'default pfofile photo assigned';
+export const INVALID_VOTER_FILE_UPLOAD = 'Invalid file format. Only Excel and CSV are allowed';
+export const ERROR_CSV_PROCESSING =
+  'CSV processing error: Failed to parse the CSV file. Ensure the file contains valid data.';
+export const ERROR_EXCEL_INVALID = 'Invalid or empty Excel file';
+export const ERROR_EXCEL_PROCESSING =
+  'EXCEL processing error: Failed to parse the excel file. Ensure the file contains valid data.';
+export const VOTER_INSERTION_ERROR = 'Error insertion voters';
