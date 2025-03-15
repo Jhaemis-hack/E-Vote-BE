@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   HttpStatus,
   Injectable,
   InternalServerErrorException,
@@ -69,10 +70,14 @@ export class VoterService {
 
           if (duplicates.length > 0) {
             return reject(
-              new BadRequestException({
-                status_code: HttpStatus.BAD_REQUEST,
-                message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
-              }),
+              new HttpException(
+                {
+                  status_code: HttpStatus.BAD_REQUEST,
+                  message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
+                  data: duplicates.map(d => d.email).join(', '),
+                },
+                HttpStatus.BAD_REQUEST,
+              ),
             );
           }
           await this.saveVoters(voters);
@@ -133,11 +138,14 @@ export class VoterService {
         .map(([email, rows]) => ({ email, rows }));
 
       if (duplicates.length > 0) {
-        throw new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
-          data: null,
-        });
+        throw new HttpException(
+          {
+            status_code: HttpStatus.BAD_REQUEST,
+            message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
+            data: null,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       await this.saveVoters(voters);
