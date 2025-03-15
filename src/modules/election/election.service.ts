@@ -26,6 +26,7 @@ import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 
 config();
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
@@ -742,5 +743,33 @@ export class ElectionService {
     const header = 'Candidate Name,Votes\n';
     const rows = results.map(r => `"${r.name.replace(/"/g, '""')}",${r.votes}`).join('\n');
     return header + rows;
+  }
+
+  async updateNotificationSettings(
+    id: string,
+    settings: NotificationSettingsDto,
+  ): Promise<{ status_code: number; data: { electionId: string }; message: string }> {
+    if (!isUUID(id)) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.INCORRECT_UUID,
+        data: null,
+      });
+    }
+    const election = await this.electionRepository.findOne({ where: { id } });
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+    election.email_notification = settings.email_notification;
+    await this.electionRepository.save(election);
+    return {
+      status_code: HttpStatus.OK,
+      data: { electionId: id },
+      message: settings.email_notification ? SYS_MSG.EMAIL_NOTIFICATION_ENABLED : SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
+    };
   }
 }

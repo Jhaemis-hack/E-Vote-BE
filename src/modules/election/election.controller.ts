@@ -38,6 +38,7 @@ import { Election } from './entities/election.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -163,6 +164,26 @@ export class ElectionController {
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
   getElectionByVoterLink(@Param('vote_id') vote_id: string) {
     return this.electionService.getElectionByVoterLink(vote_id);
+  }
+
+  @Put(':id/notification-settings')
+  @ApiOperation({ summary: 'Update email notification settings for an election' })
+  @ApiParam({ name: 'id', description: 'Election ID', type: String })
+  @ApiBody({
+    type: NotificationSettingsDto,
+    examples: {
+      example1: {
+        summary: 'Example request body',
+        value: {
+          email_notification: true,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: HttpStatus.OK, description: SYS_MSG.EMAIL_NOTIFICATION_UPDATED })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: SYS_MSG.INVALID_NOTIFICATION_SETTINGS })
+  async updateNotificationSettings(@Param('id') id: string, @Body() settings: NotificationSettingsDto) {
+    return this.electionService.updateNotificationSettings(id, settings);
   }
 
   @ApiBearerAuth()
