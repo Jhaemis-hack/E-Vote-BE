@@ -98,7 +98,10 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         election_type: ElectionType.SINGLECHOICE,
         max_choices: 1,
-        candidates: ['Candidate A', 'Candidate B'],
+        candidates: [
+          { name: 'Tommy', photo_url: 'https://tommy.com' },
+          { name: 'Ben', photo_url: 'https://ben.com' },
+        ],
       };
 
       const result = await service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e');
@@ -149,7 +152,10 @@ describe('ElectionService', () => {
         // vote_link: '7284fdbc-a1b9-45ad-a586-72edae14526d',
         election_type: ElectionType.SINGLECHOICE,
         max_choices: 1,
-        candidates: ['Candidate A', 'Candidate B'],
+        candidates: [
+          { name: 'Tommy', photo_url: 'https://tommy.com' },
+          { name: 'Ben', photo_url: 'https://ben.com' },
+        ],
       };
 
       jest.spyOn(electionRepository, 'create').mockImplementationOnce(() => {
@@ -713,7 +719,10 @@ describe('ElectionService', () => {
         end_time: '17:00:00',
         election_type: ElectionType.SINGLECHOICE,
         max_choices: 1,
-        candidates: ['Candidate A', 'Candidate B'],
+        candidates: [
+          { name: 'Tommy', photo_url: 'https://tommy.com' },
+          { name: 'Ben', photo_url: 'https://ben.com' },
+        ],
       };
 
       it('should throw an exception when start date is in the past', async () => {

@@ -2,6 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsDate,
   IsDateString,
@@ -11,10 +12,13 @@ import {
   IsString,
   Matches,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 import { ElectionStatus, ElectionType } from '../entities/election.entity';
 import { CreateElectionDto } from './create-election.dto';
+import { CandidateDto } from './single-election.dto';
+import { CreateCandidateDto } from 'src/modules/candidate/dto/create-candidate.dto';
 export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @ApiProperty({
     example: 'Updated Election Title',
@@ -69,10 +73,9 @@ export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @IsEnum(ElectionType)
   election_type: ElectionType;
 
-  @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
   @IsArray()
-  @IsString({ each: true })
-  @ValidateIf(candidates => candidates.length > 0)
-  @IsNotEmpty({ message: 'Candidates array cannot be empty' })
-  candidates: string[];
+  @ArrayMinSize(2, { message: 'Candidates array must contain at least two candidates' })
+  @ValidateNested({ each: true })
+  @Type(() => CreateCandidateDto)
+  candidates: CreateCandidateDto[];
 }
