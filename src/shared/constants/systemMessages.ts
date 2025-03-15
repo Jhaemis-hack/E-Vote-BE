@@ -54,3 +54,5 @@ export const INVALID_VERIFICATION_TOKEN = 'Invalid verification token';
 export const VERIFICATION_TOKEN_EXPIRED = 'Verification token has expired';
 export const WELCOME_EMAIL_FAILED = 'Welcome email failed to send';
 export const ERROR_MAX_CHOICES = 'Maximum choices for single election must be 1';
+export const ELECTION_VOTERS_NOT_FOUND = 'No voters found for this election';
+export const FETCH_ELECTION_VOTER_LIST = 'Election voters fetched successfully';
