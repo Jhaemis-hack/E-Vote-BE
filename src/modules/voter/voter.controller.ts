@@ -5,10 +5,7 @@ import {
   Post,
   Query,
   Req,
-  Body,
-  Patch,
   Param,
-  Delete,
   UploadedFile,
   BadRequestException,
   UseGuards,
@@ -27,7 +24,7 @@ export class VoterController {
   constructor(private readonly voterService: VoterService) {}
 
   @ApiBearerAuth()
-  @Get(':electionId/voters')
+  @Get('/:electionId/voters')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: "Get Voters' List" })
   @ApiResponse({ status: 200, description: 'List of all eligible voters' })

@@ -79,8 +79,8 @@ export class CreateElectionDto {
 
   @ApiProperty({
     example: [
-      '{name: Candidate A, profile_url: https://from-s3-bucket.com}',
-      '{name: Candidate B ,profile_url: https://from-s3-bucket.com}',
+      { name: 'Candidate A', profile_url: 'https://from-s3-bucket.com' },
+      { name: 'Candidate B', profile_url: 'https://from-s3-bucket.com' },
     ],
     description: 'List of candidate names and profile url',
     type: [CreateCandidateDto],

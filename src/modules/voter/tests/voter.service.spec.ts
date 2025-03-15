@@ -99,14 +99,15 @@ describe('VoterService', () => {
           current_page: page,
           total_pages: 1,
           total_results: total,
+          election_id: validElectionId,
           voter_list: [
             {
-              election_id: validElectionId,
+              voter_id: '340e8400-e29b-765w-a716-446655440990',
               name: 'Bayo',
               email: 'Bayo@gmail.com',
             },
             {
-              election_id: validElectionId,
+              voter_id: '340e8400-e29b-41d4-a716-446655440990',
               name: 'Tayo',
               email: 'Tayo@gmail.com',
             },

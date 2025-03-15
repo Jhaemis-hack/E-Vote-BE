@@ -36,6 +36,7 @@ export class VoterService {
       current_page: number;
       total_pages: number;
       total_results: number;
+      election_id: string;
       voter_list: any;
       meta: any;
     };
@@ -68,12 +69,23 @@ export class VoterService {
     const skip = (page - 1) * pageSize;
 
     const election = await this.electionRepository.findOne({
-      where: { created_by: adminId, id: electionId },
+      where: { id: electionId },
     });
 
     if (!election) {
       throw new HttpException(
         { status_code: 404, message: SYS_MSG.ELECTION_NOT_FOUND, data: null },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const admin_created_election = await this.electionRepository.findOne({
+      where: { created_by: adminId, id: electionId },
+    });
+
+    if (!admin_created_election) {
+      throw new HttpException(
+        { status_code: 404, message: `No election associated with Admin ID: ${adminId} could be found.`, data: null },
         HttpStatus.NOT_FOUND,
       );
     }
@@ -93,7 +105,7 @@ export class VoterService {
     }
 
     const data = voter_list.map(voter => ({
-      election_id: voter.election?.id,
+      voter_id: voter.id,
       name: voter.name,
       email: voter.email,
     }));
@@ -107,6 +119,7 @@ export class VoterService {
         current_page: page,
         total_pages,
         total_results: total,
+        election_id: electionId,
         voter_list: data,
         meta: {
           hasNext: page < total_pages,
