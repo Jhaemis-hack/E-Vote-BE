@@ -90,4 +90,8 @@ export class CreateElectionDto {
   @ValidateNested({ each: true })
   @Type(() => CreateCandidateDto)
   candidates: CreateCandidateDto[];
+
+  @ApiProperty({ example: false, description: 'Enable email notifications', required: true })
+  @IsNotEmpty()
+  email_notification?: boolean;
 }

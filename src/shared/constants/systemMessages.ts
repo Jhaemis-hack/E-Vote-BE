@@ -57,7 +57,10 @@ export const FAILED_TO_SEND_VOTING_LINK = 'Failed to send voting link to all vot
 export const VOTING_LINK_SENT_SUCCESSFULLY = 'Voting links sent successfully';
 export const FAILED_TO_RETRIEVE_VOTERS = 'Failed to retrieve voters';
 export const RETRIEVED_VOTERS_SUCCESSFULLY = 'Retrieved voters successfully';
+export const INVALID_NOTIFICATION_SETTINGS = 'Enable or Disable email notifications';
+export const EMAIL_NOTIFICATION_UPDATED = 'Email notification settings updated successfully';
 export const ERROR_MAX_CHOICES = 'Maximum choices for single election must be 1';
+export const UPLOAD_VOTER_SUCCESS = 'Voters uploaded successfully';
 export const VALID_PHOTO_URL = 'Valid photo url';
 export const UPLOAD_FAILED = 'Upload failed';
 export const NO_PHOTO_URL = 'No photo url';
@@ -68,3 +71,12 @@ export const PHOTO_SIZE_LIMIT = 'File size exceeds 2MB limit.';
 export const INVALID_FILE_TYPE = 'Invalid file type. Only JPEG and PNG are allowed.';
 export const NO_FILE_UPLOADED = 'No file uploaded';
 export const DEFAULT_PROFILE_URL = 'default pfofile photo assigned';
+export const INVALID_VOTER_FILE_UPLOAD = 'Invalid file format. Only Excel and CSV are allowed';
+export const ERROR_CSV_PROCESSING =
+  'CSV processing error: Failed to parse the CSV file. Ensure the file contains valid data.';
+export const ERROR_EXCEL_INVALID = 'Invalid or empty Excel file';
+export const ERROR_EXCEL_PROCESSING =
+  'EXCEL processing error: Failed to parse the excel file. Ensure the file contains valid data.';
+export const VOTER_INSERTION_ERROR = 'Error insertion voters';
+export const EMAIL_NOTIFICATION_ENABLED = 'Email notifications have been enabled for this election.';
+export const EMAIL_NOTIFICATION_DISABLED = 'Email notifications have been disabled for this election.';
