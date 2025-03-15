@@ -131,7 +131,6 @@ describe('UserService', () => {
         data: {
           id: newAdmin.id,
           email: newAdmin.email,
-          token: 'mockedToken',
         },
       });
     });
