@@ -9,9 +9,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { createClient } from '@supabase/supabase-js';
 import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
+import { config } from 'dotenv';
+import * as moment from 'moment';
+import * as path from 'path';
 import { Repository } from 'typeorm';
+import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
 import { Vote } from '../votes/entities/votes.entity';
@@ -19,40 +24,42 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
-// import { add, isPast, isAfter, isSameDay, parseISO, format, parse, startOfDay } from 'date-fns';
-import * as moment from 'moment';
+
+config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 
-interface ElectionResultsDownload {
-  filename: string;
-  csvData: string;
-}
+const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
 @Injectable()
 export class ElectionService {
   private readonly logger = new Logger(ElectionService.name);
+  private readonly supabase;
+  private readonly bucketName = process.env.SUPABASE_BUCKET;
 
   constructor(
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
-  ) {}
+    private electionStatusUpdaterService: ElectionStatusUpdaterService,
+  ) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
+      throw new Error('Supabase environment variables are not set.');
+    }
+
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    this.bucketName = process.env.SUPABASE_BUCKET;
+  }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
     const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
       createElectionDto;
 
     const currentDate = moment().utc();
-    console.log('Current Date (UTC): ', currentDate.format('YYYY-MM-DD HH:mm:ss'));
 
     const currentDateStartOfDay = moment.utc().startOf('day');
-    console.log('Current Date Start of Day (UTC): ', currentDateStartOfDay.format('YYYY-MM-DD HH:mm:ss'));
 
     const startDate = moment.utc(start_date);
     const endDate = moment.utc(end_date);
-
-    console.log('Start Date (UTC): ', startDate.format('YYYY-MM-DD HH:mm:ss'));
-    console.log('End Date (UTC): ', endDate.format('YYYY-MM-DD HH:mm:ss'));
 
     // Validate start_date and end_date
     if (startDate.isBefore(currentDateStartOfDay)) {
@@ -86,12 +93,34 @@ export class ElectionService {
 
       // Validate startDateTime against currentDate and startTime
       const startDateTime = moment.utc(`${startDate.format('YYYY-MM-DD')}T${start_time}`);
-      if (startDateTime.isBefore(currentDate)) {
+      if (startDateTime.isBefore(currentDate.add(1, 'hour'))) {
         throw new HttpException(
           { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
           HttpStatus.BAD_REQUEST,
         );
       }
+    }
+
+    if (election_type === ElectionType.SINGLECHOICE && max_choices !== 1) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.ERROR_MAX_CHOICES,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (election_type === ElectionType.MULTIPLECHOICE && candidates.length <= max_choices!) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.ERROR_TOTAL_CANDIDATES,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const election = this.electionRepository.create({
@@ -109,15 +138,18 @@ export class ElectionService {
 
     const savedElection = await this.electionRepository.save(election);
 
-    const candidateEntities: Candidate[] = candidates.map(name => {
-      const candidate = new Candidate();
-      candidate.name = name;
-      candidate.election = savedElection;
-      return candidate;
+    const candidateEntities: Candidate[] = candidates.map(candidate => {
+      const newCandidate = new Candidate();
+      newCandidate.name = candidate.name;
+      newCandidate.photo_url = candidate.photo_url;
+      newCandidate.election = savedElection;
+      return newCandidate;
     });
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
+
+    await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
       status_code: HttpStatus.CREATED,
@@ -134,8 +166,76 @@ export class ElectionService {
         max_choices: savedElection.max_choices,
         election_type: savedElection.type,
         created_by: savedElection.created_by,
-        candidates: savedElection.candidates.map(candidate => candidate.name),
+        candidates: savedElection.candidates.map(candidate => ({
+          name: candidate.name,
+          photo_url: candidate.photo_url,
+        })),
       },
+    };
+  }
+
+  async uploadPhoto(file: Express.Multer.File, adminId: string) {
+    if (!adminId) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          data: null,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!file) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.DEFAULT_PROFILE_URL,
+        data: { profile_url: DEFAULT_PLACEHOLDER_PHOTO },
+      };
+    }
+
+    // Validate file type
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INVALID_FILE_TYPE, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Validate file size (limit: 2MB)
+    const maxSize = 1 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.PHOTO_SIZE_LIMIT, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const { buffer, originalname, mimetype } = file;
+    const fileExt = path.extname(originalname);
+    const fileName = `${Date.now()}${fileExt}`;
+
+    const { error } = await this.supabase.storage
+      .from(this.bucketName)
+      .upload(`resolve-vote/${fileName}`, buffer, { contentType: mimetype });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new HttpException(
+        { status_code: HttpStatus.INTERNAL_SERVER_ERROR, message: SYS_MSG.FAILED_PHOTO_UPLOAD, data: null },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const { data: publicUrlData } = this.supabase.storage
+      .from(this.bucketName)
+      .getPublicUrl(`resolve-vote/${fileName}`);
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_PROFILE_URL,
+      data: { profile_url: publicUrlData.publicUrl },
     };
   }
 
@@ -251,19 +351,6 @@ export class ElectionService {
     // Transform the election response
     const mappedElection = this.transformElectionResponse(election);
 
-    let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
-    // Simple datetime comparison
-    if (now < startDateTime) {
-      mappedElection.status = 'upcoming';
-      // mappedElection.message = "Election has not started.";
-    } else if (now > endDateTime) {
-      mappedElection.status = 'completed';
-      message = 'Election has ended.';
-    } else {
-      mappedElection.status = 'ongoing';
-      message = 'Election is live. Vote now!';
-    }
-
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
       if (Array.isArray(vote.candidate_id)) {
@@ -367,14 +454,6 @@ export class ElectionService {
         data: null,
       });
     }
-    // TODO
-    // if (election.status === ElectionStatus.ONGOING) {
-    //   throw new ForbiddenException({
-    //     status_code: HttpStatus.FORBIDDEN,
-    //     message: SYS_MSG.ELECTION_ACTIVE_CANNOT_DELETE,
-    //     data: null,
-    //   });
-    // }
 
     if (election.created_by !== adminId) {
       throw new ForbiddenException({
@@ -495,19 +574,6 @@ export class ElectionService {
         // Transform the election response
         const mappedElection = this.transformElectionResponse(election);
 
-        let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
-        // Simple datetime comparison
-        if (now < startDateTime) {
-          mappedElection.status = 'upcoming';
-          // mappedElection.message = "Election has not started.";
-        } else if (now > endDateTime) {
-          mappedElection.status = 'completed';
-          message = 'Election has ended.';
-        } else {
-          mappedElection.status = 'ongoing';
-          message = 'Election is live. Vote now!';
-        }
-
         return {
           election_id: election.id,
           title: election.title,
@@ -524,6 +590,7 @@ export class ElectionService {
             election.candidates.map(candidate => ({
               candidate_id: candidate.id,
               name: candidate.name,
+              photo_url: candidate.photo_url,
             })) || [],
         };
       })
@@ -583,6 +650,7 @@ export class ElectionService {
             return {
               candidate_id: candidate.id,
               name: candidate.name,
+              photo_url: candidate.photo_url,
             };
           }) || [],
       };
@@ -644,6 +712,7 @@ export class ElectionService {
       candidate_id: candidate.id,
       name: candidate.name,
       votes: voteCounts.get(candidate.id) || 0,
+      photo_url: candidate.photo_url,
     }));
 
     return {
@@ -676,14 +745,18 @@ export class ElectionService {
     return header + rows;
   }
 
-  async updateNotificationSettings(id: string, settings: NotificationSettingsDto): Promise<Election> {
-    const election = await this.electionRepository.findOne({ where: { id } });
+  async updateNotificationSettings(
+    id: string,
+    settings: NotificationSettingsDto,
+  ): Promise<{ status_code: number; data: { electionId: string }; message: string }> {
     if (!isUUID(id)) {
       throw new BadRequestException({
         status_code: HttpStatus.BAD_REQUEST,
         message: SYS_MSG.INCORRECT_UUID,
+        data: null,
       });
     }
+    const election = await this.electionRepository.findOne({ where: { id } });
     if (!election) {
       throw new NotFoundException({
         status_code: HttpStatus.NOT_FOUND,
@@ -692,6 +765,11 @@ export class ElectionService {
       });
     }
     election.email_notification = settings.email_notification;
-    return this.electionRepository.save(election);
+    await this.electionRepository.save(election);
+    return {
+      status_code: HttpStatus.OK,
+      data: { electionId: id },
+      message: settings.email_notification ? SYS_MSG.EMAIL_NOTIFICATION_ENABLED : SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
+    };
   }
 }

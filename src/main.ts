@@ -36,9 +36,9 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const config = new DocumentBuilder()
-    .setTitle('E-Vote API')
+    .setTitle('Resolve API')
     .setDescription(
-      'Welcome to the E-Vote API. This API provides a comprehensive set of endpoints that enable secure, transparent, and efficient online voting.\
+      'Welcome to the Resolve API. This API provides a comprehensive set of endpoints that enable secure, transparent, and efficient online voting.\
        It supports the complete election lifecycle—from user registration and authentication to election setup, candidate management, voting link generation, and vote casting.',
     )
     .setVersion('1.0')

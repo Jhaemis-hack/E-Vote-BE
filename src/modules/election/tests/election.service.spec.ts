@@ -8,12 +8,15 @@ import {
 } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import type { DeepPartial, Repository } from 'typeorm';
+import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import type { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
-import type { CreateElectionDto } from '../dto/create-election.dto';
+import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
@@ -25,6 +28,7 @@ describe('ElectionService', () => {
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
 
+  // Mock repositories
   const mockElectionRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
     create: jest.fn().mockImplementation((data: Partial<Election>) => ({
@@ -60,6 +64,11 @@ describe('ElectionService', () => {
     find: jest.fn(),
   });
 
+  // Mock ElectionStatusUpdaterService
+  const mockElectionStatusUpdaterService = {
+    scheduleElectionUpdates: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -67,6 +76,7 @@ describe('ElectionService', () => {
         { provide: getRepositoryToken(Election), useFactory: mockElectionRepository },
         { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
         { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
+        { provide: ElectionStatusUpdaterService, useValue: mockElectionStatusUpdaterService }, // Provide the mock service
       ],
     }).compile();
 
@@ -89,9 +99,12 @@ describe('ElectionService', () => {
         end_date: new Date('2025-03-22T00:00:00.000Z'),
         start_time: '09:00:00',
         end_time: '10:00:00',
-        // vote_link: expect.any(String),
         election_type: ElectionType.SINGLECHOICE,
-        candidates: ['Candidate A', 'Candidate B'],
+        max_choices: 1,
+        candidates: [
+          { name: 'Tommy', photo_url: 'https://tommy.com' },
+          { name: 'Ben', photo_url: 'https://ben.com' },
+        ],
       };
 
       const result = await service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e');
@@ -128,6 +141,7 @@ describe('ElectionService', () => {
 
       expect(electionRepository.save).toHaveBeenCalled();
       expect(candidateRepository.save).toHaveBeenCalled();
+      expect(mockElectionStatusUpdaterService.scheduleElectionUpdates);
     });
 
     it('should handle errors during election creation', async () => {
@@ -140,7 +154,11 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         // vote_link: '7284fdbc-a1b9-45ad-a586-72edae14526d',
         election_type: ElectionType.SINGLECHOICE,
-        candidates: ['Candidate A', 'Candidate B'],
+        max_choices: 1,
+        candidates: [
+          { name: 'Tommy', photo_url: 'https://tommy.com' },
+          { name: 'Ben', photo_url: 'https://ben.com' },
+        ],
       };
 
       jest.spyOn(electionRepository, 'create').mockImplementationOnce(() => {
@@ -175,6 +193,7 @@ describe('ElectionService', () => {
           deleted_at: null,
           candidates: [] as Candidate[],
           votes: [] as Vote[],
+          voters: [],
           max_choices: 1,
           type: ElectionType.SINGLECHOICE,
           email_notification: false,
@@ -196,6 +215,7 @@ describe('ElectionService', () => {
           created_at: new Date(),
           candidates: [] as Candidate[],
           votes: [] as Vote[],
+          voters: [],
           max_choices: 1,
           type: ElectionType.SINGLECHOICE,
           email_notification: false,
@@ -333,7 +353,7 @@ describe('ElectionService', () => {
         created_at: new Date('2025-03-22T13:35:13.731Z'),
         updated_at: new Date('2025-03-30T13:35:13.731Z'),
         deleted_at: null,
-        status: ElectionStatus.UPCOMING,
+        status: ElectionStatus.ONGOING,
         title: '2025 Presidential Election',
         description: 'Election to choose the next president of the country',
         start_date: new Date('2025-03-01T00:00:00.000Z'),
@@ -342,6 +362,7 @@ describe('ElectionService', () => {
         end_time: '10:00:00',
         type: 'singlechoice',
         created_by: 'ad658c1c-ffca-4640-bfd4-ac8aece2eabf',
+        candidates: [],
       };
 
       const mockCandidates = [
@@ -579,8 +600,8 @@ describe('ElectionService', () => {
     });
     describe('updateNotificationSettings', () => {
       it('should update email_notification setting successfully', async () => {
-        const electionId = '550e8400-e29b-41d4-a716-446655440000';
-        const settings: NotificationSettingsDto = { email_notification: false };
+        const electionId = '84902582-8939-4231-804f-7bbe9ffc5bfe';
+        const settings: NotificationSettingsDto = { email_notification: true };
 
         const election = new Election();
         election.id = electionId;
@@ -591,50 +612,30 @@ describe('ElectionService', () => {
 
         const result = await service.updateNotificationSettings(electionId, settings);
 
-        expect(result.email_notification).toBe(false);
+        expect(result).toEqual({
+          status_code: HttpStatus.OK,
+          message: SYS_MSG.EMAIL_NOTIFICATION_ENABLED,
+          data: { electionId: electionId },
+        });
         expect(electionRepository.findOne).toHaveBeenCalledWith({ where: { id: electionId } });
         expect(electionRepository.save).toHaveBeenCalledWith(election);
       });
 
       it('should throw BadRequestException if id is not a valid UUID', async () => {
-        const invalidId = 'invalid-uuid';
-        const settings: NotificationSettingsDto = { email_notification: false };
+        const invalidId = '1234';
+        const settings: NotificationSettingsDto = { email_notification: true };
 
-        await expect(service.updateNotificationSettings(invalidId, settings)).rejects.toThrow;
-        new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        });
+        await expect(service.updateNotificationSettings(invalidId, settings)).rejects.toThrow(BadRequestException);
       });
 
       it('should throw NotFoundException if election is not found', async () => {
-        const electionId = '550e8400-e29b-41d4-a716-446655440000';
+        const electionId = '84902582-8939-4231-804f-7bbe9ffc5bfe';
         const settings: NotificationSettingsDto = { email_notification: false };
 
         jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
         await expect(service.updateNotificationSettings(electionId, settings)).rejects.toThrow(NotFoundException);
       });
-
-      // it('should throw BadRequestException if email_notification is undefined', async () => {
-      //   const electionId = '550e8400-e29b-41d4-a716-446655440000';
-      //   const settings: NotificationSettingsDto = { email_notification: false };
-
-      //   const election = new Election();
-      //   election.id = electionId;
-      //   election.email_notification = true;
-
-      //   jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
-
-      //   await expect(service.updateNotificationSettings(electionId, settings)).rejects.toThrow
-      //   new BadRequestException({
-      //     status_code: HttpStatus.BAD_REQUEST,
-      //     message: SYS_MSG.INVALID_NOTIFICATION_SETTINGS,
-      //     data: null,
-      //   }
-      //   );
-      // });
     });
 
     describe('getElectionResults', () => {
@@ -748,6 +749,98 @@ describe('ElectionService', () => {
 
         expect(result.csvData).toBe('Candidate Name,Votes\n' + '"Candidate A",2\n' + '"Candidate B",1');
         expect(result.filename).toBe(`election-${electionId}-results.csv`);
+      });
+    });
+
+    describe('Validation of CreateElectionDto', () => {
+      const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+      const baseDto: CreateElectionDto = {
+        title: '2025 Presidential Election',
+        description: 'Election to choose the next president of the country',
+        start_date: new Date('2025-03-22T00:00:00.000Z'),
+        end_date: new Date('2025-03-23T00:00:00.000Z'),
+        start_time: '09:00:00',
+        end_time: '17:00:00',
+        election_type: ElectionType.SINGLECHOICE,
+        max_choices: 1,
+        candidates: [
+          { name: 'Tommy', photo_url: 'https://tommy.com' },
+          { name: 'Ben', photo_url: 'https://ben.com' },
+        ],
+      };
+
+      it('should throw an exception when start date is in the past', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2024-12-31T00:00:00.000Z'), // Past date
+        };
+
+        await expect(service.create(dto, adminId)).rejects.toThrow(
+          new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      });
+
+      it('should throw an exception when start date is after end date', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-04-01T00:00:00.000Z'),
+          end_date: new Date('2025-03-31T00:00:00.000Z'),
+        };
+
+        await expect(service.create(dto, adminId)).rejects.toThrow(
+          new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      });
+
+      it('should throw an exception when start time is after end time on the same day', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-03-22T00:00:00.000Z'),
+          end_date: new Date('2025-03-22T00:00:00.000Z'),
+          start_time: '15:00:00',
+          end_time: '09:00:00',
+        };
+
+        await expect(service.create(dto, adminId)).rejects.toThrow(
+          new HttpException(
+            { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
+            HttpStatus.BAD_REQUEST,
+          ),
+        );
+      });
+
+      it('should accept when start time is before end time on the same day', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-03-23T00:00:00.000Z'),
+          end_date: new Date('2025-03-23T00:00:00.000Z'),
+          start_time: '09:00:00',
+          end_time: '17:00:00',
+        };
+
+        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        expect(electionRepository.create).toHaveBeenCalled();
+        expect(electionRepository.save).toHaveBeenCalled();
+      });
+
+      it('should accept when start time is after end time but on different days', async () => {
+        const dto = {
+          ...baseDto,
+          start_date: new Date('2025-03-21T00:00:00.000Z'),
+          end_date: new Date('2025-03-22T00:00:00.000Z'),
+          start_time: '17:00:00',
+          end_time: '09:00:00',
+        };
+
+        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        expect(electionRepository.create).toHaveBeenCalled();
+        expect(electionRepository.save).toHaveBeenCalled();
       });
     });
   });

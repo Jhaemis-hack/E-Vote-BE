@@ -30,7 +30,7 @@ export class UserService {
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private readonly mailService: EmailService, // Inject your mail service
+    private readonly mailService: EmailService,
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
@@ -56,9 +56,11 @@ export class UserService {
       is_verified: true,
     });
 
+    const credentials = { email: newAdmin.email, sub: newAdmin.id };
+    const token = this.jwtService.sign(credentials);
+
     try {
-      await this.mailService.sendWelcomeMail(email);
-      await this.userRepository.save(newAdmin);
+      await this.mailService.sendWelcomeMail(newAdmin.email);
     } catch (err) {
       return {
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -67,8 +69,18 @@ export class UserService {
       };
     }
 
-    const credentials = { email: newAdmin.email, sub: newAdmin.id };
-    const token = this.jwtService.sign(credentials);
+    try {
+      await this.mailService.sendVerificationMail(newAdmin.email, token);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+        data: null,
+      };
+    }
+
+    await this.userRepository.save(newAdmin);
+
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.SIGNUP_MESSAGE,
@@ -85,18 +97,37 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND);
     }
 
-    if (userExist.is_verified === false) {
-      throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_VERIFIED);
-    }
-
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
     }
 
+    if (userExist.is_verified === false) {
+      const credentials = { email: userExist.email, sub: userExist.id };
+      const token = this.jwtService.sign(credentials);
+
+      try {
+        await this.mailService.sendVerificationMail(userExist.email, token);
+
+        // Restricts the user from logging in until their email is verified
+        return {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.EMAIL_NOT_VERIFIED,
+          data: null,
+        };
+      } catch (error) {
+        return {
+          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+          data: null,
+        };
+      }
+    }
+
     const { password, ...admin } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };
     const token = this.jwtService.sign(credentials);
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
@@ -253,6 +284,7 @@ export class UserService {
       data: null,
     };
   }
+
   async resetPassword(resetPassword: ResetPasswordDto): Promise<{ message: string; data: null }> {
     const { email, reset_token, password } = resetPassword;
     const resetPasswordRequestExist = await this.forgotPasswordRepository.findOne({ where: { reset_token } });
@@ -286,11 +318,8 @@ export class UserService {
   async verifyEmail(token: string) {
     try {
       const payload = this.jwtService.verify(token);
-
       const userId = payload.sub;
-
       const user = await this.userRepository.findOne({ where: { id: userId } });
-
       if (!user) {
         throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
       }
