@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,27 +7,37 @@ import {
   HttpCode,
   HttpException,
   HttpStatus,
+  InternalServerErrorException,
+  NotFoundException,
   Param,
-  Patch,
-  Put,
   Post,
+  Put,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
-  NotFoundException,
-  BadRequestException,
-  InternalServerErrorException,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
-import { isUUID } from 'class-validator';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -48,7 +59,10 @@ export class ElectionController {
   @Get()
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get all elections' })
-  @ApiResponse({ status: 200, description: 'List of elections', type: [ElectionResponseDto] })
+  @ApiResponse({ status: 200, description: SYS_MSG.FETCH_ELECTIONS, type: [ElectionResponseDto] })
+  @ApiResponse({ status: 401, description: SYS_MSG.UNAUTHORIZED_USER })
+  @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
+  @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'page_size', required: false, example: 10, description: 'Number of items per page (default: 10)' })
   async findAll(
@@ -126,24 +140,16 @@ export class ElectionController {
       }
     }
   }
+
   @Delete(':id')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete Inactive Election' })
-  @ApiResponse({ status: 200, description: 'Election deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 404, description: 'Not found' })
-  @ApiResponse({ status: 500, description: 'Internal server error' })
+  @ApiResponse({ status: 200, description: SYS_MSG.ELECTION_DELETED })
+  @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
+  @ApiResponse({ status: 403, description: SYS_MSG.UNAUTHORIZED_ACCESS })
+  @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
+  @ApiResponse({ status: 500, description: SYS_MSG.INTERNAL_SERVER_ERROR })
   remove(@Param('id') id: string, @Req() req: any) {
-    if (!isUUID(id)) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.NOT_ACCEPTABLE,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.NOT_ACCEPTABLE,
-      );
-    }
     const adminId = req.user.sub;
     return this.electionService.remove(id, adminId);
   }
@@ -157,5 +163,52 @@ export class ElectionController {
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
   getElectionByVoterLink(@Param('vote_id') vote_id: string) {
     return this.electionService.getElectionByVoterLink(vote_id);
+  }
+
+  @Put(':id/notification-settings')
+  @ApiOperation({ summary: 'Update email notification settings for an election' })
+  @ApiParam({ name: 'id', description: 'Election ID', type: String })
+  @ApiBody({
+    type: NotificationSettingsDto,
+    examples: {
+      example1: {
+        summary: 'Example request body',
+        value: {
+          email_notification: true,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: HttpStatus.OK, description: SYS_MSG.EMAIL_NOTIFICATION_UPDATED })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: SYS_MSG.INVALID_NOTIFICATION_SETTINGS })
+  async updateNotificationSettings(@Param('id') id: string, @Body() settings: NotificationSettingsDto) {
+    return this.electionService.updateNotificationSettings(id, settings);
+  }
+
+  @ApiBearerAuth()
+  @Post('upload')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('photo'))
+  @ApiOperation({ summary: 'Upload a photo' })
+  @ApiResponse({ status: 200, description: SYS_MSG.FETCH_PROFILE_URL })
+  @ApiResponse({ status: 401, description: SYS_MSG.UNAUTHORIZED_USER })
+  @ApiResponse({ status: 400, description: SYS_MSG.BAD_REQUEST })
+  @ApiResponse({ status: 500, description: SYS_MSG.FAILED_PHOTO_UPLOAD })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async uploadPhoto(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const adminId = req.user.sub;
+    return this.electionService.uploadPhoto(file, adminId);
   }
 }

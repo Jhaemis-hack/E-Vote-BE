@@ -9,9 +9,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { createClient } from '@supabase/supabase-js';
 import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
+import { config } from 'dotenv';
 import * as moment from 'moment';
+import * as path from 'path';
 import { Repository } from 'typeorm';
 import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -21,21 +24,31 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
-interface ElectionResultsDownload {
-  filename: string;
-  csvData: string;
-}
+
+config();
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+
+const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
 @Injectable()
 export class ElectionService {
   private readonly logger = new Logger(ElectionService.name);
+  private readonly supabase;
+  private readonly bucketName = process.env.SUPABASE_BUCKET;
 
   constructor(
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
-  ) {}
+  ) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
+      throw new Error('Supabase environment variables are not set.');
+    }
+
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    this.bucketName = process.env.SUPABASE_BUCKET;
+  }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
     const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
@@ -125,11 +138,12 @@ export class ElectionService {
 
     const savedElection = await this.electionRepository.save(election);
 
-    const candidateEntities: Candidate[] = candidates.map(name => {
-      const candidate = new Candidate();
-      candidate.name = name;
-      candidate.election = savedElection;
-      return candidate;
+    const candidateEntities: Candidate[] = candidates.map(candidate => {
+      const newCandidate = new Candidate();
+      newCandidate.name = candidate.name;
+      newCandidate.photo_url = candidate.photo_url;
+      newCandidate.election = savedElection;
+      return newCandidate;
     });
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
@@ -152,8 +166,76 @@ export class ElectionService {
         max_choices: savedElection.max_choices,
         election_type: savedElection.type,
         created_by: savedElection.created_by,
-        candidates: savedElection.candidates.map(candidate => candidate.name),
+        candidates: savedElection.candidates.map(candidate => ({
+          name: candidate.name,
+          photo_url: candidate.photo_url,
+        })),
       },
+    };
+  }
+
+  async uploadPhoto(file: Express.Multer.File, adminId: string) {
+    if (!adminId) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          data: null,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!file) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.DEFAULT_PROFILE_URL,
+        data: { profile_url: DEFAULT_PLACEHOLDER_PHOTO },
+      };
+    }
+
+    // Validate file type
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INVALID_FILE_TYPE, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Validate file size (limit: 2MB)
+    const maxSize = 1 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.PHOTO_SIZE_LIMIT, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const { buffer, originalname, mimetype } = file;
+    const fileExt = path.extname(originalname);
+    const fileName = `${Date.now()}${fileExt}`;
+
+    const { error } = await this.supabase.storage
+      .from(this.bucketName)
+      .upload(`resolve-vote/${fileName}`, buffer, { contentType: mimetype });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new HttpException(
+        { status_code: HttpStatus.INTERNAL_SERVER_ERROR, message: SYS_MSG.FAILED_PHOTO_UPLOAD, data: null },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const { data: publicUrlData } = this.supabase.storage
+      .from(this.bucketName)
+      .getPublicUrl(`resolve-vote/${fileName}`);
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_PROFILE_URL,
+      data: { profile_url: publicUrlData.publicUrl },
     };
   }
 
@@ -372,14 +454,6 @@ export class ElectionService {
         data: null,
       });
     }
-    // TODO
-    // if (election.status === ElectionStatus.ONGOING) {
-    //   throw new ForbiddenException({
-    //     status_code: HttpStatus.FORBIDDEN,
-    //     message: SYS_MSG.ELECTION_ACTIVE_CANNOT_DELETE,
-    //     data: null,
-    //   });
-    // }
 
     if (election.created_by !== adminId) {
       throw new ForbiddenException({
@@ -516,6 +590,7 @@ export class ElectionService {
             election.candidates.map(candidate => ({
               candidate_id: candidate.id,
               name: candidate.name,
+              photo_url: candidate.photo_url,
             })) || [],
         };
       })
@@ -575,6 +650,7 @@ export class ElectionService {
             return {
               candidate_id: candidate.id,
               name: candidate.name,
+              photo_url: candidate.photo_url,
             };
           }) || [],
       };
@@ -636,6 +712,7 @@ export class ElectionService {
       candidate_id: candidate.id,
       name: candidate.name,
       votes: voteCounts.get(candidate.id) || 0,
+      photo_url: candidate.photo_url,
     }));
 
     return {
@@ -666,5 +743,33 @@ export class ElectionService {
     const header = 'Candidate Name,Votes\n';
     const rows = results.map(r => `"${r.name.replace(/"/g, '""')}",${r.votes}`).join('\n');
     return header + rows;
+  }
+
+  async updateNotificationSettings(
+    id: string,
+    settings: NotificationSettingsDto,
+  ): Promise<{ status_code: number; data: { electionId: string }; message: string }> {
+    if (!isUUID(id)) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.INCORRECT_UUID,
+        data: null,
+      });
+    }
+    const election = await this.electionRepository.findOne({ where: { id } });
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+    election.email_notification = settings.email_notification;
+    await this.electionRepository.save(election);
+    return {
+      status_code: HttpStatus.OK,
+      data: { electionId: id },
+      message: settings.email_notification ? SYS_MSG.EMAIL_NOTIFICATION_ENABLED : SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
+    };
   }
 }
