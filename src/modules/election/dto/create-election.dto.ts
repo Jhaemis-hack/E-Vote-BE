@@ -13,9 +13,11 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
-import { ElectionStatus, ElectionType } from '../entities/election.entity';
+import { ElectionType } from '../entities/election.entity';
+import { CreateCandidateDto } from 'src/modules/candidate/dto/create-candidate.dto';
 
 export class CreateElectionDto {
   @ApiProperty({ example: 'Presidential Election 2025' })
@@ -75,10 +77,21 @@ export class CreateElectionDto {
   @Min(1)
   max_choices?: number;
 
-  @ApiProperty({ example: ['Candidate A', 'Candidate B'], description: 'List of candidate names', type: [String] })
+  @ApiProperty({
+    example: [
+      '{name: Candidate A, profile_url: https://from-s3-bucket.com}',
+      '{name: Candidate B ,profile_url: https://from-s3-bucket.com}',
+    ],
+    description: 'List of candidate names and profile url',
+    type: [CreateCandidateDto],
+  })
   @IsArray()
   @ArrayMinSize(2, { message: 'Candidates array must contain at least two candidates' })
-  @IsString({ each: true, message: 'Each candidate must be a string' })
-  @IsNotEmpty({ each: true, message: 'Each candidate must not be empty' })
-  candidates: string[];
+  @ValidateNested({ each: true })
+  @Type(() => CreateCandidateDto)
+  candidates: CreateCandidateDto[];
+
+  @ApiProperty({ example: false, description: 'Enable email notifications', required: true })
+  @IsNotEmpty()
+  email_notification?: boolean;
 }

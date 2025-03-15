@@ -48,11 +48,15 @@ describe('ElectionService - update', () => {
       start_date: new Date('2025-06-01T00:00:00Z'),
       end_date: new Date('2025-06-02T00:00:00Z'),
       election_status: ElectionStatus.ONGOING,
-      candidates: ['candidate1', 'candidate2'],
+      candidates: [
+        { name: 'Tommy', photo_url: 'https://tommy.com' },
+        { name: 'Ben', photo_url: 'https://ben.com' },
+      ],
       start_time: '20:25:22',
       end_time: '20:23:23',
       election_type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     };
 
     const existingElection = {
@@ -76,6 +80,7 @@ describe('ElectionService - update', () => {
       deleted_at: null,
       type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(existingElection);
@@ -115,7 +120,10 @@ describe('ElectionService - update', () => {
     const updateElectionDto: UpdateElectionDto = {
       title: 'Updated Election Title',
       election_status: ElectionStatus.UPCOMING,
-      candidates: ['candidate1'],
+      candidates: [
+        { name: 'Tommy', photo_url: 'https://tommy.com' },
+        { name: 'Ben', photo_url: 'https://ben.com' },
+      ],
       start_time: '08:00:00',
       end_time: '17:00:00',
       start_date: new Date('2023-11-01T00:00:00.000Z'),
@@ -136,7 +144,10 @@ describe('ElectionService - update', () => {
     const updateElectionDto: UpdateElectionDto = {
       start_date: new Date('2025-06-02T00:00:00Z'),
       end_date: new Date('2025-06-01T00:00:00Z'),
-      candidates: ['candidate1'],
+      candidates: [
+        { name: 'Tommy', photo_url: 'https://tommy.com' },
+        { name: 'Ben', photo_url: 'https://ben.com' },
+      ],
       election_status: ElectionStatus.ONGOING,
       start_time: '08:00:00',
       end_time: '17:00:00',
@@ -165,6 +176,7 @@ describe('ElectionService - update', () => {
       deleted_at: null,
       type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     };
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(existingElection);
@@ -176,7 +188,10 @@ describe('ElectionService - update', () => {
     const electionId = '550e8400-e29b-41d4-a716-446655440000';
     const updateElectionDto: UpdateElectionDto = {
       title: 'Updated Election Title',
-      candidates: ['candidate1'],
+      candidates: [
+        { name: 'Tommy', photo_url: 'https://tommy.com' },
+        { name: 'Ben', photo_url: 'https://ben.com' },
+      ],
       start_time: '08:00:00',
       election_status: ElectionStatus.COMPLETED,
       end_time: '17:00:00',
@@ -206,6 +221,7 @@ describe('ElectionService - update', () => {
       deleted_at: null,
       type: ElectionType.SINGLECHOICE,
       max_choices: 1,
+      email_notification: false,
     });
     jest.spyOn(electionRepository, 'save').mockRejectedValue(new Error('Database connection failed'));
 
