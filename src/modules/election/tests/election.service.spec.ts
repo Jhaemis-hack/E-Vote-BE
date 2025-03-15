@@ -16,17 +16,21 @@ import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Candidate } from '../../candidate/entities/candidate.entity';
 import type { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
+import { Voter } from '../../voter/entities/voter.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
 import { stat } from 'fs';
+import { EmailService } from '../../email/email.service';
+import { VoterService } from '../../voter/voter.service';
 
 describe('ElectionService', () => {
   let service: ElectionService;
   let electionRepository: Repository<Election>;
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
+  let voterRepository: Repository<Voter>;
 
   // Mock repositories
   const mockElectionRepository = () => ({
@@ -64,9 +68,23 @@ describe('ElectionService', () => {
     find: jest.fn(),
   });
 
+  const mockVoterRepository = () => ({
+    find: jest.fn(),
+  });
+
   // Mock ElectionStatusUpdaterService
   const mockElectionStatusUpdaterService = {
     scheduleElectionUpdates: jest.fn().mockResolvedValue(undefined),
+  };
+
+  // Mock EmailService
+  const mockEmailService = {
+    sendEmail: jest.fn().mockResolvedValue(undefined),
+  };
+
+  // Mock VoterService
+  const mockVoterService = {
+    findAllVoters: jest.fn().mockResolvedValue({ data: [] }),
   };
 
   beforeEach(async () => {
@@ -76,7 +94,10 @@ describe('ElectionService', () => {
         { provide: getRepositoryToken(Election), useFactory: mockElectionRepository },
         { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
         { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
+        { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
         { provide: ElectionStatusUpdaterService, useValue: mockElectionStatusUpdaterService }, // Provide the mock service
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: VoterService, useValue: mockVoterService }, // Provide the mock service
       ],
     }).compile();
 
@@ -84,6 +105,7 @@ describe('ElectionService', () => {
     electionRepository = module.get<Repository<Election>>(getRepositoryToken(Election));
     candidateRepository = module.get<Repository<Candidate>>(getRepositoryToken(Candidate));
     voteRepository = module.get<Repository<Vote>>(getRepositoryToken(Vote));
+    voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
   });
 
   afterEach(() => {
