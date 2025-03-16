@@ -294,7 +294,15 @@ describe('VoterService', () => {
 
   describe('saveVoters', () => {
     it('should save voters successfully', async () => {
-      const voters = [{ name: 'John Doe', email: 'john@example.com', election: { id: '123' } }];
+      const voters = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'John Doe',
+          email: 'john@example.com',
+          verification_token: '123e4567-e89b-12d3-a456-426614174001',
+          election: { id: '123' },
+        },
+      ];
 
       jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
 

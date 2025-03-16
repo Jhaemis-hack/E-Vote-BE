@@ -16,6 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Voter } from '../voter/entities/voter.entity';
 import { In, Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class VoterService {
@@ -153,7 +154,13 @@ export class VoterService {
     electionId: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
-      const voters: { name: string; email: string; election: { id: string } }[] = [];
+      const voters: {
+        id: string;
+        name: string;
+        email: string;
+        verification_token: string;
+        election: { id: string };
+      }[] = [];
       const emailOccurrences = new Map<string, number[]>();
       let rowIndex = 1;
 
@@ -173,7 +180,13 @@ export class VoterService {
                   emailOccurrences.get(email)!.push(rowIndex);
                 } else {
                   emailOccurrences.set(email, [rowIndex]);
-                  voters.push({ name, email, election: { id: electionId } });
+                  voters.push({
+                    id: crypto.randomUUID(),
+                    name,
+                    email,
+                    verification_token: crypto.randomUUID(),
+                    election: { id: electionId },
+                  });
                 }
               }
               rowIndex++;
@@ -266,7 +279,13 @@ export class VoterService {
 
       const rows = xlsx.utils.sheet_to_json(sheet);
       const emailOccurrences = new Map<string, number[]>();
-      const voters: { name: string; email: string; election: { id: string } }[] = [];
+      const voters: {
+        id: string;
+        name: string;
+        email: string;
+        verification_token: string;
+        election: { id: string };
+      }[] = [];
 
       rows.forEach((row: any, index: number) => {
         const name = row.name || row.Name || row.NAME;
@@ -277,7 +296,13 @@ export class VoterService {
             emailOccurrences.get(email)!.push(index + 1);
           } else {
             emailOccurrences.set(email, [index + 1]);
-            voters.push({ name, email, election: { id: electionId } });
+            voters.push({
+              id: crypto.randomUUID(),
+              name,
+              email,
+              verification_token: crypto.randomUUID(),
+              election: { id: electionId },
+            });
           }
         }
       });
@@ -319,7 +344,15 @@ export class VoterService {
     }
   }
 
-  async saveVoters(data: { name: string; email: string; election: { id: string } }[]): Promise<any> {
+  async saveVoters(
+    data: {
+      id: string;
+      name: string;
+      email: string;
+      verification_token: string;
+      election: { id: string };
+    }[],
+  ): Promise<any> {
     try {
       if (!data.length) {
         throw new BadRequestException({
