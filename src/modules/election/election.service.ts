@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClient } from '@supabase/supabase-js';
@@ -24,6 +25,7 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+import { VerifyVoterDto } from './dto/verify-voter.dto';
 
 config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
@@ -349,7 +351,7 @@ export class ElectionService {
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
     // Transform the election response
-    const mappedElection = this.transformElectionResponse(election);
+    const mappedElection = this.transformElectionResponseFindOne(election);
 
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
@@ -367,6 +369,7 @@ export class ElectionService {
     const result = candidates.map(candidate => ({
       candidate_id: candidate.id,
       name: candidate.name,
+      photo_url: candidate.photo_url,
       vote_count: voteCounts.get(candidate.id) || 0,
     }));
 
@@ -659,6 +662,50 @@ export class ElectionService {
     }
   }
 
+  private transformElectionResponseFindOne(election: any): any {
+    if (!election) {
+      return null;
+    }
+
+    let electionType: ElectionType;
+    if (election.type === 'singlechoice') {
+      electionType = ElectionType.SINGLECHOICE;
+    } else if (election.type === 'multiplechoice') {
+      electionType = ElectionType.MULTIPLECHOICE;
+    } else {
+      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      electionType = ElectionType.SINGLECHOICE;
+    }
+
+    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.ONGOING) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        vote_id: election.vote_id,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+        created_by: election.created_by,
+        max_choices: election.max_choices,
+        election_type: electionType,
+      };
+    } else {
+      console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
+    }
+  }
+
   async getElectionResults(electionId: string, adminId: string): Promise<ElectionResultsDto> {
     if (!isUUID(electionId)) {
       throw new HttpException(
@@ -771,5 +818,33 @@ export class ElectionService {
       data: { electionId: id },
       message: settings.email_notification ? SYS_MSG.EMAIL_NOTIFICATION_ENABLED : SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
     };
+  }
+
+  async verifyVoter(verifyVoterDto: VerifyVoterDto) {
+    const { vote_id, email } = verifyVoterDto;
+    const election = await this.electionRepository.findOne({
+      where: { vote_id: vote_id },
+      relations: ['voters'],
+    });
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+    if (election.voters.some(voter => voter.email === email)) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.VOTER_VERIFIED,
+        data: null,
+      };
+    } else {
+      throw new UnauthorizedException({
+        status_code: HttpStatus.UNAUTHORIZED,
+        message: SYS_MSG.VOTER_UNVERIFIED,
+        data: null,
+      });
+    }
   }
 }

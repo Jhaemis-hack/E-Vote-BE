@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EmailQueue } from './email.queue';
 import { MailInterface } from './interface/email.interface';
+import { Voter } from '../voter/entities/voter.entity';
 @Injectable()
 export class EmailService {
   constructor(private emailQueue: EmailQueue) {}
@@ -54,6 +55,26 @@ export class EmailService {
             template: 'election-start',
           },
           template: 'election-start',
+        });
+      }
+    }
+  }
+
+  async sendElectionReminderEmails(election: any, unvotedVoters: Voter[]): Promise<void> {
+    if (election.voters && unvotedVoters.length > 0) {
+      for (const voter of unvotedVoters) {
+        await this.emailQueue.sendEmail({
+          mail: {
+            to: voter.email,
+            subject: `Reminder: Don't forget to vote in ${election.title}!`,
+            context: {
+              electionTitle: election.title,
+              electionEndDate: election.end_date,
+              electionLink: `${process.env.FRONTEND_URL}/vote/${election.vote_id}`,
+            },
+            template: 'election-reminder',
+          },
+          template: 'election-reminder',
         });
       }
     }
