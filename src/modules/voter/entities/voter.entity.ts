@@ -9,11 +9,14 @@ export class Voter extends AbstractBaseEntity {
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column()
   email: string;
 
   @Column({ default: false })
   is_verified: boolean;
+
+  @Column({ default: false })
+  is_voted: boolean;
 
   @Column({ nullable: true })
   verification_token: string;
