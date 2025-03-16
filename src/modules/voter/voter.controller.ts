@@ -40,6 +40,7 @@ export class VoterController {
     return this.voterService.findAll(page, pageSize, adminId, electionId);
   }
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload voters via CSV or Excel file' })
   @ApiConsumes('multipart/form-data')
   @ApiFile()

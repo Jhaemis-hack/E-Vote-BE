@@ -88,3 +88,4 @@ export const NO_VOTERS_DATA = 'No voter data provided.';
 export const DUPLICATE_EMAILS_ELECTION =
   'Duplicate Voter Registration Detected: The email(s) are already registered for this election.';
 export const FETCH_ADMINS = 'Admins fetched successfully';
+export const ERROR_VOTER_LIST_FORBBIDEN_ACCESS = "Only Election Creator can view Voter's list.";
