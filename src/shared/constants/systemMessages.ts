@@ -76,3 +76,5 @@ export const ERROR_EXCEL_PROCESSING =
 export const VOTER_INSERTION_ERROR = 'Error insertion voters';
 export const EMAIL_NOTIFICATION_ENABLED = 'Email notifications have been enabled for this election.';
 export const EMAIL_NOTIFICATION_DISABLED = 'Email notifications have been disabled for this election.';
+export const INVALID_VOTE_LINK = 'Invalid vote link';
+export const ALREADY_VOTED = 'You have already voted';
