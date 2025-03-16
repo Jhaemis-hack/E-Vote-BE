@@ -53,7 +53,10 @@ export class ElectionStatusUpdaterService {
       });
 
       this.schedulerRegistry.addCronJob(`end-${id}`, endJob);
-      endJob.start();
+      endJob.start(); // Start the job
+      this.logger.log(`Scheduled end job for election ${id} at ${endDateTime}`);
+    } else {
+      this.logger.log(`End date/time ${endDateTime} for election ${id} is in the past, not scheduling job.`);
     }
   }
 

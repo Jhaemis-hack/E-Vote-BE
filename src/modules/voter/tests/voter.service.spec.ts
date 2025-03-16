@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VoterService } from '../voter.service';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Voter } from '../entities/voter.entity';
 import { BadRequestException, HttpException } from '@nestjs/common';
@@ -76,9 +76,11 @@ describe('VoterService', () => {
     it('should process a valid CSV file and save voters', async () => {
       const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,jane@example.com');
 
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
       const result = await service.processCSV(fileBuffer, '123');
+
       expect(result.status_code).toBe(201);
       expect(voterRepository.insert).toHaveBeenCalledTimes(1);
     });
@@ -101,6 +103,7 @@ describe('VoterService', () => {
       xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
       const result = await service.processExcel(fileBuffer, '123');
@@ -125,9 +128,18 @@ describe('VoterService', () => {
   describe('saveVoters', () => {
     it('should save voters successfully', async () => {
       const voters = [{ name: 'John Doe', email: 'john@example.com', election: { id: '123' } }];
+
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
+
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
       await service.saveVoters(voters);
+
+      expect(voterRepository.find).toHaveBeenCalledWith({
+        where: { email: In(['john@example.com']), election: { id: '123' } },
+        select: ['email'],
+      });
+
       expect(voterRepository.insert).toHaveBeenCalledWith(voters);
     });
   });

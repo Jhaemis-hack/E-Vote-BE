@@ -39,6 +39,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+import { VerifyVoterDto } from './dto/verify-voter.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -211,5 +212,15 @@ export class ElectionController {
   async uploadPhoto(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const adminId = req.user.sub;
     return this.electionService.uploadPhoto(file, adminId);
+  }
+
+  @Post('voters/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify voter' })
+  @ApiResponse({ status: 200, description: SYS_MSG.VOTER_VERIFIED })
+  @ApiResponse({ status: 401, description: SYS_MSG.VOTER_UNVERIFIED })
+  @ApiResponse({ status: 400, description: SYS_MSG.BAD_REQUEST })
+  async verifyVoter(@Body() verifyVoterDto: VerifyVoterDto) {
+    return this.electionService.verifyVoter(verifyVoterDto);
   }
 }
