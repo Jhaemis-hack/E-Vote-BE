@@ -12,7 +12,7 @@ import * as xlsx from 'xlsx';
 import * as stream from 'stream';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Voter } from '../voter/entities/voter.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @Injectable()
@@ -156,7 +156,7 @@ export class VoterService {
         data: null,
       };
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof HttpException) {
         throw error;
       }
       throw new InternalServerErrorException({
@@ -169,8 +169,33 @@ export class VoterService {
 
   async saveVoters(data: { name: string; email: string; election: { id: string } }[]): Promise<any> {
     try {
+      if (!data.length) {
+        throw new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.NO_VOTERS_DATA,
+          data: null,
+        });
+      }
+      const electionId = data[0].election.id;
+      const emails = data.map(voter => voter.email);
+
+      const existingVoters = await this.voterRepository.find({
+        where: { email: In(emails), election: { id: electionId } },
+        select: ['email'],
+      });
+
+      if (existingVoters.length > 0) {
+        const existingEmails = existingVoters.map(voter => voter.email);
+        throw new ConflictException({
+          status_code: HttpStatus.CONFLICT,
+          message: SYS_MSG.DUPLICATE_EMAILS_ELECTION,
+        });
+      }
       await this.voterRepository.insert(data);
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new InternalServerErrorException({
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
         message: SYS_MSG.VOTER_INSERTION_ERROR,
