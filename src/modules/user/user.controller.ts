@@ -56,8 +56,8 @@ export class UserController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of users per page' })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Number of items per page (default: 10)' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Successfully retrieved messages',

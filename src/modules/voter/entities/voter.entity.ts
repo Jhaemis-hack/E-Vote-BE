@@ -9,7 +9,7 @@ export class Voter extends AbstractBaseEntity {
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column()
   email: string;
 
   @Column({ default: false })
