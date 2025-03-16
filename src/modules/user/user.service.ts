@@ -59,25 +59,25 @@ export class UserService {
     const credentials = { email: newAdmin.email, sub: newAdmin.id };
     const token = this.jwtService.sign(credentials);
 
-    // try {
-    //   await this.mailService.sendWelcomeMail(newAdmin.email);
-    // } catch (err) {
-    //   return {
-    //     status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-    //     message: SYS_MSG.WELCOME_EMAIL_FAILED,
-    //     data: null,
-    //   };
-    // }
+    try {
+      await this.mailService.sendWelcomeMail(newAdmin.email);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.WELCOME_EMAIL_FAILED,
+        data: null,
+      };
+    }
 
-    // try {
-    //   await this.mailService.sendVerificationMail(newAdmin.email, token);
-    // } catch (err) {
-    //   return {
-    //     status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-    //     message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-    //     data: null,
-    //   };
-    // }
+    try {
+      await this.mailService.sendVerificationMail(newAdmin.email, token);
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+        data: null,
+      };
+    }
 
     await this.userRepository.save(newAdmin);
 
