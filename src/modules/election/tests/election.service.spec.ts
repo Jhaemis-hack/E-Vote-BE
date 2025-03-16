@@ -31,6 +31,8 @@ describe('ElectionService', () => {
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
   let voterRepository: Repository<Voter>;
+  let emailService: EmailService;
+  let voterService: VoterService;
 
   // Mock repositories
   const mockElectionRepository = () => ({
@@ -85,6 +87,7 @@ describe('ElectionService', () => {
   // Mock VoterService
   const mockVoterService = {
     findAllVoters: jest.fn().mockResolvedValue({ data: [] }),
+    getVotersByElection: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -106,6 +109,8 @@ describe('ElectionService', () => {
     candidateRepository = module.get<Repository<Candidate>>(getRepositoryToken(Candidate));
     voteRepository = module.get<Repository<Vote>>(getRepositoryToken(Vote));
     voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
+    voterService = module.get<VoterService>(VoterService);
+    emailService = module.get<EmailService>(EmailService);
   });
 
   afterEach(() => {
@@ -190,6 +195,70 @@ describe('ElectionService', () => {
       await expect(service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e')).rejects.toThrow(
         'Error creating election',
       );
+    });
+  });
+
+  describe('sendVotingLinkToVoters', () => {
+    it('should throw HttpException if election is not found', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(service.sendVotingLinkToVoters('invalid-id')).rejects.toThrow(HttpException);
+    });
+
+    it('should send voting links to all voters and return success response', async () => {
+      const election = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        start_date: new Date(),
+        start_time: '09:00',
+        end_date: new Date(),
+        end_time: '17:00',
+      } as Election;
+      const voters = [{ email: 'voter1@example.com' }, { email: 'voter2@example.com' }] as Voter[];
+
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
+      jest.spyOn(voterService, 'getVotersByElection').mockResolvedValue(voters);
+      jest.spyOn(service, 'sendVotingLinkToVoters').mockResolvedValue({
+        status_code: HttpStatus.OK,
+        message: 'Voting links sent successfully',
+        data: null,
+      });
+
+      const result = await service.sendVotingLinkToVoters('550e8400-e29b-41d4-a716-446655440000');
+
+      expect(result).toEqual({
+        status_code: HttpStatus.OK,
+        message: 'Voting links sent successfully',
+        data: null,
+      });
+      expect(service.sendVotingLinkToVoters).toHaveBeenCalledTimes(voters.length);
+    });
+
+    it('should return error response if sending voting link fails', async () => {
+      const election = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        start_date: new Date(),
+        start_time: '09:00',
+        end_date: new Date(),
+        end_time: '17:00',
+      } as Election;
+      const voters = [{ email: 'voter1@example.com' }, { email: 'voter2@example.com' }] as Voter[];
+
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
+      jest.spyOn(voterService, 'getVotersByElection').mockResolvedValue(voters);
+      jest.spyOn(service, 'sendVotingLinkToVoters').mockRejectedValue({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to send voting link to voters',
+        data: null,
+      });
+
+      const result = await service.sendVotingLinkToVoters('550e8400-e29b-41d4-a716-446655440000');
+
+      expect(result).toEqual({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Failed to send voting link to voters',
+        data: null,
+      });
+      expect(service.sendVotingLinkToVoters).toHaveBeenCalledTimes(voters.length);
     });
   });
 

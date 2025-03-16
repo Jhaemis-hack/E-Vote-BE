@@ -200,13 +200,11 @@ export class ElectionService {
 
     const voters = await this.voterService.getVotersByElection(id);
     let votingLinkId: string;
-    // this.logger.log(voters);
 
-    try {
-      const emailPromises = voters.map(async voter => {
+    for (const voter of voters) {
+      try {
         votingLinkId = randomUUID();
         voter.verification_token = votingLinkId;
-        this.logger.log('Sending voting link to: ', voter.email, 'Generated voting link ID:', votingLinkId);
 
         await this.emailService.sendVotingLink(
           voter.email,
@@ -219,24 +217,20 @@ export class ElectionService {
 
         // Save voting link id to the voter
         await this.voterRepository.save(voter);
-      });
-
-      await Promise.all(emailPromises);
-    } catch (error) {
-      return {
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
-        data: error.response.data,
-      };
+      } catch (emailError) {
+        this.logger.error(`Failed to send voting link to ${voter.email}: ${emailError.message}`);
+        return {
+          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
+          data: null,
+        };
+      }
     }
 
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
-      // data: {
-      //   email: voters.map(voter => voter.email),
-      //   voting_link_id: voters.map(voter => voter.verification_token),
-      // },
+      data: null,
     };
   }
 

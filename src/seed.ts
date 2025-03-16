@@ -125,7 +125,7 @@ async function seed() {
 
   // Create voters
   const voters = [
-    { name: 'Voter 1', email: 'nachodev369@gmail.com', election: savedElections[0], is_verified: true },
+    { name: 'Voter 1', email: 'voter1@example.com', election: savedElections[0], is_verified: true },
     { name: 'Voter 2', email: 'voter2@example.com', election: savedElections[0], is_verified: true },
     { name: 'Voter 3', email: 'voter3@example.com', election: savedElections[1], is_verified: true },
     { name: 'Voter 4', email: 'voter4@example.com', election: savedElections[1], is_verified: true },

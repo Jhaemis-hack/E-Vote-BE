@@ -64,11 +64,6 @@ export class EmailProcessor {
       });
       this.logger.log(`Voting link has been sent sucessfully to ${mail.to}`);
     } catch (sendVotingLinkJobError) {
-      // return {
-      //   status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-      //   message: `EmailProcessor - sendVotingLinkJobError: ${sendVotingLinkJobError.message}`,
-      //   data: null,
-      // };
       this.logger.error(`EmailProcessor - sendVotingLinkJobError: ${sendVotingLinkJobError.message}`);
     }
   }
