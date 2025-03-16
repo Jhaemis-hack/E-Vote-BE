@@ -59,9 +59,10 @@ export class EmailService {
       }
     }
   }
+  async sendElectionReminderEmails(election: any, reminderTime: Date): Promise<void> {
+    if (election.email_notification === true && election.voters && election.voters.length > 0) {
+      const unvotedVoters = election.voters.filter(voter => !voter.votes?.length);
 
-  async sendElectionReminderEmails(election: any, unvotedVoters: Voter[]): Promise<void> {
-    if (election.voters && unvotedVoters.length > 0) {
       for (const voter of unvotedVoters) {
         await this.emailQueue.sendEmail({
           mail: {
@@ -71,6 +72,7 @@ export class EmailService {
               electionTitle: election.title,
               electionEndDate: election.end_date,
               electionLink: `${process.env.FRONTEND_URL}/vote/${election.vote_id}`,
+              reminderTime: reminderTime.toLocaleString(),
             },
             template: 'election-reminder',
           },

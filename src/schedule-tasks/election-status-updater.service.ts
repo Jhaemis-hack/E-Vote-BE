@@ -37,6 +37,22 @@ export class ElectionStatusUpdaterService {
         if (election.email_notification) {
           await this.emailService.sendElectionStartEmails(election);
         }
+        // Schedule reminder emails for 5 minutes before end time
+        const reminderTime = new Date(endDateTime.getTime() - 5 * 60 * 1000);
+        if (reminderTime > new Date()) {
+          const reminderJob = new CronJob(reminderTime, async () => {
+            this.logger.log(`Sending reminder emails for election ${id}`);
+            if (election.email_notification) {
+              await this.emailService.sendElectionReminderEmails(election, reminderTime);
+            }
+            this.schedulerRegistry.deleteCronJob(`reminder-${id}`);
+          });
+
+          this.schedulerRegistry.addCronJob(`reminder-${id}`, reminderJob);
+          reminderJob.start();
+          this.logger.log(`Scheduled reminder emails for election ${id} at ${reminderTime}`);
+        }
+
         this.schedulerRegistry.deleteCronJob(`start-${id}`);
       });
 
