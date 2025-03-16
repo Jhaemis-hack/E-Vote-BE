@@ -68,6 +68,9 @@ describe('VoterService', () => {
           created_at: new Date(),
           updated_at: new Date(),
           deleted_at: null,
+          is_verified: false,
+          verification_token: '',
+          votes: [],
           election: { id: validElectionId } as Election,
         },
         {
@@ -77,6 +80,9 @@ describe('VoterService', () => {
           created_at: new Date(),
           updated_at: new Date(),
           deleted_at: null,
+          is_verified: false,
+          verification_token: '',
+          votes: [],
           election: { id: validElectionId } as Election,
         },
       ];
