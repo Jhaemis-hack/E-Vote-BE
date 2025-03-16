@@ -41,7 +41,13 @@ export class VoterService {
     electionId: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
-      const voters: { name: string; email: string; election: { id: string } }[] = [];
+      const voters: {
+        id: string;
+        name: string;
+        email: string;
+        verification_token: string;
+        election: { id: string };
+      }[] = [];
       const emailOccurrences = new Map<string, number[]>();
       let rowIndex = 1;
 
@@ -61,7 +67,13 @@ export class VoterService {
                   emailOccurrences.get(email)!.push(rowIndex);
                 } else {
                   emailOccurrences.set(email, [rowIndex]);
-                  voters.push({ name, email, election: { id: electionId } });
+                  voters.push({
+                    id: crypto.randomUUID(),
+                    name,
+                    email,
+                    verification_token: crypto.randomUUID(),
+                    election: { id: electionId },
+                  });
                 }
               }
               rowIndex++;
