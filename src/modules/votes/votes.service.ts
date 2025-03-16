@@ -18,7 +18,6 @@ export class VoteService {
 
   async createVote(vote_link: string, createVoteDto: CreateVoteDto) {
     const voter = await this.getVoter(vote_link);
-    console.log({ voter });
 
     if (voter.is_voted) {
       throw new ConflictException({
