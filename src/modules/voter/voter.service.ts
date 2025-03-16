@@ -39,65 +39,101 @@ export class VoterService {
     fileBuffer: Buffer,
     electionId: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
-    const voters: { name: string; email: string; election: { id: string } }[] = [];
-    const emailOccurrences = new Map<string, number[]>();
-    let rowIndex = 1;
+    try {
+      const voters: { name: string; email: string; election: { id: string } }[] = [];
+      const emailOccurrences = new Map<string, number[]>();
+      let rowIndex = 1;
 
-    return new Promise((resolve, reject) => {
       const bufferStream = new stream.PassThrough();
       bufferStream.end(fileBuffer);
 
-      bufferStream
-        .pipe(csv())
-        .on('data', row => {
-          const name = row.name || row.Name || row.NAME;
-          const email = (row.email || row.Email || row.EMAIL)?.toLowerCase();
+      return await new Promise((resolve, reject) => {
+        bufferStream
+          .pipe(csv())
+          .on('data', row => {
+            try {
+              const name = row.name || row.Name || row.NAME;
+              const email = (row.email || row.Email || row.EMAIL)?.toLowerCase();
 
-          if (email) {
-            if (emailOccurrences.has(email)) {
-              emailOccurrences.get(email)!.push(rowIndex);
-            } else {
-              emailOccurrences.set(email, [rowIndex]);
-              voters.push({ name, email, election: { id: electionId } });
+              if (email) {
+                if (emailOccurrences.has(email)) {
+                  emailOccurrences.get(email)!.push(rowIndex);
+                } else {
+                  emailOccurrences.set(email, [rowIndex]);
+                  voters.push({ name, email, election: { id: electionId } });
+                }
+              }
+              rowIndex++;
+            } catch (error) {
+              reject(
+                new InternalServerErrorException({
+                  status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+                  message: SYS_MSG.ERROR_CSV_PROCESSING,
+                  data: null,
+                }),
+              );
             }
-          }
-          rowIndex++;
-        })
-        .on('end', async () => {
-          const duplicates = Array.from(emailOccurrences.entries())
-            .filter(([_, rows]) => rows.length > 1)
-            .map(([email, rows]) => ({ email, rows }));
+          })
+          .on('end', async () => {
+            try {
+              const duplicates = Array.from(emailOccurrences.entries())
+                .filter(([_, rows]) => rows.length > 1)
+                .map(([email, rows]) => ({ email, rows }));
 
-          if (duplicates.length > 0) {
-            return reject(
-              new HttpException(
-                {
-                  status_code: HttpStatus.BAD_REQUEST,
-                  message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
-                  data: duplicates.map(d => d.email).join(', '),
-                },
-                HttpStatus.BAD_REQUEST,
-              ),
+              if (duplicates.length > 0) {
+                return reject(
+                  new HttpException(
+                    {
+                      status_code: HttpStatus.BAD_REQUEST,
+                      message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
+                      data: duplicates.map(d => d.email).join(', '),
+                    },
+                    HttpStatus.BAD_REQUEST,
+                  ),
+                );
+              }
+
+              await this.saveVoters(voters);
+
+              resolve({
+                status_code: HttpStatus.CREATED,
+                message: SYS_MSG.UPLOAD_VOTER_SUCCESS,
+                data: null,
+              });
+            } catch (error) {
+              reject(
+                error instanceof HttpException
+                  ? error
+                  : new InternalServerErrorException({
+                      status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+                      message: SYS_MSG.ERROR_CSV_PROCESSING,
+                      data: null,
+                    }),
+              );
+            }
+          })
+          .on('error', error => {
+            reject(
+              error instanceof HttpException
+                ? error
+                : new InternalServerErrorException({
+                    status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: SYS_MSG.ERROR_CSV_PROCESSING,
+                    data: null,
+                  }),
             );
-          }
-          await this.saveVoters(voters);
-
-          resolve({
-            status_code: HttpStatus.CREATED,
-            message: SYS_MSG.UPLOAD_VOTER_SUCCESS,
-            data: null,
           });
-        })
-        .on('error', error =>
-          reject(
-            new InternalServerErrorException({
-              status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-              message: SYS_MSG.ERROR_CSV_PROCESSING,
-              data: null,
-            }),
-          ),
-        );
-    });
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException({
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.ERROR_CSV_PROCESSING,
+        data: null,
+      });
+    }
   }
 
   async processExcel(
@@ -157,6 +193,9 @@ export class VoterService {
       };
     } catch (error) {
       if (error instanceof HttpException) {
+        throw error;
+      }
+      if (error instanceof ConflictException) {
         throw error;
       }
       throw new InternalServerErrorException({
