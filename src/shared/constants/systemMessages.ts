@@ -79,3 +79,4 @@ export const EMAIL_NOTIFICATION_DISABLED = 'Email notifications have been disabl
 export const NO_VOTERS_DATA = 'No voter data provided.';
 export const DUPLICATE_EMAILS_ELECTION =
   'Duplicate Voter Registration Detected: The email(s) are already registered for this election.';
+export const FETCH_ADMINS = 'Admins fetched successfully';
