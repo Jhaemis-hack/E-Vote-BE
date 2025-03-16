@@ -68,7 +68,7 @@ export const FAILED_PHOTO_UPLOAD = 'Failed to upload photo to Supabase.';
 export const PHOTO_SIZE_LIMIT = 'File size exceeds 2MB limit.';
 export const INVALID_FILE_TYPE = 'Invalid file type. Only JPEG and PNG are allowed.';
 export const NO_FILE_UPLOADED = 'No file uploaded';
-export const DEFAULT_PROFILE_URL = 'default pfofile photo assigned';
+export const DEFAULT_PROFILE_URL = 'default profile photo assigned';
 export const INVALID_VOTER_FILE_UPLOAD = 'Invalid file format. Only Excel and CSV are allowed';
 export const ERROR_CSV_PROCESSING =
   'CSV processing error: Failed to parse the CSV file. Ensure the file contains valid data.';
@@ -78,6 +78,12 @@ export const ERROR_EXCEL_PROCESSING =
 export const VOTER_INSERTION_ERROR = 'Error insertion voters';
 export const EMAIL_NOTIFICATION_ENABLED = 'Email notifications have been enabled for this election.';
 export const EMAIL_NOTIFICATION_DISABLED = 'Email notifications have been disabled for this election.';
+export const INVALID_VOTE_LINK = 'Invalid vote link';
+export const ALREADY_VOTED = 'You have already voted';
+
+export const VOTER_VERIFIED = 'Voter verified, proceed to cast your vote';
+export const VOTER_UNVERIFIED = 'Voter unverified, your not allowed to vote in this election';
+
 export const NO_VOTERS_DATA = 'No voter data provided.';
 export const DUPLICATE_EMAILS_ELECTION =
   'Duplicate Voter Registration Detected: The email(s) are already registered for this election.';

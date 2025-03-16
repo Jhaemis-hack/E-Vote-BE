@@ -15,6 +15,9 @@ export class Voter extends AbstractBaseEntity {
   @Column({ default: false })
   is_verified?: boolean;
 
+  @Column({ default: false })
+  is_voted: boolean;
+
   @Column({ nullable: true })
   verification_token?: string;
 

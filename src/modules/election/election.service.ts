@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClient } from '@supabase/supabase-js';
@@ -24,6 +25,7 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+import { VerifyVoterDto } from './dto/verify-voter.dto';
 
 config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
@@ -816,5 +818,33 @@ export class ElectionService {
       data: { electionId: id },
       message: settings.email_notification ? SYS_MSG.EMAIL_NOTIFICATION_ENABLED : SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
     };
+  }
+
+  async verifyVoter(verifyVoterDto: VerifyVoterDto) {
+    const { vote_id, email } = verifyVoterDto;
+    const election = await this.electionRepository.findOne({
+      where: { vote_id: vote_id },
+      relations: ['voters'],
+    });
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+    if (election.voters.some(voter => voter.email === email)) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.VOTER_VERIFIED,
+        data: null,
+      };
+    } else {
+      throw new UnauthorizedException({
+        status_code: HttpStatus.UNAUTHORIZED,
+        message: SYS_MSG.VOTER_UNVERIFIED,
+        data: null,
+      });
+    }
   }
 }
