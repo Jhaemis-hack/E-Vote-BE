@@ -8,7 +8,7 @@ export class EmailQueue {
   constructor(@InjectQueue('emailQueue') private readonly emailQueue: Queue) {}
 
   async sendEmail({ mail, template }: EmailSender) {
-    const emailJob = await this.emailQueue.add(
+    return this.emailQueue.add(
       template,
       { mail },
       {
@@ -21,6 +21,5 @@ export class EmailQueue {
         removeOnFail: false,
       },
     );
-    return { jobId: emailJob.id };
   }
 }

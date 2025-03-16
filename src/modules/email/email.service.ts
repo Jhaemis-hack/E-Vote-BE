@@ -51,15 +51,16 @@ export class EmailService {
     end_date: Date,
     end_time: string,
     votingLinkId: string,
-  ): Promise<void> {
+  ) {
     const votingLink = `${process.env.FRONTEND_URL}/vote/${votingLinkId}`;
-    await this.sendEmail(email, 'Here is your voting link', 'voting-link', {
-      email,
-      votingLink,
-      start_date,
-      start_time,
-      end_date,
-      end_time,
+    return this.emailQueue.sendEmail({
+      mail: {
+        to: email,
+        subject: 'Here is your voting link',
+        template: 'voting-link',
+        context: { email, votingLink, start_date, start_time, end_date, end_time },
+      },
+      template: 'voting-link',
     });
   }
 }

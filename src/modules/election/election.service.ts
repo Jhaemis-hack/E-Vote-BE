@@ -182,14 +182,16 @@ export class ElectionService {
   async sendVotingLinkToVoters(id: string) {
     if (!isUUID(id)) {
       throw new HttpException(
-        { status_code: 400, message: SYS_MSG.INCORRECT_UUID, data: null },
+        {
+          status_code: 400,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    const election = await this.electionRepository.findOne({
-      where: { id: id },
-    });
+    const election = await this.electionRepository.findOne({ where: { id } });
     if (!election) {
       throw new NotFoundException({
         status_code: HttpStatus.NOT_FOUND,
@@ -199,14 +201,21 @@ export class ElectionService {
     }
 
     const voters = await this.voterService.getVotersByElection(id);
-    let votingLinkId: string;
+    if (voters.length === 0) {
+      return {
+        status_code: HttpStatus.NO_CONTENT,
+        message: SYS_MSG.NO_VOTERS_FOUND,
+        data: null,
+      };
+    }
 
-    for (const voter of voters) {
+    const jobPromises = voters.map(async voter => {
       try {
-        votingLinkId = randomUUID();
+        const votingLinkId = randomUUID();
         voter.verification_token = votingLinkId;
+        await this.voterRepository.save(voter);
 
-        await this.emailService.sendVotingLink(
+        const job = await this.emailService.sendVotingLink(
           voter.email,
           election.start_date,
           election.start_time,
@@ -214,18 +223,12 @@ export class ElectionService {
           election.end_time,
           votingLinkId,
         );
-
-        // Save voting link id to the voter
-        await this.voterRepository.save(voter);
-      } catch (emailError) {
-        this.logger.error(`Failed to send voting link to ${voter.email}: ${emailError.message}`);
-        return {
-          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
-          data: null,
-        };
+      } catch (error) {
+        this.logger.error(`Email job failed for ${voter.email}: ${error.message}`);
       }
-    }
+    });
+
+    await Promise.all(jobPromises);
 
     return {
       status_code: HttpStatus.OK,
