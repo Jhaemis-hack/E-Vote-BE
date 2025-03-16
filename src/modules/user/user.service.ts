@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
@@ -140,7 +140,8 @@ export class UserService {
   }
 
   async getAllUsers(page: number, limit: number) {
-    const [messages, total] = await this.userRepository.findAndCount({
+    const [admins, total] = await this.userRepository.findAndCount({
+      where: { deleted_at: IsNull() },
       order: { created_at: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -148,13 +149,13 @@ export class UserService {
     });
     const total_pages = Math.ceil(total / limit);
     return {
-      status: 'success',
-      message: 'Retrieved users successfully',
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_ADMINS,
       data: {
         current_page: page,
         total_pages,
         total_results: total,
-        messages,
+        admins,
       },
     };
   }

@@ -78,3 +78,7 @@ export const EMAIL_NOTIFICATION_ENABLED = 'Email notifications have been enabled
 export const EMAIL_NOTIFICATION_DISABLED = 'Email notifications have been disabled for this election.';
 export const INVALID_VOTE_LINK = 'Invalid vote link';
 export const ALREADY_VOTED = 'You have already voted';
+export const NO_VOTERS_DATA = 'No voter data provided.';
+export const DUPLICATE_EMAILS_ELECTION =
+  'Duplicate Voter Registration Detected: The email(s) are already registered for this election.';
+export const FETCH_ADMINS = 'Admins fetched successfully';
