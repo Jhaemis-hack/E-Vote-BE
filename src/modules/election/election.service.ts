@@ -675,17 +675,7 @@ export class ElectionService {
       electionType = ElectionType.SINGLECHOICE;
     }
 
-    if (election.status === ElectionStatus.UPCOMING) {
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
-      };
-    } else if (election.status === ElectionStatus.COMPLETED) {
+    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
       return {
         election_id: election.id,
         title: election.title,
