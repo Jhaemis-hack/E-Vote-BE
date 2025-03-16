@@ -56,4 +56,17 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - sendWelcomeEmailJobError: ${sendWelcomeEmailJobError}`);
     }
   }
+
+  @Process('election-start')
+  async sendElectionStartEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Election start email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ElectionStartEmailJob error: ${error.message}`);
+    }
+  }
 }

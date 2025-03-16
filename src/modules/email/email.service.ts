@@ -38,4 +38,24 @@ export class EmailService {
   async sendWelcomeMail(email: string) {
     await this.sendEmail(email, 'Welcome to Resolve.vote', 'welcome-email', { email });
   }
+
+  async sendElectionStartEmails(election: any): Promise<void> {
+    if (election.voters && election.voters.length > 0) {
+      for (const voter of election.voters) {
+        await this.emailQueue.sendEmail({
+          mail: {
+            to: voter.email,
+            subject: `Election ${election.title} has started!`,
+            context: {
+              electionTitle: election.title,
+              electionEndDate: election.end_date,
+              electionLink: `${process.env.FRONTEND_URL}/vote/${election.vote_id}`,
+            },
+            template: 'election-start',
+          },
+          template: 'election-start',
+        });
+      }
+    }
+  }
 }
