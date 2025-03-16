@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EmailQueue } from './email.queue';
 import { MailInterface } from './interface/email.interface';
-import { randomUUID } from 'crypto';
 @Injectable()
 export class EmailService {
   constructor(private emailQueue: EmailQueue) {}

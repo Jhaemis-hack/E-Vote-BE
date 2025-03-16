@@ -156,9 +156,6 @@ export class ElectionService {
 
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
-    // Send Voting link to all voters
-    await this.sendVotingLinkToVoters(savedElection);
-
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.ELECTION_CREATED,
@@ -182,59 +179,65 @@ export class ElectionService {
     };
   }
 
-  async sendVotingLinkToVoters(savedElection: Election) {
+  async sendVotingLinkToVoters(id: string) {
+    if (!isUUID(id)) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const election = await this.electionRepository.findOne({
+      where: { id: id },
+    });
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    const voters = await this.voterService.getVotersByElection(id);
+    let votingLinkId: string;
+    // this.logger.log(voters);
+
     try {
-      const voters_response = await this.voterService.findAllVoters();
-      const voters = voters_response.data;
-      const filteredVoters = voters.filter(voter => voter.election.id === savedElection.id);
-      // this.logger.log('Voters:', voters);
+      const emailPromises = voters.map(async voter => {
+        votingLinkId = randomUUID();
+        voter.verification_token = votingLinkId;
+        this.logger.log('Sending voting link to: ', voter.email, 'Generated voting link ID:', votingLinkId);
 
-      const emailPromises = filteredVoters.map(async voter => {
-        try {
-          // this.logger.log('Sending voting link to: ', voter.email);
-          const votingLinkId = randomUUID();
-          voter.verification_token = votingLinkId;
-          // this.logger.log('Generated voting link ID:', votingLinkId);
+        await this.emailService.sendVotingLink(
+          voter.email,
+          election.start_date,
+          election.start_time,
+          election.end_date,
+          election.end_time,
+          votingLinkId,
+        );
 
-          await this.emailService.sendVotingLink(
-            voter.email,
-            savedElection.start_date,
-            savedElection.start_time,
-            savedElection.end_date,
-            savedElection.end_time,
-            votingLinkId,
-          );
-
-          // Save voting link id to the voter
-          await this.voterRepository.save(voter);
-        } catch (emailError) {
-          // this.logger.error(`Failed to send voting link to ${voter.email}: ${emailError.message}`);
-          throw new HttpException(
-            {
-              status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-              message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
-            },
-            HttpStatus.INTERNAL_SERVER_ERROR,
-          );
-        }
+        // Save voting link id to the voter
+        await this.voterRepository.save(voter);
       });
 
       await Promise.all(emailPromises);
-
+    } catch (error) {
       return {
-        status_code: HttpStatus.OK,
-        message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.FAILED_TO_SEND_VOTING_LINK,
+        data: error.response.data,
       };
-    } catch (err) {
-      // this.logger.error(`Failed to retrieve voters: ${err.message}`);
-      throw new HttpException(
-        {
-          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: SYS_MSG.FAILED_TO_RETRIEVE_VOTERS,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
     }
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
+      // data: {
+      //   email: voters.map(voter => voter.email),
+      //   voting_link_id: voters.map(voter => voter.verification_token),
+      // },
+    };
   }
 
   async uploadPhoto(file: Express.Multer.File, adminId: string) {

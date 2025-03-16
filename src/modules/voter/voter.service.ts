@@ -14,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Voter } from '../voter/entities/voter.entity';
 import { Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class VoterService {
@@ -30,6 +31,20 @@ export class VoterService {
       message: SYS_MSG.RETRIEVED_VOTERS_SUCCESSFULLY,
       data: voters,
     };
+  }
+
+  async getVotersByElection(electionId: string) {
+    if (!isUUID(electionId)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.voterRepository.find({
+      where: { election: { id: electionId } },
+      relations: ['election'],
+    });
   }
 
   async processFile(
@@ -49,6 +64,7 @@ export class VoterService {
       });
     }
   }
+
   async processCSV(
     fileBuffer: Buffer,
     electionId: string,

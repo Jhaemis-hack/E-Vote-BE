@@ -1,7 +1,7 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { MailerService } from '@nestjs-modules/mailer';
-import { Logger } from '@nestjs/common';
+import { HttpStatus, Logger } from '@nestjs/common';
 import { MailInterface } from './interface/email.interface';
 
 @Processor('emailQueue')
@@ -64,6 +64,11 @@ export class EmailProcessor {
       });
       this.logger.log(`Voting link has been sent sucessfully to ${mail.to}`);
     } catch (sendVotingLinkJobError) {
+      // return {
+      //   status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+      //   message: `EmailProcessor - sendVotingLinkJobError: ${sendVotingLinkJobError.message}`,
+      //   data: null,
+      // };
       this.logger.error(`EmailProcessor - sendVotingLinkJobError: ${sendVotingLinkJobError.message}`);
     }
   }

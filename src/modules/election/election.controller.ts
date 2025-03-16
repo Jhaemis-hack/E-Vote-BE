@@ -56,23 +56,6 @@ export class ElectionController {
     return this.electionService.create(createElectionDto, adminId);
   }
 
-  // Used to test the sendVotingLinkToVoters function without creating a new election
-  // @Get('send-voting-links')
-  // async sendVotingLinks() {
-  //   try {
-  //     const savedElection = {
-  //       id: 'ba681483-0b3b-43a1-88d0-07d99f5fbf9a',
-  //       start_date: '2025-06-01T00:00:00Z',
-  //       start_time: '00:00:00',
-  //       end_date: '2025-06-01T23:59:59Z',
-  //       end_time: '23:59:59',
-  //     };
-  //     await this.electionService.sendVotingLinkToVoters(savedElection);
-  //   } catch (error) {
-  //     throw new HttpException(error.message, error.status || HttpStatus.INTERNAL_SERVER_ERROR);
-  //   }
-  // }
-
   @ApiBearerAuth()
   @Get()
   @UseGuards(AuthGuard)
@@ -98,7 +81,7 @@ export class ElectionController {
   @ApiOperation({ summary: 'Retrieve election details by ID, including candidates and their respective vote counts.' })
   @ApiResponse({ status: 200, description: 'Election found', type: SingleElectionResponseDto })
   @ApiResponse({ status: 404, description: 'Election not found', type: ElectionNotFound })
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.electionService.findOne(id);
   }
 
@@ -167,7 +150,7 @@ export class ElectionController {
   @ApiResponse({ status: 403, description: SYS_MSG.UNAUTHORIZED_ACCESS })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
   @ApiResponse({ status: 500, description: SYS_MSG.INTERNAL_SERVER_ERROR })
-  remove(@Param('id') id: string, @Req() req: any) {
+  async remove(@Param('id') id: string, @Req() req: any) {
     const adminId = req.user.sub;
     return this.electionService.remove(id, adminId);
   }
@@ -179,7 +162,7 @@ export class ElectionController {
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
-  getElectionByVoterLink(@Param('vote_id') vote_id: string) {
+  async getElectionByVoterLink(@Param('vote_id') vote_id: string) {
     return this.electionService.getElectionByVoterLink(vote_id);
   }
 
@@ -228,5 +211,15 @@ export class ElectionController {
   async uploadPhoto(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const adminId = req.user.sub;
     return this.electionService.uploadPhoto(file, adminId);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/send-voting-links')
+  // @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Send voting link to all voters' })
+  @ApiResponse({ status: 200, description: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY })
+  @ApiResponse({ status: 500, description: SYS_MSG.FAILED_TO_SEND_VOTING_LINK })
+  async sendVotingLinks(@Param('id') id: string) {
+    return await this.electionService.sendVotingLinkToVoters(id);
   }
 }
