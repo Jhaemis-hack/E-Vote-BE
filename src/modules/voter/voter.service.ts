@@ -6,6 +6,8 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { isUUID } from 'class-validator';
+import { Election } from '../election/entities/election.entity';
 import { Express } from 'express';
 import * as csv from 'csv-parser';
 import * as xlsx from 'xlsx';
@@ -17,7 +19,118 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 
 @Injectable()
 export class VoterService {
-  constructor(@InjectRepository(Voter) private voterRepository: Repository<Voter>) {}
+  constructor(
+    @InjectRepository(Voter) private voterRepository: Repository<Voter>,
+    @InjectRepository(Election) private electionRepository: Repository<Election>,
+  ) {}
+
+  async findAll(
+    page: number,
+    pageSize: number,
+    adminId: string,
+    electionId: string,
+  ): Promise<{
+    status_code: number;
+    message: string;
+    data: {
+      current_page: number;
+      total_pages: number;
+      total_results: number;
+      election_id: string;
+      voter_list: any;
+      meta: any;
+    };
+  }> {
+    if (!adminId) {
+      throw new HttpException(
+        { status_code: 401, message: SYS_MSG.UNAUTHORIZED_USER, data: null },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!isUUID(adminId)) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (page < 1 || pageSize < 1) {
+      throw new HttpException(
+        {
+          status_code: 400,
+          message: 'Invalid pagination parameters. Page and pageSize must be greater than 0.',
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const skip = (page - 1) * pageSize;
+
+    const election = await this.electionRepository.findOne({
+      where: { id: electionId },
+    });
+
+    if (!election) {
+      throw new HttpException(
+        { status_code: 404, message: SYS_MSG.ELECTION_NOT_FOUND, data: null },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const admin_created_election = await this.electionRepository.findOne({
+      where: { created_by: adminId, id: electionId },
+    });
+
+    if (!admin_created_election) {
+      throw new HttpException(
+        { status_code: 403, message: `No election associated with Admin ID: ${adminId} could be found.`, data: null },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const [voter_list, total] = await this.voterRepository.findAndCount({
+      where: { election: { id: electionId } },
+      skip,
+      take: pageSize,
+      relations: ['election'],
+    });
+
+    if (total === 0) {
+      throw new HttpException(
+        { status_code: 404, message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND, data: null },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const data = voter_list.map(voter => ({
+      voter_id: voter.id,
+      name: voter.name,
+      email: voter.email,
+    }));
+
+    const total_pages = Math.ceil(total / pageSize);
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_ELECTION_VOTER_LIST,
+      data: {
+        current_page: page,
+        total_pages,
+        total_results: total,
+        election_id: electionId,
+        voter_list: data,
+        meta: {
+          hasNext: page < total_pages,
+          total,
+          nextPage: page < total_pages ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null,
+        },
+      },
+    };
+  }
+
   async processFile(
     file: Express.Multer.File,
     electionId: string,
