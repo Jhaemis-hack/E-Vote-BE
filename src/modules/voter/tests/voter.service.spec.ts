@@ -10,8 +10,6 @@ import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestException } from '@nestjs/common';
 import * as xlsx from 'xlsx';
-import * as csv from 'csv-parser';
-import * as stream from 'stream';
 
 describe('VoterService', () => {
   let service: VoterService;

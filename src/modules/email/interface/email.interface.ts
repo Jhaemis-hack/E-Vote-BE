@@ -6,6 +6,8 @@ export interface MailInterface {
   context?: any;
 
   [key: string]: any;
+
+  template?: string;
 }
 
 export interface EmailSender {

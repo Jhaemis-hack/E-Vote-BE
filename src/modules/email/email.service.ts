@@ -58,26 +58,22 @@ export class EmailService {
       }
     }
   }
-  async sendElectionReminderEmails(election: any, reminderTime: Date): Promise<void> {
-    if (election.email_notification === true && election.voters && election.voters.length > 0) {
-      const unvotedVoters = election.voters.filter(voter => !voter.votes?.length);
+  async sendElectionReminderEmail(
+    email: string,
+    electionTitle: string,
+    electionEndTime: Date,
+    votingLink: string,
+  ): Promise<void> {
+    const mailPayload: MailInterface = {
+      to: email,
+      subject: `Reminder: ${electionTitle} Closing Soon`,
+      context: {
+        electionTitle,
+        electionEndTime,
+        votingLink,
+      },
+    };
 
-      for (const voter of unvotedVoters) {
-        await this.emailQueue.sendEmail({
-          mail: {
-            to: voter.email,
-            subject: `Reminder: Don't forget to vote in ${election.title}!`,
-            context: {
-              electionTitle: election.title,
-              electionEndDate: election.end_date,
-              electionLink: `${process.env.FRONTEND_URL}/vote/${election.vote_id}`,
-              reminderTime: reminderTime.toLocaleString(),
-            },
-            template: 'election-reminder',
-          },
-          template: 'election-reminder',
-        });
-      }
-    }
+    await this.emailQueue.sendEmail({ mail: mailPayload, template: 'election-reminder' });
   }
 }
