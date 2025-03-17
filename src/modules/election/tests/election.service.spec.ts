@@ -20,7 +20,7 @@ import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
 import { Voter } from '../../voter/entities/voter.entity';
-import e from 'express';
+import { EmailService } from 'src/modules/email/email.service';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -83,6 +83,12 @@ describe('ElectionService', () => {
         { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
         { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
         { provide: ElectionStatusUpdaterService, useValue: mockElectionStatusUpdaterService },
+        {
+          provide: EmailService,
+          useValue: {
+            sendEmail: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

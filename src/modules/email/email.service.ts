@@ -62,22 +62,31 @@ export class EmailService {
       );
     }
   }
-  async sendElectionReminderEmail(
-    email: string,
-    electionTitle: string,
-    electionEndTime: Date,
-    votingLink: string,
-  ): Promise<void> {
-    const mailPayload: MailInterface = {
-      to: email,
-      subject: `Reminder: ${electionTitle} Closing Soon`,
-      context: {
-        electionTitle,
-        electionEndTime,
-        votingLink,
-      },
-    };
 
-    await this.emailQueue.sendEmail({ mail: mailPayload, template: 'election-reminder' });
+  async sendElectionReminderEmails(election: any, nonVotedVoters: any[]): Promise<void> {
+    if (nonVotedVoters && nonVotedVoters.length > 0) {
+      await Promise.all(
+        nonVotedVoters.map(voter =>
+          this.emailQueue.sendEmail({
+            mail: {
+              to: voter.email,
+              subject: `Reminder: Election "${election.title}" ends soon!`,
+              context: {
+                voterName: voter.name || voter.email,
+                electionTitle: election.title,
+                electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionEndTime: election.end_time,
+                electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
+                hoursRemaining: Math.ceil(
+                  (new Date(election.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60),
+                ),
+              },
+              template: 'election-reminder',
+            },
+            template: 'election-reminder',
+          }),
+        ),
+      );
+    }
   }
 }
