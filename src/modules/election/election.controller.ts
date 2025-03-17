@@ -32,7 +32,7 @@ import { AuthGuard } from '../../guards/auth.guard';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { ElectionService } from './election.service';
+import { ElectionResponse, ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -162,7 +162,7 @@ export class ElectionController {
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
-  getElectionByVoterLink(@Param('vote_id') vote_id: string) {
+  async getElectionByVoterLink(@Param('vote_id') vote_id: string) {
     return this.electionService.getElectionByVoterLink(vote_id);
   }
 

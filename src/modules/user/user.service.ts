@@ -10,18 +10,19 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { IsNull, Repository } from 'typeorm';
-import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginDto } from './dto/login-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
 import { exist, string } from 'joi';
-import { EmailService } from '../email/email.service';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ForgotPasswordToken } from './entities/forgot-password.entity';
+import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
+import { IsNull, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { EmailService } from '../email/email.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -37,16 +38,16 @@ export class UserService {
     const { email, password } = createAdminDto;
 
     if (!email.match(/^\S+@\S+\.\S+$/)) {
-      throw new BadRequestException(SYS_MSG.INVALID_EMAIL_FORMAT);
+      throw new BadRequestError(SYS_MSG.INVALID_EMAIL_FORMAT);
     }
 
     const existingUser = await this.userRepository.findOne({ where: { email } });
     if (existingUser) {
-      throw new BadRequestException(SYS_MSG.EMAIL_IN_USE);
+      throw new BadRequestError(SYS_MSG.EMAIL_IN_USE);
     }
 
     if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
-      throw new BadRequestException(SYS_MSG.INVALID_PASSWORD_FORMAT);
+      throw new BadRequestError(SYS_MSG.INVALID_PASSWORD_FORMAT);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -62,21 +63,13 @@ export class UserService {
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
     } catch (err) {
-      return {
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.WELCOME_EMAIL_FAILED,
-        data: null,
-      };
+      throw new InternalServerError(SYS_MSG.WELCOME_EMAIL_FAILED);
     }
 
     try {
       await this.mailService.sendVerificationMail(newAdmin.email, token);
     } catch (err) {
-      return {
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-        data: null,
-      };
+      throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
     }
 
     await this.userRepository.save(newAdmin);
@@ -94,12 +87,12 @@ export class UserService {
     });
 
     if (!userExist) {
-      throw new UnauthorizedException(SYS_MSG.EMAIL_NOT_FOUND);
+      throw new UnauthorizedError(SYS_MSG.EMAIL_NOT_FOUND);
     }
 
     const isPasswordValid = await bcrypt.compare(payload.password, userExist.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
+      throw new UnauthorizedError(SYS_MSG.INCORRECT_PASSWORD);
     }
 
     if (userExist.is_verified === false) {
@@ -110,17 +103,9 @@ export class UserService {
         await this.mailService.sendVerificationMail(userExist.email, token);
 
         // Restricts the user from logging in until their email is verified
-        return {
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.EMAIL_NOT_VERIFIED,
-          data: null,
-        };
+        throw new InternalServerError(SYS_MSG.EMAIL_NOT_VERIFIED);
       } catch (error) {
-        return {
-          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-          data: null,
-        };
+        throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
       }
     }
 
@@ -165,7 +150,7 @@ export class UserService {
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+      throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
 
     const { password, ...userData } = user;
@@ -178,25 +163,16 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto, currentUser: any) {
     if (!currentUser) {
-      throw new UnauthorizedException({
-        message: SYS_MSG.UNAUTHORIZED_USER,
-        status_code: HttpStatus.UNAUTHORIZED,
-      });
+      throw new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER);
     }
 
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException({
-        message: SYS_MSG.USER_NOT_FOUND,
-        status_code: HttpStatus.NOT_FOUND,
-      });
+      throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
 
     if (user.id !== currentUser.sub) {
-      throw new UnauthorizedException({
-        message: SYS_MSG.UNAUTHORIZED_USER,
-        status_code: HttpStatus.FORBIDDEN,
-      });
+      throw new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER);
     }
 
     if (updateUserDto.password) {
@@ -223,30 +199,20 @@ export class UserService {
 
   private validatePassword(password: string) {
     if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
-      throw new BadRequestException({
-        message: SYS_MSG.INVALID_PASSWORD_FORMAT,
-        data: {
-          password: 'Password must be at least 8 characters long and contain at least one special character and number',
-        },
-        status_code: HttpStatus.BAD_REQUEST,
-      });
+      throw new BadRequestError(SYS_MSG.INVALID_PASSWORD_FORMAT);
     }
   }
   private validateEmail(email: string) {
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
-      throw new BadRequestException({
-        message: SYS_MSG.INVALID_EMAIL_FORMAT,
-        data: { email: 'Invalid email format' },
-        status_code: HttpStatus.BAD_REQUEST,
-      });
+      throw new BadRequestError(SYS_MSG.INVALID_EMAIL_FORMAT);
     }
   }
 
   async deactivateUser(id: string): Promise<{ status_code: number; message: string; data?: any }> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+      throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
     await this.userRepository.softRemove(user);
     return {
@@ -260,10 +226,7 @@ export class UserService {
 
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.USER_NOT_FOUND,
-      });
+      throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
     const resetToken = uuidv4();
     const resetTokenExpiry = new Date(Date.now() + 86400000);
@@ -291,20 +254,14 @@ export class UserService {
     const resetPasswordRequestExist = await this.forgotPasswordRepository.findOne({ where: { reset_token } });
 
     if (!resetPasswordRequestExist) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.PASSWORD_RESET_REQUEST_NOT_FOUND,
-      });
+      throw new NotFoundError(SYS_MSG.PASSWORD_RESET_REQUEST_NOT_FOUND);
     }
 
     const adminExist = await this.userRepository.findOne({
       where: { email },
     });
     if (!adminExist) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.USER_NOT_FOUND,
-      });
+      throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     adminExist.password = hashedPassword;
@@ -322,11 +279,11 @@ export class UserService {
       const userId = payload.sub;
       const user = await this.userRepository.findOne({ where: { id: userId } });
       if (!user) {
-        throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
+        throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
       }
 
       if (user.is_verified) {
-        throw new BadRequestException(SYS_MSG.EMAIL_ALREADY_VERIFIED);
+        throw new BadRequestError(SYS_MSG.EMAIL_ALREADY_VERIFIED);
       }
 
       user.is_verified = true;
@@ -343,18 +300,12 @@ export class UserService {
       };
     } catch (error) {
       if (error.name === 'JsonWebTokenError') {
-        throw new BadRequestException({
-          message: SYS_MSG.INVALID_VERIFICATION_TOKEN,
-          status_code: HttpStatus.BAD_REQUEST,
-        });
+        throw new BadRequestError(SYS_MSG.INVALID_VERIFICATION_TOKEN);
       }
       if (error.name === 'TokenExpiredError') {
-        throw new BadRequestException({
-          message: SYS_MSG.VERIFICATION_TOKEN_EXPIRED,
-          status_code: HttpStatus.BAD_REQUEST,
-        });
+        throw new BadRequestError(SYS_MSG.VERIFICATION_TOKEN_EXPIRED);
       }
-      throw error;
+      throw new InternalServerError(error);
     }
   }
 }

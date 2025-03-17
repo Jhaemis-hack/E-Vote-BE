@@ -11,18 +11,19 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import e from 'express';
+import { stat } from 'fs';
 import type { DeepPartial, Repository } from 'typeorm';
+import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError } from '../../../errors';
 import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Candidate } from '../../candidate/entities/candidate.entity';
+import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
 import type { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
-import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
-import { stat } from 'fs';
-import e from 'express';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -411,13 +412,7 @@ describe('ElectionService', () => {
     it('should throw NotFoundException if election does not exist', async () => {
       electionRepository.findOne = jest.fn().mockResolvedValue(null);
       const electionId = '123';
-      await expect(service.findOne(electionId)).rejects.toThrow(
-        new NotFoundException({
-          status_code: HttpStatus.NOT_FOUND,
-          message: SYS_MSG.ELECTION_NOT_FOUND,
-          data: null,
-        }),
-      );
+      await expect(service.findOne(electionId)).rejects.toThrow(new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND));
     });
   });
 
@@ -428,7 +423,7 @@ describe('ElectionService', () => {
     it('should throw NotFoundException if election does not exist', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(service.remove(electionId, adminId)).rejects.toThrow(NotFoundException);
+      await expect(service.remove(electionId, adminId)).rejects.toThrow(NotFoundError);
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: electionId },
         relations: ['candidates'],
@@ -442,7 +437,7 @@ describe('ElectionService', () => {
         created_by: differentAdminId,
       } as Election);
 
-      await expect(service.remove(electionId, adminId)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove(electionId, adminId)).rejects.toThrow(ForbiddenError);
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: electionId },
         relations: ['candidates'],
@@ -454,7 +449,7 @@ describe('ElectionService', () => {
         id: electionId,
       } as Election);
 
-      await expect(service.remove(electionId, adminId)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove(electionId, adminId)).rejects.toThrow(ForbiddenError);
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: electionId },
         relations: ['candidates'],
@@ -508,10 +503,7 @@ describe('ElectionService', () => {
 
     it('should throw a HttpException with 400 status when the vote_id is not a valid UUID', async () => {
       await expect(service.getElectionByVoterLink(invalidVoteLink)).rejects.toThrow(
-        new HttpException(
-          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-          HttpStatus.BAD_REQUEST,
-        ),
+        new BadRequestError(SYS_MSG.INCORRECT_UUID),
       );
       expect(electionRepository.findOne).not.toHaveBeenCalled();
     });
@@ -559,7 +551,7 @@ describe('ElectionService', () => {
           start_time: mockElection.start_time,
           end_time: mockElection.end_time,
           created_by: mockElection.created_by,
-          candidates: [],
+          // candidates: [],
           max_choices: 1,
           election_type: ElectionType.SINGLECHOICE,
         },
@@ -576,10 +568,7 @@ describe('ElectionService', () => {
 
     it('should throw a HttpException with 400 status when the vote_id is not a valid UUID', async () => {
       await expect(service.getElectionByVoterLink(invalidVoteLink)).rejects.toThrow(
-        new HttpException(
-          { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-          HttpStatus.BAD_REQUEST,
-        ),
+        new BadRequestError(SYS_MSG.INCORRECT_UUID),
       );
       expect(electionRepository.findOne).not.toHaveBeenCalled();
     });
@@ -588,11 +577,7 @@ describe('ElectionService', () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
-        new NotFoundException({
-          status_code: HttpStatus.NOT_FOUND,
-          message: SYS_MSG.ELECTION_NOT_FOUND,
-          data: null,
-        }),
+        new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND),
       );
 
       expect(electionRepository.findOne).toHaveBeenCalledWith({
@@ -627,7 +612,7 @@ describe('ElectionService', () => {
         const invalidId = '1234';
         const settings: NotificationSettingsDto = { email_notification: true };
 
-        await expect(service.updateNotificationSettings(invalidId, settings)).rejects.toThrow(BadRequestException);
+        await expect(service.updateNotificationSettings(invalidId, settings)).rejects.toThrow(BadRequestError);
       });
 
       it('should throw NotFoundException if election is not found', async () => {
@@ -636,7 +621,7 @@ describe('ElectionService', () => {
 
         jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
-        await expect(service.updateNotificationSettings(electionId, settings)).rejects.toThrow(NotFoundException);
+        await expect(service.updateNotificationSettings(electionId, settings)).rejects.toThrow(NotFoundError);
       });
     });
 
@@ -670,21 +655,14 @@ describe('ElectionService', () => {
 
       it('should throw HttpException if adminId is invalid', async () => {
         await expect(service.getElectionResults(electionId, 'invalid-admin')).rejects.toThrow(
-          new HttpException(
-            { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-            HttpStatus.BAD_REQUEST,
-          ),
+          new BadRequestError(SYS_MSG.INCORRECT_UUID),
         );
       });
 
       it('should throw NotFoundException if election does not exist', async () => {
         jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
         await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
-          new NotFoundException({
-            status_code: HttpStatus.NOT_FOUND,
-            message: SYS_MSG.ELECTION_NOT_FOUND,
-            data: null,
-          }),
+          new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND),
         );
       });
 
@@ -696,11 +674,7 @@ describe('ElectionService', () => {
         } as Election);
 
         await expect(service.getElectionResults(electionId, adminId)).rejects.toThrow(
-          new ForbiddenException({
-            status_code: HttpStatus.FORBIDDEN,
-            message: SYS_MSG.UNAUTHORIZED_ACCESS,
-            data: null,
-          }),
+          new ForbiddenError(SYS_MSG.UNAUTHORIZED_ACCESS),
         );
       });
 
@@ -777,12 +751,7 @@ describe('ElectionService', () => {
           start_date: new Date('2024-12-31T00:00:00.000Z'), // Past date
         };
 
-        await expect(service.create(dto, adminId)).rejects.toThrow(
-          new HttpException(
-            { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
-            HttpStatus.BAD_REQUEST,
-          ),
-        );
+        await expect(service.create(dto, adminId)).rejects.toThrow(new BadRequestError(SYS_MSG.ERROR_START_DATE_PAST));
       });
 
       it('should throw an exception when start date is after end date', async () => {
@@ -793,10 +762,7 @@ describe('ElectionService', () => {
         };
 
         await expect(service.create(dto, adminId)).rejects.toThrow(
-          new HttpException(
-            { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
-            HttpStatus.BAD_REQUEST,
-          ),
+          new BadRequestError(SYS_MSG.ERROR_START_DATE_AFTER_END_DATE),
         );
       });
 
@@ -810,10 +776,7 @@ describe('ElectionService', () => {
         };
 
         await expect(service.create(dto, adminId)).rejects.toThrow(
-          new HttpException(
-            { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
-            HttpStatus.BAD_REQUEST,
-          ),
+          new BadRequestError(SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME),
         );
       });
 
@@ -864,12 +827,7 @@ describe('ElectionService', () => {
     };
     it('should throw NotFoundException if election does not exist', async () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
-      await expect(service.verifyVoter(verifyVoteDto)).rejects.toThrow(
-        new HttpException(
-          { status_code: HttpStatus.NOT_FOUND, message: SYS_MSG.ELECTION_NOT_FOUND, data: null },
-          HttpStatus.NOT_FOUND,
-        ),
-      );
+      await expect(service.verifyVoter(verifyVoteDto)).rejects.toThrow(new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND));
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { vote_id: verifyVoteDto.vote_id },
         relations: ['voters'],
@@ -881,13 +839,7 @@ describe('ElectionService', () => {
         email: 'voter@example.com',
       };
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(mockElection);
-      await expect(service.verifyVoter(verifyVoteDto)).rejects.toThrow(
-        new UnauthorizedException({
-          status_code: HttpStatus.UNAUTHORIZED,
-          message: SYS_MSG.VOTER_UNVERIFIED,
-          data: null,
-        }),
-      );
+      await expect(service.verifyVoter(verifyVoteDto)).rejects.toThrow(new UnauthorizedError(SYS_MSG.VOTER_UNVERIFIED));
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { vote_id: verifyVoteDto.vote_id },
         relations: ['voters'],

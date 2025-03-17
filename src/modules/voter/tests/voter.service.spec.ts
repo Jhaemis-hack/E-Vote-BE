@@ -12,6 +12,7 @@ import { BadRequestException } from '@nestjs/common';
 import * as xlsx from 'xlsx';
 import * as csv from 'csv-parser';
 import * as stream from 'stream';
+import { BadRequestError } from '../../../errors';
 
 describe('VoterService', () => {
   let service: VoterService;
@@ -255,7 +256,7 @@ describe('VoterService', () => {
     it('should reject duplicate emails in CSV', async () => {
       const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,john@example.com');
 
-      await expect(service.processCSV(fileBuffer, '123')).rejects.toThrow(HttpException);
+      await expect(service.processCSV(fileBuffer, '123')).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -288,7 +289,7 @@ describe('VoterService', () => {
       xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-      await expect(service.processExcel(fileBuffer, '123')).rejects.toThrow(HttpException);
+      await expect(service.processExcel(fileBuffer, '123')).rejects.toThrow(BadRequestError);
     });
   });
 

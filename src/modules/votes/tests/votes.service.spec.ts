@@ -8,6 +8,7 @@ import { Election, ElectionStatus, ElectionType } from '../../election/entities/
 import { Voter } from '../../voter/entities/voter.entity';
 import { CreateVoteDto } from '../dto/create-votes.dto';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../../../errors';
 
 describe('VoteService', () => {
   let service: VoteService;
@@ -57,14 +58,14 @@ describe('VoteService', () => {
 
   describe('getVoter', () => {
     it('should throw an exception if vote_link is not a valid UUID', async () => {
-      await expect(service.getVoter('not-a-uuid')).rejects.toThrow(HttpException);
+      await expect(service.getVoter('not-a-uuid')).rejects.toThrow(BadRequestError);
     });
 
     it('should throw NotFoundException if voter does not exist', async () => {
       const mockVote_link = '123e4567-e89b-12d3-a456-426614174000';
       jest.spyOn(voterRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(service.getVoter(mockVote_link)).rejects.toThrow(NotFoundException);
+      await expect(service.getVoter(mockVote_link)).rejects.toThrow(NotFoundError);
       expect(voterRepository.findOne).toHaveBeenCalledWith({
         where: { verification_token: mockVote_link },
         relations: ['election'],
@@ -120,7 +121,7 @@ describe('VoteService', () => {
       const votedVoter = { ...mockVoter, is_voted: true };
       jest.spyOn(service, 'getVoter').mockResolvedValue(votedVoter as any);
 
-      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(ConflictException);
+      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(ConflictError);
       expect(service.getVoter).toHaveBeenCalledWith(mockVote_link);
     });
 
@@ -128,14 +129,14 @@ describe('VoteService', () => {
       const voterWithoutElection = { ...mockVoter, election: null };
       jest.spyOn(service, 'getVoter').mockResolvedValue(voterWithoutElection as any);
 
-      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(NotFoundException);
+      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(NotFoundError);
     });
 
     it('should throw NotFoundException if election cannot be found', async () => {
       jest.spyOn(service, 'getVoter').mockResolvedValue(mockVoter as any);
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(NotFoundException);
+      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(NotFoundError);
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { id: mockVoter.election.id },
         relations: ['candidates'],
@@ -147,7 +148,7 @@ describe('VoteService', () => {
       const completedElection = { ...mockElection, status: ElectionStatus.COMPLETED };
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(completedElection as any);
 
-      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(HttpException);
+      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(ForbiddenError);
     });
 
     it('should throw HttpException if election is upcoming', async () => {
@@ -155,7 +156,7 @@ describe('VoteService', () => {
       const upcomingElection = { ...mockElection, status: ElectionStatus.UPCOMING };
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(upcomingElection as any);
 
-      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(HttpException);
+      await expect(service.createVote(mockVote_link, mockCreateVoteDto)).rejects.toThrow(ForbiddenError);
     });
 
     it('should throw HttpException if too many candidates selected for multiple choice election', async () => {
@@ -169,7 +170,7 @@ describe('VoteService', () => {
 
       const invalidVoteDto = { candidate_id: ['candidate-1', 'candidate-2'] };
 
-      await expect(service.createVote(mockVote_link, invalidVoteDto)).rejects.toThrow(HttpException);
+      await expect(service.createVote(mockVote_link, invalidVoteDto)).rejects.toThrow(BadRequestError);
     });
 
     it('should throw NotFoundException if candidate does not exist in the election', async () => {
@@ -178,7 +179,7 @@ describe('VoteService', () => {
 
       const invalidCandidateVoteDto = { candidate_id: ['non-existent-candidate'] };
 
-      await expect(service.createVote(mockVote_link, invalidCandidateVoteDto)).rejects.toThrow(NotFoundException);
+      await expect(service.createVote(mockVote_link, invalidCandidateVoteDto)).rejects.toThrow(NotFoundError);
     });
 
     it('should successfully create a vote and mark voter as voted', async () => {
