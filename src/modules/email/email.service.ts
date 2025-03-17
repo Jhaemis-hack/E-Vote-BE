@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EmailQueue } from './email.queue';
 import { MailInterface } from './interface/email.interface';
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   constructor(private emailQueue: EmailQueue) {}
   async sendEmail(email: string, subject: string, template: string, context: Record<string, any>): Promise<void> {
     await this.emailQueue.sendEmail({
@@ -57,6 +58,31 @@ export class EmailService {
               template: 'election-start',
             },
             template: 'election-start',
+          }),
+        ),
+      );
+    }
+  }
+
+  async sendElectionEndEmails(election: any): Promise<void> {
+    this.logger.log(`Sending election end email for election ${election.id}`);
+
+    if (election.voters && election.voters.length > 0) {
+      await Promise.all(
+        election.voters.map(voter =>
+          this.emailQueue.sendEmail({
+            mail: {
+              to: voter.email,
+              subject: `Election ${election.title} is Ending Soon!`,
+              context: {
+                voterName: voter.name || voter.email,
+                electionTitle: election.title,
+                electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
+              },
+              template: 'election-end',
+            },
+            template: 'election-end',
           }),
         ),
       );
