@@ -26,6 +26,7 @@ import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
+import { User } from '../user/entities/user.entity';
 
 config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
