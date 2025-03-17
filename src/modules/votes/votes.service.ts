@@ -140,6 +140,9 @@ export class VoteService {
       });
     }
 
+    voterExist.is_verified = true;
+    await this.voterRepository.save(voterExist);
+
     return voterExist;
   }
 }
