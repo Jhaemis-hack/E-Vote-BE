@@ -26,7 +26,6 @@ import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
-import { User } from '../user/entities/user.entity';
 
 config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
@@ -339,21 +338,14 @@ export class ElectionService {
       });
     }
 
-    const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
-
-    // Check if election is active based on dates and times
-    const now = new Date();
-
     const startDateTime = new Date(election.start_date);
     const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
     startDateTime.setHours(startHour, startMinute, startSecond || 0);
 
-    // For end datetime
     const endDateTime = new Date(election.end_date);
     const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
-    // Transform the election response
     const mappedElection = this.transformElectionResponseFindOne(election);
 
     const voteCounts = new Map<string, number>();
@@ -547,8 +539,6 @@ export class ElectionService {
           console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
           electionType = ElectionType.SINGLECHOICE;
         }
-
-        const now = new Date();
 
         const startDateTime = new Date(election.start_date);
         const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
