@@ -509,12 +509,11 @@ describe('ElectionService', () => {
 
   describe('Get Election By Vote Link', () => {
     const validVoteLink = '7284fdbc-a1b9-45ad-a586-72edae14526d';
-    const invalidVoteLink = 'invalid-vote-link';
 
     const mockVoter = {
       id: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
       verification_token: validVoteLink,
-      has_voted: false,
+      is_voted: false,
       election: {
         id: '550e8400-e29b-41d4-a716-446655440000',
         title: '2025 Presidential Election',
@@ -580,7 +579,7 @@ describe('ElectionService', () => {
     it('should throw a ForbiddenException when the voter has already voted', async () => {
       jest.spyOn(voterRepository, 'findOne').mockResolvedValue({
         ...mockVoter,
-        has_voted: true,
+        is_voted: true,
       } as any);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(

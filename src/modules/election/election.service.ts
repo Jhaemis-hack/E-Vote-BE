@@ -490,7 +490,7 @@ export class ElectionService {
       relations: ['election', 'election.candidates'],
     });
     if (!voter) throw new NotFoundException('Voter with given vote link not found');
-    if (voter.has_voted) throw new ForbiddenException('Voter has a vote for this election already.');
+    if (voter.is_voted) throw new ForbiddenException('Voter has a vote for this election already.');
 
     const now = new Date(Date.now());
 
