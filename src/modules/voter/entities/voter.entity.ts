@@ -21,6 +21,9 @@ export class Voter extends AbstractBaseEntity {
   @Column({ nullable: true })
   verification_token: string;
 
+  @Column({ default: false })
+  has_voted: boolean;
+
   @ManyToOne(() => Election, election => election.voters, {
     onDelete: 'CASCADE',
     nullable: false,
