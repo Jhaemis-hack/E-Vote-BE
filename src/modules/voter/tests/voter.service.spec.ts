@@ -2,6 +2,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DeepPartial, Repository } from 'typeorm';
 import { VoterService } from '../voter.service';
+import { In } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Voter } from '../entities/voter.entity';
 import { Election } from '../../election/entities/election.entity';
@@ -67,6 +68,10 @@ describe('VoterService', () => {
           created_at: new Date(),
           updated_at: new Date(),
           deleted_at: null,
+          is_voted: false,
+          is_verified: false,
+          verification_token: '6d33c7c5-b7c9-479e-969f-7c354fd57e3b',
+          votes: [],
           election: { id: validElectionId } as Election,
         },
         {
@@ -76,6 +81,10 @@ describe('VoterService', () => {
           created_at: new Date(),
           updated_at: new Date(),
           deleted_at: null,
+          is_voted: false,
+          is_verified: false,
+          verification_token: '6d33c7c5-b7c9-339e-969f-7c354fd57e3b',
+          votes: [],
           election: { id: validElectionId } as Election,
         },
       ];
@@ -105,11 +114,13 @@ describe('VoterService', () => {
               voter_id: '340e8400-e29b-765w-a716-446655440990',
               name: 'Bayo',
               email: 'Bayo@gmail.com',
+              verification_token: '6d33c7c5-b7c9-479e-969f-7c354fd57e3b',
             },
             {
               voter_id: '340e8400-e29b-41d4-a716-446655440990',
               name: 'Tayo',
               email: 'Tayo@gmail.com',
+              verification_token: '6d33c7c5-b7c9-339e-969f-7c354fd57e3b',
             },
           ],
           meta: {
@@ -234,9 +245,11 @@ describe('VoterService', () => {
     it('should process a valid CSV file and save voters', async () => {
       const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,jane@example.com');
 
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
       const result = await service.processCSV(fileBuffer, '123');
+
       expect(result.status_code).toBe(201);
       expect(voterRepository.insert).toHaveBeenCalledTimes(1);
     });
@@ -259,6 +272,7 @@ describe('VoterService', () => {
       xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
       const result = await service.processExcel(fileBuffer, '123');
@@ -282,10 +296,26 @@ describe('VoterService', () => {
 
   describe('saveVoters', () => {
     it('should save voters successfully', async () => {
-      const voters = [{ name: 'John Doe', email: 'john@example.com', election: { id: '123' } }];
+      const voters = [
+        {
+          name: 'John Doe',
+          email: 'john@example.com',
+          election: { id: '123' },
+          verification_token: '340e8400-e29b-41d4-a716-446655440990',
+        },
+      ];
+
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
+
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
       await service.saveVoters(voters);
+
+      expect(voterRepository.find).toHaveBeenCalledWith({
+        where: { email: In(['john@example.com']), election: { id: '123' } },
+        select: ['email'],
+      });
+
       expect(voterRepository.insert).toHaveBeenCalledWith(voters);
     });
   });

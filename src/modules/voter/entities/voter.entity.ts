@@ -9,23 +9,26 @@ export class Voter extends AbstractBaseEntity {
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column()
   email: string;
 
   @Column({ default: false })
-  is_verified?: boolean;
+  is_verified: boolean;
+
+  @Column({ default: false })
+  is_voted: boolean;
 
   @Column({ nullable: true })
-  verification_token?: string;
+  verification_token: string;
 
   @ManyToOne(() => Election, election => election.voters, {
     onDelete: 'CASCADE',
     nullable: false,
   })
   @JoinColumn({ name: 'election_id' })
-  election?: Election;
+  election: Election;
 
   @OneToMany(() => Vote, vote => vote.voter)
   @JoinColumn({ name: 'vote_id' })
-  votes?: Vote[];
+  votes: Vote[];
 }
