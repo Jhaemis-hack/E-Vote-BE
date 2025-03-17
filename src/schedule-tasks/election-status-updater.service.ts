@@ -1,29 +1,30 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Election, ElectionStatus } from '../modules/election/entities/election.entity';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { EmailService } from '../modules/email/email.service';
 
 @Injectable()
-export class ElectionStatusUpdaterService implements OnModuleInit {
+export class ElectionStatusUpdaterService {
   private readonly logger = new Logger(ElectionStatusUpdaterService.name);
 
   constructor(
     @InjectRepository(Election)
     private electionRepository: Repository<Election>,
-    private schedulerRegistry: SchedulerRegistry, // Inject SchedulerRegistry
+    private schedulerRegistry: SchedulerRegistry,
+    private emailService: EmailService,
   ) {}
 
   async onModuleInit() {
     // Load all elections and schedule tasks for them
-    const elections = await this.electionRepository.find();
+    const elections = await this.electionRepository.find({ relations: ['voters'] });
     for (const election of elections) {
       await this.scheduleElectionUpdates(election);
     }
   }
 
-  // Public method to schedule updates for a new election
   async scheduleElectionUpdates(election: Election) {
     const { id, start_date, end_date, start_time, end_time } = election;
 
@@ -33,14 +34,32 @@ export class ElectionStatusUpdaterService implements OnModuleInit {
       const startJob = new CronJob(startDateTime, async () => {
         this.logger.log(`Updating election ${id} from UPCOMING to ONGOING`);
         await this.electionRepository.update(id, { status: ElectionStatus.ONGOING });
+        if (election.email_notification) {
+          await this.emailService.sendElectionStartEmails(election);
+        }
+        // Schedule reminder emails for 5 minutes before end time
+        const reminderTime = new Date(endDateTime.getTime() - 5 * 60 * 1000);
+        if (reminderTime > new Date()) {
+          const reminderJob = new CronJob(reminderTime, async () => {
+            this.logger.log(`Sending reminder emails for election ${id}`);
+            if (election.email_notification) {
+              await this.emailService.sendElectionReminderEmails(election, reminderTime);
+            }
+            this.schedulerRegistry.deleteCronJob(`reminder-${id}`);
+          });
+
+          this.schedulerRegistry.addCronJob(`reminder-${id}`, reminderJob);
+          reminderJob.start();
+          this.logger.log(`Scheduled reminder emails for election ${id} at ${reminderTime}`);
+        }
+
         this.schedulerRegistry.deleteCronJob(`start-${id}`);
       });
 
       this.schedulerRegistry.addCronJob(`start-${id}`, startJob);
-      startJob.start(); // Start the job
+      startJob.start();
     }
 
-    // Schedule end task
     const endDateTime = this.getDateTime(end_date, end_time);
     if (endDateTime > new Date()) {
       const endJob = new CronJob(endDateTime, async () => {
