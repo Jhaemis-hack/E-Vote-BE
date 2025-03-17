@@ -97,7 +97,7 @@ export class ElectionService {
 
       // Validate startDateTime against currentDate and startTime
       const startDateTime = moment.utc(`${startDate.format('YYYY-MM-DD')}T${start_time}`);
-      if (startDateTime.isBefore(currentDate.add(0, 'hour'))) {
+      if (startDateTime.isBefore(currentDate.add(1, 'hour'))) {
         throw new HttpException(
           { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
           HttpStatus.BAD_REQUEST,
