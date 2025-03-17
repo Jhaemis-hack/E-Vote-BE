@@ -30,7 +30,11 @@ export class ElectionStatusUpdaterService {
 
     // Schedule start task
     const startDateTime = this.getDateTime(start_date, start_time);
-    if (startDateTime > new Date()) {
+    const currentDate = new Date();
+    currentDate.setHours(currentDate.getHours() + 1);
+    console.log('startDateTime', startDateTime);
+    console.log('currentDate', currentDate); 
+    if (startDateTime > currentDate) {
       const startJob = new CronJob(startDateTime, async () => {
         this.logger.log(`Updating election ${id} from UPCOMING to ONGOING`);
         await this.electionRepository.update(id, { status: ElectionStatus.ONGOING });
