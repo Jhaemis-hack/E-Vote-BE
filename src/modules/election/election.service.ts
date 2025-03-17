@@ -29,6 +29,7 @@ import { VerifyVoterDto } from './dto/verify-voter.dto';
 
 config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+import { Voter } from '../voter/entities/voter.entity';
 
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
@@ -42,6 +43,7 @@ export class ElectionService {
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
+    @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
@@ -336,21 +338,14 @@ export class ElectionService {
       });
     }
 
-    const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
-
-    // Check if election is active based on dates and times
-    const now = new Date();
-
     const startDateTime = new Date(election.start_date);
     const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
     startDateTime.setHours(startHour, startMinute, startSecond || 0);
 
-    // For end datetime
     const endDateTime = new Date(election.end_date);
     const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
-    // Transform the election response
     const mappedElection = this.transformElectionResponseFindOne(election);
 
     const voteCounts = new Map<string, number>();
@@ -483,40 +478,21 @@ export class ElectionService {
   }
 
   async getElectionByVoterLink(vote_id: string) {
-    if (!isUUID(vote_id)) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const election = await this.electionRepository.findOne({
-      where: { vote_id: vote_id },
-      relations: ['candidates'],
+    const voter = await this.voterRepository.findOne({
+      where: { verification_token: vote_id },
+      relations: ['election', 'election.candidates'],
     });
+    if (!voter) throw new NotFoundException('Voter with given vote link not found');
+    if (voter.is_voted) throw new ForbiddenException('Voter has a vote for this election already.');
 
-    if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
-    }
+    const now = new Date(Date.now());
 
-    // Check if election is active based on dates and times
-    const now = new Date();
-
-    const startDateTime = new Date(election.start_date);
-    const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+    const startDateTime = new Date(voter.election.start_date);
+    const [startHour, startMinute, startSecond] = voter.election.start_time.split(':').map(Number);
     startDateTime.setHours(startHour, startMinute, startSecond || 0);
 
-    // For end datetime
-    const endDateTime = new Date(election.end_date);
-    const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+    const endDateTime = new Date(voter.election.end_date);
+    const [endHour, endMinute, endSecond] = voter.election.end_time.split(':').map(Number);
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
     let newStatus: ElectionStatus;
@@ -525,19 +501,20 @@ export class ElectionService {
       newStatus = ElectionStatus.UPCOMING;
     } else if (now >= startDateTime && now <= endDateTime) {
       newStatus = ElectionStatus.ONGOING;
-      message = 'Election is live. Vote now!';
+      message = SYS_MSG.ELECTION_IS_LIVE;
     } else {
       newStatus = ElectionStatus.COMPLETED;
-      message = 'Election has ended.';
+      message = SYS_MSG.ELECTION_HAS_ENDED;
     }
 
-    // If the status has changed, update it in the database
-    if (election.status !== newStatus) {
-      election.status = newStatus;
-      await this.electionRepository.update(election.id, { status: newStatus });
+    if (voter.election.status !== newStatus) {
+      voter.election.status = newStatus;
+      await this.electionRepository.update(voter.election.id, { status: newStatus });
     }
 
-    const mappedElection = this.transformElectionResponse(election);
+    const mappedElection = this.transformElectionResponse(voter.election);
+
+    mappedElection.vote_id = voter.verification_token;
     return {
       status_code: HttpStatus.OK,
       message: message,
@@ -562,19 +539,15 @@ export class ElectionService {
           console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
           electionType = ElectionType.SINGLECHOICE;
         }
-        // Check if election is active based on dates and times
-        const now = new Date();
 
         const startDateTime = new Date(election.start_date);
         const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
         startDateTime.setHours(startHour, startMinute, startSecond || 0);
 
-        // For end datetime
         const endDateTime = new Date(election.end_date);
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
         endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
-        // Transform the election response
         const mappedElection = this.transformElectionResponse(election);
 
         return {
@@ -615,17 +588,7 @@ export class ElectionService {
       electionType = ElectionType.SINGLECHOICE;
     }
 
-    if (election.status === ElectionStatus.UPCOMING) {
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
-      };
-    } else if (election.status === ElectionStatus.COMPLETED) {
+    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
       return {
         election_id: election.id,
         title: election.title,

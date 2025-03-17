@@ -7,10 +7,11 @@ import { Candidate } from '../candidate/entities/candidate.entity';
 import { UserModule } from '../user/user.module';
 import { Vote } from '../votes/entities/votes.entity';
 import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
+import { Voter } from '../voter/entities/voter.entity';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Election, Candidate, Vote]), UserModule, EmailModule],
+  imports: [TypeOrmModule.forFeature([Election, Candidate, Vote, Voter]), UserModule, EmailModule],
   controllers: [ElectionController],
   providers: [ElectionService, ElectionStatusUpdaterService],
 })
