@@ -56,6 +56,8 @@ export const WELCOME_EMAIL_FAILED = 'Welcome email failed to send';
 export const INVALID_NOTIFICATION_SETTINGS = 'Enable or Disable email notifications';
 export const EMAIL_NOTIFICATION_UPDATED = 'Email notification settings updated successfully';
 export const ERROR_MAX_CHOICES = 'Maximum choices for single election must be 1';
+export const ELECTION_VOTERS_NOT_FOUND = 'No voters found for this election';
+export const FETCH_ELECTION_VOTER_LIST = 'Election voters fetched successfully';
 export const UPLOAD_VOTER_SUCCESS = 'Voters uploaded successfully';
 export const VALID_PHOTO_URL = 'Valid photo url';
 export const UPLOAD_FAILED = 'Upload failed';
@@ -76,6 +78,8 @@ export const ERROR_EXCEL_PROCESSING =
 export const VOTER_INSERTION_ERROR = 'Error insertion voters';
 export const EMAIL_NOTIFICATION_ENABLED = 'Email notifications have been enabled for this election.';
 export const EMAIL_NOTIFICATION_DISABLED = 'Email notifications have been disabled for this election.';
+export const INVALID_VOTE_LINK = 'Invalid vote link';
+export const ALREADY_VOTED = 'You have already voted';
 
 export const VOTER_VERIFIED = 'Voter verified, proceed to cast your vote';
 export const VOTER_UNVERIFIED = 'Voter unverified, your not allowed to vote in this election';
@@ -84,3 +88,4 @@ export const NO_VOTERS_DATA = 'No voter data provided.';
 export const DUPLICATE_EMAILS_ELECTION =
   'Duplicate Voter Registration Detected: The email(s) are already registered for this election.';
 export const FETCH_ADMINS = 'Admins fetched successfully';
+export const ERROR_VOTER_LIST_FORBBIDEN_ACCESS = "Only Election Creator can view Voter's list.";
