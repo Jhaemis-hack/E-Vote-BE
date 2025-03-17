@@ -8,12 +8,14 @@ import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UpdateElectionDto } from '../dto/update-election.dto';
 import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
+import { Voter } from '../../voter/entities/voter.entity';
 
 describe('ElectionService - update', () => {
   let service: ElectionService;
   let electionRepository: Repository<Election>;
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
+  let voterRepository: Repository<Voter>;
   let electionStatusUpdaterService: ElectionStatusUpdaterService;
 
   beforeEach(() => {
@@ -24,6 +26,7 @@ describe('ElectionService - update', () => {
 
     candidateRepository = {} as Repository<Candidate>;
     voteRepository = {} as Repository<Vote>;
+    voterRepository = {} as Repository<Voter>;
 
     // Mock the ElectionStatusUpdaterService
     electionStatusUpdaterService = {
@@ -35,7 +38,8 @@ describe('ElectionService - update', () => {
       electionRepository,
       candidateRepository,
       voteRepository,
-      electionStatusUpdaterService, // Add the mocked service
+      voterRepository,
+      electionStatusUpdaterService,
     );
   });
 

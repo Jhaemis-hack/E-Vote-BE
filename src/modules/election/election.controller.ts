@@ -5,11 +5,11 @@ import {
   Delete,
   Get,
   HttpCode,
-  HttpException,
   HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -162,7 +162,7 @@ export class ElectionController {
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
-  getElectionByVoterLink(@Param('vote_id') vote_id: string) {
+  getElectionByVoterLink(@Param('vote_id', new ParseUUIDPipe()) vote_id: string) {
     return this.electionService.getElectionByVoterLink(vote_id);
   }
 

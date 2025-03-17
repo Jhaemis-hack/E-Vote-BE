@@ -5,10 +5,10 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { isUUID } from 'class-validator';
 import { Election } from '../election/entities/election.entity';
-import { Express } from 'express';
 import * as csv from 'csv-parser';
 import * as xlsx from 'xlsx';
 import * as stream from 'stream';
@@ -20,6 +20,8 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class VoterService {
+  private logger = new Logger(VoterService.name);
+
   constructor(
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
@@ -218,8 +220,7 @@ export class VoterService {
                   ),
                 );
               }
-
-              await this.saveVoters(voters);
+              const savedVoters = await this.saveVoters(voters);
 
               resolve({
                 status_code: HttpStatus.CREATED,
@@ -370,7 +371,6 @@ export class VoterService {
       });
 
       if (existingVoters.length > 0) {
-        const existingEmails = existingVoters.map(voter => voter.email);
         throw new ConflictException({
           status_code: HttpStatus.CONFLICT,
           message: SYS_MSG.DUPLICATE_EMAILS_ELECTION,
@@ -381,6 +381,7 @@ export class VoterService {
       if (error instanceof HttpException) {
         throw error;
       }
+      this.logger.log(error);
       throw new InternalServerErrorException({
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
         message: SYS_MSG.VOTER_INSERTION_ERROR,
