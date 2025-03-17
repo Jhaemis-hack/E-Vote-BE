@@ -41,21 +41,25 @@ export class EmailService {
 
   async sendElectionStartEmails(election: any): Promise<void> {
     if (election.voters && election.voters.length > 0) {
-      for (const voter of election.voters) {
-        await this.emailQueue.sendEmail({
-          mail: {
-            to: voter.email,
-            subject: `Election ${election.title} has started!`,
-            context: {
-              electionTitle: election.title,
-              electionEndDate: election.end_date,
-              electionLink: `${process.env.FRONTEND_URL}/vote/${election.vote_id}`,
+      await Promise.all(
+        election.voters.map(voter =>
+          this.emailQueue.sendEmail({
+            mail: {
+              to: voter.email,
+              subject: `Election ${election.title} has started!`,
+              context: {
+                voterName: voter.name || voter.email,
+                electionTitle: election.title,
+                electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
+                electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
+              },
+              template: 'election-start',
             },
             template: 'election-start',
-          },
-          template: 'election-start',
-        });
-      }
+          }),
+        ),
+      );
     }
   }
   async sendElectionReminderEmail(

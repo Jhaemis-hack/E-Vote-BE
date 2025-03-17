@@ -37,6 +37,18 @@ export class ElectionStatusUpdaterService {
       const startJob = new CronJob(startDateTime, async () => {
         this.logger.log(`Updating election ${id} from UPCOMING to ONGOING`);
         await this.electionRepository.update(id, { status: ElectionStatus.ONGOING });
+
+        const updatedElection = await this.electionRepository.findOne({
+          where: { id },
+          relations: ['voters'],
+        });
+        if (!updatedElection) {
+          this.logger.error(`Election with id ${id} not found!`);
+          return;
+        }
+        if (updatedElection.email_notification) {
+          await this.emailService.sendElectionStartEmails(updatedElection);
+        }
         this.schedulerRegistry.deleteCronJob(`start-${id}`);
       });
 
