@@ -48,9 +48,11 @@ export class EmailService {
               to: voter.email,
               subject: `Election ${election.title} has started!`,
               context: {
+                voterName: voter.name || voter.email,
                 electionTitle: election.title,
-                electionEndDate: election.end_date,
-                electionLink: `${process.env.FRONTEND_URL}/vote/${election.vote_id}`,
+                electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
+                electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
               },
               template: 'election-start',
             },
