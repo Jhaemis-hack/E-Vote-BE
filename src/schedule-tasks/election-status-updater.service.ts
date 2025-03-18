@@ -19,7 +19,7 @@ export class ElectionStatusUpdaterService {
 
   async onModuleInit() {
     // Load all elections and schedule tasks for them
-    const elections = await this.electionRepository.find({ relations: ['voters'] });
+    const elections = await this.electionRepository.find({ relations: ['voters', 'created_by_user'] });
     for (const election of elections) {
       await this.scheduleElectionUpdates(election);
     }
@@ -39,7 +39,7 @@ export class ElectionStatusUpdaterService {
 
         const updatedElection = await this.electionRepository.findOne({
           where: { id },
-          relations: ['voters'],
+          relations: ['voters', 'created_by_user'],
         });
         if (!updatedElection) {
           this.logger.error(`Election with id ${id} not found!`);
@@ -48,6 +48,8 @@ export class ElectionStatusUpdaterService {
         if (updatedElection.email_notification) {
           await this.emailService.sendElectionStartEmails(updatedElection);
         }
+        await this.emailService.sendAdminElectionMonitorEmails(updatedElection);
+
         this.schedulerRegistry.deleteCronJob(`start-${id}`);
       });
 
@@ -75,7 +77,7 @@ export class ElectionStatusUpdaterService {
     const dateTime = new Date(date);
     const [hours, minutes, seconds] = timeString.split(':').map(Number);
     dateTime.setHours(hours, minutes, seconds || 0);
-    const utcDateTime = new Date(dateTime.getTime() - 60 * 60 * 1000);
-    return utcDateTime;
+    //const utcDateTime = new Date(dateTime.getTime() - 60 * 60 * 1000);
+    return dateTime;
   }
 }

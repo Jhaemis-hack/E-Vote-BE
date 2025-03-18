@@ -11,5 +11,5 @@ export interface MailInterface {
 export interface EmailSender {
   mail: MailInterface;
   // Add 'verify-email' | 'reset-password' | 'welcome-email' | 'election-start' to the template
-  template: 'reset-password' | 'welcome-email' | 'election-start';
+  template: 'reset-password' | 'welcome-email' | 'election-start' | 'election-monitor';
 }
