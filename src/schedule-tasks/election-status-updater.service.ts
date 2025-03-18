@@ -103,10 +103,22 @@ export class ElectionStatusUpdaterService {
         this.logger.log(`Scheduled reminder job for election ${id} at ${reminderDateTime}`);
       }
       const endJob = new CronJob(endDateTime, async () => {
+        this.logger.log(`Cron job triggered for election end at ${new Date()}`);
+
         this.logger.log(`Updating election ${id} from ONGOING to COMPLETED`);
         await this.electionRepository.update(id, { status: ElectionStatus.COMPLETED });
         this.schedulerRegistry.deleteCronJob(`end-${id}`);
       });
+
+      const updatedElection = await this.electionRepository.findOne({
+        where: { id },
+        relations: ['voters'],
+      });
+
+      if (!updatedElection) {
+        this.logger.error(`Election with id ${id} not found!`);
+        return;
+      }
 
       this.schedulerRegistry.addCronJob(`end-${id}`, endJob);
       endJob.start();
