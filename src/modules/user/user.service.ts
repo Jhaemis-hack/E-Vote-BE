@@ -34,7 +34,8 @@ export class UserService {
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
-    const { email, password } = createAdminDto;
+    const { email: rawEmail, password } = createAdminDto;
+    const email = rawEmail.toLowerCase();
 
     if (!email.match(/^\S+@\S+\.\S+$/)) {
       throw new BadRequestException(SYS_MSG.INVALID_EMAIL_FORMAT);
@@ -91,7 +92,7 @@ export class UserService {
 
   async login(payload: LoginDto) {
     const userExist = await this.userRepository.findOne({
-      where: { email: payload.email },
+      where: { email: payload.email.toLowerCase() },
     });
 
     if (!userExist) {
