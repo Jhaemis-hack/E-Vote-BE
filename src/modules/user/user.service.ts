@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,7 +9,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-import { exist, string } from 'joi';
 import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
@@ -56,8 +48,8 @@ export class UserService {
       is_verified: true,
     });
 
-    const credentials = { email: newAdmin.email, sub: newAdmin.id };
-    const token = this.jwtService.sign(credentials);
+    // const credentials = { email: newAdmin.email, sub: newAdmin.id };
+    // const token = this.jwtService.sign(credentials);
 
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
@@ -69,15 +61,16 @@ export class UserService {
       };
     }
 
-    try {
-      await this.mailService.sendVerificationMail(newAdmin.email, token);
-    } catch (err) {
-      return {
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-        data: null,
-      };
-    }
+    // TODO
+    // try {
+    //   await this.mailService.sendVerificationMail(newAdmin.email, token);
+    // } catch (err) {
+    //   return {
+    //     status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+    //     message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+    //     data: null,
+    //   };
+    // }
 
     await this.userRepository.save(newAdmin);
 
@@ -102,27 +95,28 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
     }
 
-    if (userExist.is_verified === false) {
-      const credentials = { email: userExist.email, sub: userExist.id };
-      const token = this.jwtService.sign(credentials);
+    // TODO
+    // if (userExist.is_verified === false) {
+    //   const credentials = { email: userExist.email, sub: userExist.id };
+    //   const token = this.jwtService.sign(credentials);
 
-      try {
-        await this.mailService.sendVerificationMail(userExist.email, token);
+    //   try {
+    //     await this.mailService.sendVerificationMail(userExist.email, token);
 
-        // Restricts the user from logging in until their email is verified
-        return {
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.EMAIL_NOT_VERIFIED,
-          data: null,
-        };
-      } catch (error) {
-        return {
-          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-          data: null,
-        };
-      }
-    }
+    //     // Restricts the user from logging in until their email is verified
+    //     return {
+    //       status_code: HttpStatus.FORBIDDEN,
+    //       message: SYS_MSG.EMAIL_NOT_VERIFIED,
+    //       data: null,
+    //     };
+    //   } catch (error) {
+    //     return {
+    //       status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+    //       message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+    //       data: null,
+    //     };
+    //   }
+    // }
 
     const { password, ...admin } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };
