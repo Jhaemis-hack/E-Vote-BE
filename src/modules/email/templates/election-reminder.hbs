@@ -70,7 +70,7 @@
           <tr>
             <td style="padding: 20px;">
               <h2 style="padding: 10px 0; font-size: 16px; font-weight: 600;">Reminder: Your Vote is Waiting. Act Now with Resolve!</h2>
-              <p style="font-size: 14px;">Hi {Silver},</p>
+              <p style="font-size: 14px;">Hi {{voterName}},</p>
               <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">This is a friendly reminder that your election is still open! Don't miss the chance to make your voice heard.</p>
               
               <!-- Features -->
@@ -83,13 +83,13 @@
                     </div>
                   </td>
                   <td valign="top" style="padding-top: 5px;">
-                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Cast your vote: <a href="https://resolve.vote/resolveteamlead" style="color: #7FB4F1;">https://resolve.vote/resolveteamlead</a></p>
+                    <p style="font-size: 10px; color: #1F2124; font-weight: 500;">Cast your vote: </span> <a href="{{electionLink}}" class="voting-link">{{electionLink}}</a></p>
                   </td>
                 </tr>
               </table>
               
               <p style="padding-bottom: 8px; font-size: 10px; color: #1F2124;">It's quick, secure, and easy</p>
-              <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Hurry now! Voting closes on 29th March 2025. Make sure your vote counts!</p>
+              <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Hurry now! Voting closes on:</span> {{electionEndDate}} by {{electionStartTime}}. Make sure your vote counts!</p>
               <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">
                 <span style="display: block;">Best regards,</span> The Resolve Team
               </p>
