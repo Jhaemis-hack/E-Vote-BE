@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Election, ElectionStatus } from '../modules/election/entities/election.entity';
@@ -6,10 +6,10 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import * as moment from 'moment';
 import { clearInterval, setInterval } from 'timers';
-// import {NodeJS} from 'node'
+import { EmailService } from 'src/modules/email/email.service';
 
 @Injectable()
-export class ElectionStatusUpdaterService implements OnModuleInit {
+export class ElectionStatusUpdaterService {
   private readonly logger = new Logger(ElectionStatusUpdaterService.name);
   private readonly redisKeyPrefix = 'election:status:';
   private readonly checkInterval = 30000; // Check every 30 seconds
@@ -20,6 +20,7 @@ export class ElectionStatusUpdaterService implements OnModuleInit {
     @InjectRepository(Election)
     private electionRepository: Repository<Election>,
     @InjectRedis() private readonly redis: Redis,
+    private emailService: EmailService,
   ) {}
 
   async onModuleInit() {
@@ -36,7 +37,7 @@ export class ElectionStatusUpdaterService implements OnModuleInit {
   }
 
   private async loadAndScheduleElections() {
-    const elections = await this.electionRepository.find();
+    const elections = await this.electionRepository.find({ relations: ['voters'] });
     this.logger.log(`Found ${elections.length} elections to schedule`);
 
     for (const election of elections) {
@@ -176,6 +177,25 @@ export class ElectionStatusUpdaterService implements OnModuleInit {
       this.logger.log(`Updating election ${id} status to ${status}`);
       const result = await this.electionRepository.update(id, { status });
       this.logger.log(`Election ${id} status updated to ${status}: ${JSON.stringify(result)}`);
+
+      // Fetch the updated election with voters
+      const updatedElection = await this.electionRepository.findOne({
+        where: { id },
+        relations: ['voters'],
+      });
+
+      if (!updatedElection) {
+        this.logger.error(`Election with id ${id} not found!`);
+      }
+
+      if (updatedElection?.email_notification) {
+        try {
+          await this.emailService.sendElectionStartEmails(updatedElection);
+          this.logger.log(`Email notification sent for election ${id}`);
+        } catch (error) {
+          this.logger.error(`Failed to send email notifications for election ${id}: ${error.message}`);
+        }
+      }
 
       // Update status in Redis
       await this.redis.hset(`${this.redisKeyPrefix}info:${id}`, 'status', status);

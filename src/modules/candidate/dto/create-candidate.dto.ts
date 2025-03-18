@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, Matches, MaxLength, MinLength, IsOptional } from 'class-validator';
 
 export class CreateCandidateDto {
   @ApiProperty({ example: 'Tommy' })
@@ -14,4 +14,13 @@ export class CreateCandidateDto {
   @IsString()
   @Matches(/^https?:\/\/.+$/, { message: 'photo_url must be a valid URL' })
   photo_url: string;
+
+  @ApiProperty({
+    example: 'Tommy is a passionate advocate for student rights with 3 years of experience in student government.',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000, { message: 'Bio must not be more than 1000 characters long.' })
+  bio?: string;
 }

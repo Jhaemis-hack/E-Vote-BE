@@ -1,19 +1,20 @@
+import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { IsNull, Repository } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { EmailService } from '../email/email.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login-user.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { User } from './entities/user.entity';
+import { EmailService } from '../email/email.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class UserService {
@@ -21,6 +22,7 @@ export class UserService {
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
+    private configService: ConfigService,
     private readonly mailService: EmailService,
   ) {}
 
@@ -47,20 +49,20 @@ export class UserService {
       is_verified: true,
     });
 
-    const credentials = { email: newAdmin.email, sub: newAdmin.id };
-    const token = this.jwtService.sign(credentials);
-
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
     } catch {
       throw new InternalServerError(SYS_MSG.WELCOME_EMAIL_FAILED);
     }
 
-    try {
-      await this.mailService.sendVerificationMail(newAdmin.email, token);
-    } catch {
-      throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
-    }
+    //TODO
+    // const credentials = { email: newAdmin.email, sub: newAdmin.id };
+    // const token = this.jwtService.sign(credentials);
+    // try {
+    //   await this.mailService.sendVerificationMail(newAdmin.email, token);
+    // } catch {
+    //   throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
+    // }
 
     await this.userRepository.save(newAdmin);
 
@@ -85,19 +87,20 @@ export class UserService {
       throw new UnauthorizedError(SYS_MSG.INCORRECT_PASSWORD);
     }
 
-    if (userExist.is_verified === false) {
-      const credentials = { email: userExist.email, sub: userExist.id };
-      const token = this.jwtService.sign(credentials);
+    // TODO
+    // if (userExist.is_verified === false) {
+    //   const credentials = { email: userExist.email, sub: userExist.id };
+    //   const token = this.jwtService.sign(credentials);
 
-      try {
-        await this.mailService.sendVerificationMail(userExist.email, token);
+    //   try {
+    //     await this.mailService.sendVerificationMail(userExist.email, token);
 
-        // Restricts the user from logging in until their email is verified
-        throw new InternalServerError(SYS_MSG.EMAIL_NOT_VERIFIED);
-      } catch {
-        throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
-      }
-    }
+    //     // Restricts the user from logging in until their email is verified
+    //     throw new InternalServerError(SYS_MSG.EMAIL_NOT_VERIFIED);
+    //   } catch {
+    //     throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
+    //   }
+    // }
 
     const { id, email } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };

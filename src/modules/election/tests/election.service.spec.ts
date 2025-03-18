@@ -107,8 +107,8 @@ describe('ElectionService', () => {
         election_type: ElectionType.SINGLECHOICE,
         max_choices: 1,
         candidates: [
-          { name: 'Tommy', photo_url: 'https://tommy.com' },
-          { name: 'Ben', photo_url: 'https://ben.com' },
+          { name: 'Tommy', photo_url: 'https://tommy.com', bio: 'Tommy is a great leader' },
+          { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a strong candidate' },
         ],
       };
 
@@ -161,8 +161,8 @@ describe('ElectionService', () => {
         election_type: ElectionType.SINGLECHOICE,
         max_choices: 1,
         candidates: [
-          { name: 'Tommy', photo_url: 'https://tommy.com' },
-          { name: 'Ben', photo_url: 'https://ben.com' },
+          { name: 'Tommy', photo_url: 'https://tommy.com', bio: 'Tommy is a great leader' },
+          { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a strong candidate' },
         ],
       };
 
@@ -786,8 +786,8 @@ describe('ElectionService', () => {
         election_type: ElectionType.SINGLECHOICE,
         max_choices: 1,
         candidates: [
-          { name: 'Tommy', photo_url: 'https://tommy.com' },
-          { name: 'Ben', photo_url: 'https://ben.com' },
+          { name: 'Tommy', photo_url: 'https://tommy.com', bio: 'Tommy is a great leader' },
+          { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a great leader' },
         ],
       };
 
