@@ -120,10 +120,6 @@ export class ElectionStatusUpdaterService {
         return;
       }
 
-      if (updatedElection.email_notification) {
-        await this.emailService.sendElectionEndEmails(updatedElection);
-      }
-
       this.schedulerRegistry.addCronJob(`end-${id}`, endJob);
       endJob.start();
       this.logger.log(`Scheduled end job for election ${id} at ${endDateTime}`);
