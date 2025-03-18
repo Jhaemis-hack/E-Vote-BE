@@ -489,13 +489,15 @@ export class ElectionService {
 
     const now = new Date(Date.now());
 
-    const startDateTime = new Date(voter.election.start_date);
+    const startDateTimeLocal = new Date(voter.election.start_date);
     const [startHour, startMinute, startSecond] = voter.election.start_time.split(':').map(Number);
-    startDateTime.setHours(startHour, startMinute, startSecond || 0);
+    startDateTimeLocal.setHours(startHour, startMinute, startSecond || 0);
+    const startDateTime = new Date(startDateTimeLocal.getTime() - 60 * 60 * 1000);
 
-    const endDateTime = new Date(voter.election.end_date);
+    const endDateTimeLocal = new Date(voter.election.end_date);
     const [endHour, endMinute, endSecond] = voter.election.end_time.split(':').map(Number);
-    endDateTime.setHours(endHour, endMinute, endSecond || 0);
+    endDateTimeLocal.setHours(endHour, endMinute, endSecond || 0);
+    const endDateTime = new Date(endDateTimeLocal.getTime() - 60 * 60 * 1000);
 
     let newStatus: ElectionStatus;
     let message = SYS_MSG.ELECTION_HAS_NOT_STARTED;
@@ -544,11 +546,11 @@ export class ElectionService {
 
         const startDateTime = new Date(election.start_date);
         const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
-        startDateTime.setHours(startHour, startMinute, startSecond || 0);
+        startDateTime.setHours(startHour - 1, startMinute, startSecond || 0);
 
         const endDateTime = new Date(election.end_date);
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
-        endDateTime.setHours(endHour, endMinute, endSecond || 0);
+        endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
         const mappedElection = this.transformElectionResponse(election);
 

@@ -34,11 +34,9 @@ export class ElectionStatusUpdaterService {
     const { id, start_date, end_date, start_time, end_time } = election;
     // Schedule start task
     const startDateTime = this.getDateTime(start_date, start_time);
-    const currentDate = new Date();
-    currentDate.setHours(currentDate.getHours() + 1);
-    console.log('startDateTime', startDateTime);
-    console.log('currentDate', currentDate);
-    if (startDateTime > currentDate) {
+    console.log('startDateTime:', startDateTime);
+    console.log('new Date():', new Date());
+    if (startDateTime > new Date()) {
       const startJob = new CronJob(startDateTime, async () => {
         this.logger.log(`Updating election ${id} from UPCOMING to ONGOING`);
         await this.electionRepository.update(id, { status: ElectionStatus.ONGOING });
@@ -122,6 +120,7 @@ export class ElectionStatusUpdaterService {
     const dateTime = new Date(date);
     const [hours, minutes, seconds] = timeString.split(':').map(Number);
     dateTime.setHours(hours, minutes, seconds || 0);
-    return dateTime;
+    const utcDateTime = new Date(dateTime.getTime() - 60 * 60 * 1000);
+    return utcDateTime;
   }
 }
