@@ -90,7 +90,6 @@ export class EmailService {
       template: 'election-monitor',
     };
 
-    // Add the job to the email queue
     await this.emailQueue.sendEmail({ mail, template: 'election-monitor' });
     }
   }
