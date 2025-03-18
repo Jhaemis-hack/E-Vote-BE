@@ -48,6 +48,7 @@ export class EmailService {
 
   async sendVotingLink(
     email: string,
+    title: string,
     start_date: Date,
     start_time: string,
     end_date: Date,
@@ -60,7 +61,7 @@ export class EmailService {
         to: email,
         subject: 'Here is your voting link',
         template: 'voting-link',
-        context: { email, votingLink, start_date, start_time, end_date, end_time },
+        context: { email, title, start_date, start_time, end_date, end_time, votingLink },
       },
       template: 'voting-link',
     });
