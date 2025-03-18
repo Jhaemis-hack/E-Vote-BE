@@ -1,6 +1,5 @@
-import { NotFoundException, Injectable } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
@@ -53,8 +52,8 @@ describe('ElectionService - update', () => {
       end_date: new Date('2025-06-02T00:00:00Z'),
       election_status: ElectionStatus.ONGOING,
       candidates: [
-        { name: 'Tommy', photo_url: 'https://tommy.com' },
-        { name: 'Ben', photo_url: 'https://ben.com' },
+        { name: 'Tommy', photo_url: 'https://tommy.com', bio: 'Tommy is a great candidate' },
+        { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a great leader' },
       ],
       start_time: '20:25:22',
       end_time: '20:23:23',
@@ -125,8 +124,8 @@ describe('ElectionService - update', () => {
       title: 'Updated Election Title',
       election_status: ElectionStatus.UPCOMING,
       candidates: [
-        { name: 'Tommy', photo_url: 'https://tommy.com' },
-        { name: 'Ben', photo_url: 'https://ben.com' },
+        { name: 'Tommy', photo_url: 'https://tommy.com', bio: 'Tommy is a great candidate' },
+        { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a great leader' },
       ],
       start_time: '08:00:00',
       end_time: '17:00:00',
@@ -149,8 +148,8 @@ describe('ElectionService - update', () => {
       start_date: new Date('2025-06-02T00:00:00Z'),
       end_date: new Date('2025-06-01T00:00:00Z'),
       candidates: [
-        { name: 'Tommy', photo_url: 'https://tommy.com' },
-        { name: 'Ben', photo_url: 'https://ben.com' },
+        { name: 'Tommy', photo_url: 'https://tommy.com', bio: 'Tommy is a great candidate' },
+        { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a great leader' },
       ],
       election_status: ElectionStatus.ONGOING,
       start_time: '08:00:00',
@@ -193,8 +192,8 @@ describe('ElectionService - update', () => {
     const updateElectionDto: UpdateElectionDto = {
       title: 'Updated Election Title',
       candidates: [
-        { name: 'Tommy', photo_url: 'https://tommy.com' },
-        { name: 'Ben', photo_url: 'https://ben.com' },
+        { name: 'Tommy', photo_url: 'https://tommy.com', bio: 'Tommy is a great candidate' },
+        { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a great leader' },
       ],
       start_time: '08:00:00',
       election_status: ElectionStatus.COMPLETED,

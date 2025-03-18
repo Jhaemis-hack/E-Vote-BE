@@ -146,6 +146,7 @@ export class ElectionService {
       const newCandidate = new Candidate();
       newCandidate.name = candidate.name;
       newCandidate.photo_url = candidate.photo_url;
+      newCandidate.bio = candidate.bio || '';
       newCandidate.election = savedElection;
       return newCandidate;
     });
@@ -173,6 +174,7 @@ export class ElectionService {
         candidates: savedElection.candidates.map(candidate => ({
           name: candidate.name,
           photo_url: candidate.photo_url,
+          bio: candidate.bio,
         })),
       },
     };
@@ -365,6 +367,7 @@ export class ElectionService {
       candidate_id: candidate.id,
       name: candidate.name,
       photo_url: candidate.photo_url,
+      bio: candidate.bio,
       vote_count: voteCounts.get(candidate.id) || 0,
     }));
 
@@ -567,6 +570,7 @@ export class ElectionService {
               candidate_id: candidate.id,
               name: candidate.name,
               photo_url: candidate.photo_url,
+              bio: candidate.bio,
             })) || [],
         };
       })
@@ -723,6 +727,7 @@ export class ElectionService {
       name: candidate.name,
       votes: voteCounts.get(candidate.id) || 0,
       photo_url: candidate.photo_url,
+      bio: candidate.bio,
     }));
 
     return {
