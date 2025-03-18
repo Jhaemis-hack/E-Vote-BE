@@ -422,7 +422,6 @@ describe('UserService', () => {
 
       await expect(userService.login(loginDto)).rejects.toThrow(new UnauthorizedError(SYS_MSG.INCORRECT_PASSWORD));
     });
-
     // it('❌ should return forbidden if email is not verified and send verification email', async () => {
     //   const loginDto: LoginDto = {
     //     email: 'user@example.com',
@@ -511,6 +510,7 @@ describe('UserService', () => {
           email: 'test@example.com',
         }),
       );
+
       expect(result.data).not.toHaveProperty('password');
       expect(result.data).not.toHaveProperty('hashPassword');
     });
@@ -719,6 +719,7 @@ describe('UserService', () => {
     let jwtService: JwtService;
     let userRepository: any;
     let forgotPasswordTokenRepository: any;
+
     let emailService: EmailService;
     // let someService: any;
     let configService: any;

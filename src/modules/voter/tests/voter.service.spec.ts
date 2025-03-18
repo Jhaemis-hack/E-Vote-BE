@@ -1,10 +1,9 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DeepPartial, In, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import * as xlsx from 'xlsx';
-import { BadRequestError } from '../../../errors';
+import { BadRequestError, NotFoundError, UnauthorizedError } from '../../../errors';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Election } from '../../election/entities/election.entity';
 import { Voter } from '../entities/voter.entity';
@@ -140,10 +139,7 @@ describe('VoterService', () => {
 
     it('should throw UNAUTHORIZED if adminId is missing', async () => {
       await expect(service.findAll(1, 10, '', validElectionId)).rejects.toThrow(
-        new HttpException(
-          { status_code: 401, message: SYS_MSG.UNAUTHORIZED_USER, data: null },
-          HttpStatus.UNAUTHORIZED,
-        ),
+        new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER),
       );
     });
 
@@ -151,7 +147,7 @@ describe('VoterService', () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
       await expect(service.findAll(1, 10, validAdminId, invalidElectionId)).rejects.toThrow(
-        new HttpException({ status_code: 404, message: SYS_MSG.ELECTION_NOT_FOUND, data: null }, HttpStatus.NOT_FOUND),
+        new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND),
       );
     });
 
@@ -159,25 +155,11 @@ describe('VoterService', () => {
       jest.spyOn(voterRepository, 'findOne').mockResolvedValue({} as Voter);
 
       await expect(service.findAll(0, 10, validAdminId, validElectionId)).rejects.toThrow(
-        new HttpException(
-          {
-            status_code: 400,
-            message: 'Invalid pagination parameters. Page and pageSize must be greater than 0.',
-            data: null,
-          },
-          HttpStatus.BAD_REQUEST,
-        ),
+        new BadRequestError(SYS_MSG.PAGE_SIZE_ERROR),
       );
 
       await expect(service.findAll(1, 0, validAdminId, validElectionId)).rejects.toThrow(
-        new HttpException(
-          {
-            status_code: 400,
-            message: 'Invalid pagination parameters. Page and pageSize must be greater than 0.',
-            data: null,
-          },
-          HttpStatus.BAD_REQUEST,
-        ),
+        new BadRequestError(SYS_MSG.PAGE_SIZE_ERROR),
       );
     });
 
@@ -186,10 +168,7 @@ describe('VoterService', () => {
       jest.spyOn(voterRepository, 'findAndCount').mockResolvedValue([[], 0]);
 
       await expect(service.findAll(1, 10, validAdminId, validElectionId)).rejects.toThrow(
-        new HttpException(
-          { status_code: 404, message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND, data: null },
-          HttpStatus.NOT_FOUND,
-        ),
+        new NotFoundError(SYS_MSG.ELECTION_VOTERS_NOT_FOUND),
       );
     });
   });

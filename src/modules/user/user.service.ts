@@ -95,7 +95,7 @@ export class UserService {
     //   try {
     //     await this.mailService.sendVerificationMail(userExist.email, token);
 
-    //     // Restricts the user from logging in until their email is verified
+    // Restricts the user from logging in until their email is verified
     //     throw new InternalServerError(SYS_MSG.EMAIL_NOT_VERIFIED);
     //   } catch {
     //     throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);

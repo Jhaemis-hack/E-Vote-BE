@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resolve Election Reminder</title>
+  <style type="text/css">
+    body, p, h1, h2, h3, h4, h5, h6, ul, ol, li {
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.4;
+      color: #000000;
+      background-color: #f5f5f5;
+    }
+    .email-container {
+      max-width: 420px;
+      margin: 10px auto;
+      border: 1px solid #cccccc;
+      background-color: #ffffff;
+    }
+    .header {
+      height: 87px;
+      background-color: #002347;
+      padding: 0 20px;
+    }
+    .header-content {
+      display: table;
+      width: 100%;
+      height: 100%;
+    }
+    .logo {
+      display: table-cell;
+      vertical-align: middle;
+    }
+    .logo img {
+      height: 26px;
+      width: auto;
+    }
+    .website-link {
+      display: table-cell;
+      vertical-align: middle;
+      text-align: right;
+      font-size: 10px;
+      color: #999999;
+    }
+    .footer {
+      background-color: #002347;
+      padding: 20px;
+      color: #ffffff;
+      height: 161px;
+    }
+    .footer-top {
+      overflow: hidden;
+    }
+    .footer-logo {
+      float: left;
+      text-align: center;
+    }
+    .footer-logo img {
+      height: 13px;
+      width: auto;
+    }
+    .footer-tagline {
+      font-size: 8px;
+      color: #999999;
+      margin-top: 5px;
+    }
+    .footer-divider {
+      height: 1px;
+      background-color: rgba(203, 213, 225, 0.1);
+      margin: 10px 0;
+      clear: both;
+    }
+    .footer-bottom {
+      overflow: hidden;
+      padding-top: 10px;
+    }
+    .footer-message {
+      float: left;
+      width: 164px;
+      font-size: 10px;
+      color: #999999;
+    }
+    .footer-copyright {
+      float: right;
+      font-size: 8px;
+      color: #999999;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="header-content">
+        <div class="logo">
+          <img src="https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png" alt="Resolve Logo">
+        </div>
+        <div class="website-link">
+          https://resolve.vote/
+        </div>
+      </div>
+    </div>
+    <div class="main-content" style="padding: 20px;">
+      <h2 style="padding: 10px 0; font-size: 16px; font-weight: 600;">Reminder: Your Vote is Waiting. Act Now with Resolve!</h2>
+      <p style="font-size: 14px;">Hi {{voterName}},</p>
+      <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">This is a friendly reminder that your election is still open! Don't miss the chance to make your voice heard.</p>
+      <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Hurry now! Voting closes on: {{electionEndDate}} by {{electionEndTime}}.</p>
+      <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Best regards,</p>
+      <p style="font-size: 10px; color: #1F2124;">The Resolve Team</p>
+    </div>
+    <div class="footer">
+      <div class="footer-top">
+        <div class="footer-logo">
+          <img src="https://example.com/resolve-logo.png" alt="Resolve Logo">
+          <div class="footer-tagline">Secure Elections, <br> Trusted Results</div>
+        </div>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-bottom">
+        <div class="footer-message">Start with Resolve: Create, manage, and monitor your elections effortlessly.</div>
+        <div class="footer-copyright">© Resolve Rights Reserved 2025</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

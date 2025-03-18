@@ -7,6 +7,8 @@ import Redis from 'ioredis';
 import * as moment from 'moment';
 import { clearInterval, setInterval } from 'timers';
 import { EmailService } from 'src/modules/email/email.service';
+import { Vote } from '../modules/votes/entities/votes.entity';
+import { Voter } from '../modules/voter/entities/voter.entity';
 
 @Injectable()
 export class ElectionStatusUpdaterService {
@@ -21,6 +23,10 @@ export class ElectionStatusUpdaterService {
     private electionRepository: Repository<Election>,
     @InjectRedis() private readonly redis: Redis,
     private emailService: EmailService,
+    @InjectRepository(Vote)
+    private voteRepository: Repository<Vote>,
+    @InjectRepository(Voter)
+    private voterRepository: Repository<Voter>,
   ) {}
 
   async onModuleInit() {
@@ -138,6 +144,16 @@ export class ElectionStatusUpdaterService {
 
       this.logger.log(`Scheduling end update for election ${id} in ${ttlSeconds} seconds`);
       await this.redis.set(endKey, '1', 'EX', ttlSeconds);
+
+      // Schedule a reminder 24 hours before the election ends
+      const reminderDateTime = moment(endDateTime).subtract(24, 'hours');
+      if (reminderDateTime.isAfter(moment().utc())) {
+        const reminderKey = `${this.redisKeyPrefix}${id}:reminder`;
+        const reminderTtlSeconds = Math.floor(reminderDateTime.diff(moment().utc()) / 1000);
+
+        this.logger.log(`Scheduling reminder for election ${id} in ${reminderTtlSeconds} seconds`);
+        await this.redis.set(reminderKey, '1', 'EX', reminderTtlSeconds);
+      }
     } else {
       this.logger.log(`End date/time for election ${id} is in the past or less than 1 hour away`);
       // Check if the status needs to be updated based on current time
@@ -186,12 +202,14 @@ export class ElectionStatusUpdaterService {
 
       if (!updatedElection) {
         this.logger.error(`Election with id ${id} not found!`);
+        return;
       }
 
-      if (updatedElection?.email_notification) {
+      // Send email notifications if enabled
+      if (updatedElection.email_notification) {
         try {
           await this.emailService.sendElectionStartEmails(updatedElection);
-          this.logger.log(`Email notification sent for election ${id}`);
+          this.logger.log(`Email notifications sent for election ${id}`);
         } catch (error) {
           this.logger.error(`Failed to send email notifications for election ${id}: ${error.message}`);
         }

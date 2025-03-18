@@ -8,6 +8,7 @@ import { UpdateElectionDto } from '../dto/update-election.dto';
 import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
 import { Voter } from '../../voter/entities/voter.entity';
 import { NotFoundError } from '../../../errors';
+import { EmailService } from 'src/modules/email/email.service';
 
 describe('ElectionService - update', () => {
   let service: ElectionService;
@@ -16,6 +17,7 @@ describe('ElectionService - update', () => {
   let voteRepository: Repository<Vote>;
   let voterRepository: Repository<Voter>;
   let electionStatusUpdaterService: ElectionStatusUpdaterService;
+  let emailService: EmailService;
 
   beforeEach(() => {
     electionRepository = {
@@ -26,11 +28,16 @@ describe('ElectionService - update', () => {
     candidateRepository = {} as Repository<Candidate>;
     voteRepository = {} as Repository<Vote>;
     voterRepository = {} as Repository<Voter>;
+    electionStatusUpdaterService = {} as ElectionStatusUpdaterService;
 
     // Mock the ElectionStatusUpdaterService
     electionStatusUpdaterService = {
       scheduleElectionUpdates: jest.fn(),
     } as unknown as ElectionStatusUpdaterService;
+
+    emailService = {
+      sendElectionReminderEmails: jest.fn(),
+    } as unknown as EmailService;
 
     // Provide all 4 arguments to the ElectionService constructor
     service = new ElectionService(
@@ -39,6 +46,7 @@ describe('ElectionService - update', () => {
       voteRepository,
       voterRepository,
       electionStatusUpdaterService,
+      emailService,
     );
   });
 
