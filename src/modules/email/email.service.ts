@@ -7,7 +7,7 @@ export class EmailService {
   async sendEmail(
     email: string,
     subject: string,
-    template: 'verify-email' | 'reset-password' | 'welcome-email' | 'voting-link',
+    template: 'verify-email' | 'reset-password' | 'welcome-email' | 'voter-invite' | 'election-start',
     context: Record<string, any>,
   ): Promise<void> {
     await this.emailQueue.sendEmail({
@@ -48,10 +48,11 @@ export class EmailService {
 
   async sendVotingLink(
     email: string,
+    name: string,
     title: string,
-    start_date: Date,
+    start_date: string,
     start_time: string,
-    end_date: Date,
+    end_date: string,
     end_time: string,
     votingLinkId: string,
   ) {
@@ -59,11 +60,11 @@ export class EmailService {
     return this.emailQueue.sendEmail({
       mail: {
         to: email,
-        subject: 'Here is your voting link',
-        template: 'voting-link',
-        context: { email, title, start_date, start_time, end_date, end_time, votingLink },
+        subject: `You have been invited to vote in the ${title}`,
+        template: 'voter-invite',
+        context: { name: name || email, title, start_date, start_time, end_date, end_time, votingLink },
       },
-      template: 'voting-link',
+      template: 'voter-invite',
     });
   }
 
@@ -80,7 +81,7 @@ export class EmailService {
                 electionTitle: election.title,
                 electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
                 electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
-                electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
+                electionLink: `${process.env.FRONTEND_URL}/vote/${voter.verification_token}`,
               },
             },
             template: 'election-start',

@@ -236,14 +236,19 @@ export class ElectionService {
     const jobPromises = voters.map(async voter => {
       try {
         const votingLinkId = voter.verification_token;
+        const formattedStartDate = moment(election.start_date).format('MMMM Do YYYY');
+        const formattedStartTime = moment(election.start_time, 'HH:mm:ss').format('h:mm A');
+        const formattedEndDate = moment(election.end_date).format('MMMM Do YYYY');
+        const formattedEndTime = moment(election.end_time, 'HH:mm:ss').format('h:mm A');
 
         await this.emailService.sendVotingLink(
           voter.email,
+          voter.name,
           election.title,
-          election.start_date,
-          election.start_time,
-          election.end_date,
-          election.end_time,
+          formattedStartDate,
+          formattedStartTime,
+          formattedEndDate,
+          formattedEndTime,
           votingLinkId,
         );
       } catch (error) {
