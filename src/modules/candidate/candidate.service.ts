@@ -24,7 +24,7 @@ export class CandidateService {
     this.bucketName = process.env.SUPABASE_BUCKET;
   }
 
-  async updatePhoto(id: string, file: Express.Multer.File): Promise<Candidate> {
+  async updatePhoto(id: string, file: Express.Multer.File | null): Promise<Candidate> {
     const candidate = await this.candidateRepository.findOne({ where: { id } });
 
     if (!candidate) {
