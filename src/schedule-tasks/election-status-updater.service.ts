@@ -30,6 +30,8 @@ export class ElectionStatusUpdaterService {
 
     // Schedule start task
     const startDateTime = this.getDateTime(start_date, start_time);
+    console.log('startDateTime:', startDateTime);
+    console.log('new Date():', new Date());
     if (startDateTime > new Date()) {
       const startJob = new CronJob(startDateTime, async () => {
         this.logger.log(`Updating election ${id} from UPCOMING to ONGOING`);
@@ -73,6 +75,7 @@ export class ElectionStatusUpdaterService {
     const dateTime = new Date(date);
     const [hours, minutes, seconds] = timeString.split(':').map(Number);
     dateTime.setHours(hours, minutes, seconds || 0);
-    return dateTime;
+    const utcDateTime = new Date(dateTime.getTime() - 60 * 60 * 1000);
+    return utcDateTime;
   }
 }
