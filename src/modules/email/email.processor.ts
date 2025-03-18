@@ -10,18 +10,19 @@ export class EmailProcessor {
 
   constructor(private readonly mailerService: MailerService) {}
 
-  @Process('verify-email')
-  async sendVeriFyEmailJob(job: Job<MailInterface>) {
-    const { mail } = job.data;
-    try {
-      await this.mailerService.sendMail({
-        ...mail,
-      });
-      this.logger.log(`Verify Email successfully sent to ${mail.to}`);
-    } catch (SendVerifyEmailError) {
-      this.logger.error(`EmailProcessor - SendVerifyEmailError: ${SendVerifyEmailError.message}`);
-    }
-  }
+  //  TODO
+  // @Process('verify-email')
+  // async sendVeriFyEmailJob(job: Job<MailInterface>) {
+  //   const { mail } = job.data;
+  //   try {
+  //     await this.mailerService.sendMail({
+  //       ...mail,
+  //     });
+  //     this.logger.log(`Verify Email successfully sent to ${mail.to}`);
+  //   } catch (SendVerifyEmailError) {
+  //     this.logger.error(`EmailProcessor - SendVerifyEmailError: ${SendVerifyEmailError.message}`);
+  //   }
+  // }
 
   @Process('reset-password')
   async sendResetPasswordEmailJob(job: Job<MailInterface>) {

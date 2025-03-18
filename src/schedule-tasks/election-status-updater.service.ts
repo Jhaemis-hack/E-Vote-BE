@@ -5,8 +5,8 @@ import { Election, ElectionStatus } from '../modules/election/entities/election.
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { EmailService } from '../modules/email/email.service';
-import { Voter } from 'src/modules/voter/entities/voter.entity';
-import { Vote } from 'src/modules/votes/entities/votes.entity';
+import { Vote } from '../modules/votes/entities/votes.entity';
+import { Voter } from '../modules/voter/entities/voter.entity';
 
 @Injectable()
 export class ElectionStatusUpdaterService {
@@ -37,7 +37,7 @@ export class ElectionStatusUpdaterService {
     const currentDate = new Date();
     currentDate.setHours(currentDate.getHours() + 1);
     console.log('startDateTime', startDateTime);
-    console.log('currentDate', currentDate); 
+    console.log('currentDate', currentDate);
     if (startDateTime > currentDate) {
       const startJob = new CronJob(startDateTime, async () => {
         this.logger.log(`Updating election ${id} from UPCOMING to ONGOING`);

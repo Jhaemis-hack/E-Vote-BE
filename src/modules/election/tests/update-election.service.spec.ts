@@ -7,8 +7,8 @@ import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UpdateElectionDto } from '../dto/update-election.dto';
 import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
-import { Voter } from '../../voter/entities/voter.entity';
 import { EmailService } from 'src/modules/email/email.service';
+import { Voter } from 'src/modules/voter/entities/voter.entity';
 
 describe('ElectionService - update', () => {
   let service: ElectionService;
