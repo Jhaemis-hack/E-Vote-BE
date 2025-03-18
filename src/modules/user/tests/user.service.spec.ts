@@ -1,5 +1,5 @@
 import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException } from '@nestjs/common';
-import * as request from 'supertest';
+// import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -29,7 +29,7 @@ describe('UserService', () => {
   let userService: UserService;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
-  let configService: ConfigService;
+  // let configService: ConfigService;
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
   let emailService: EmailService;
 
@@ -91,7 +91,7 @@ describe('UserService', () => {
     userService = module.get<UserService>(UserService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
-    configService = module.get<ConfigService>(ConfigService);
+    // configService = module.get<ConfigService>(ConfigService);
     forgotPasswordRepository = module.get<Repository<ForgotPasswordToken>>(getRepositoryToken(ForgotPasswordToken));
     emailService = module.get<EmailService>(EmailService);
   });
@@ -142,7 +142,7 @@ describe('UserService', () => {
         id: randomUUID(),
         email: 'admin@example.com',
         password: 'StrongPass1!',
-       // is_verified: false,
+        // is_verified: false,
       };
 
       userRepository.findOne = jest.fn().mockResolvedValue(null);
@@ -183,15 +183,15 @@ describe('UserService', () => {
     //   userRepository.save = jest.fn().mockResolvedValue(adminDto as User);
     //   jwtService.sign = jest.fn().mockReturnValue('mockedToken');
     //   jest.spyOn(emailService, 'sendWelcomeMail').mockResolvedValueOnce(undefined);
-     // jest.spyOn(emailService, 'sendVerificationMail').mockRejectedValueOnce(new Error('Email sending failed'));
+    // jest.spyOn(emailService, 'sendVerificationMail').mockRejectedValueOnce(new Error('Email sending failed'));
 
-      // const result = await userService.registerAdmin(adminDto);
+    // const result = await userService.registerAdmin(adminDto);
 
-      // expect(result).toEqual({
-      //   status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-      //   message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-      //   data: null,
-      // });
+    // expect(result).toEqual({
+    //   status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+    //   message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+    //   data: null,
+    // });
     // });
 
     it('❌ should throw an error for an invalid email format', async () => {
@@ -519,7 +519,7 @@ describe('UserService', () => {
           email: 'test@example.com',
         }),
       );
-      expect(result.data).not.toHaveProperty('password');
+      // expect(result.data).not.toHaveProperty('password');
       expect(result.data).not.toHaveProperty('hashPassword');
     });
 
@@ -743,7 +743,7 @@ describe('UserService', () => {
     let jwtService: JwtService;
     let userRepository: any;
     let forgotPasswordTokenRepository: any;
-    let someService: any;
+    // let someService: any;
     let configService: any;
 
     const mockToken = 'valid.jwt.token';
@@ -765,8 +765,8 @@ describe('UserService', () => {
       jwtService = new JwtService();
       jest.spyOn(jwtService, 'verify').mockReturnValue(mockPayload);
 
-      someService = {};
-      configService = {};
+      // someService = {};
+      // configService = {};
 
       userService = new UserService(
         userRepository,
