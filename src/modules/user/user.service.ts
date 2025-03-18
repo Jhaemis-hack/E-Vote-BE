@@ -69,15 +69,16 @@ export class UserService {
       };
     }
 
-    try {
-      await this.mailService.sendVerificationMail(newAdmin.email, token);
-    } catch (err) {
-      return {
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-        data: null,
-      };
-    }
+    // TODO
+    // try {
+    //   await this.mailService.sendVerificationMail(newAdmin.email, token);
+    // } catch (err) {
+    //   return {
+    //     status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+    //     message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+    //     data: null,
+    //   };
+    // }
 
     await this.userRepository.save(newAdmin);
 
@@ -102,27 +103,28 @@ export class UserService {
       throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
     }
 
-    if (userExist.is_verified === false) {
-      const credentials = { email: userExist.email, sub: userExist.id };
-      const token = this.jwtService.sign(credentials);
+    // TODO
+    // if (userExist.is_verified === false) {
+    //   const credentials = { email: userExist.email, sub: userExist.id };
+    //   const token = this.jwtService.sign(credentials);
 
-      try {
-        await this.mailService.sendVerificationMail(userExist.email, token);
+    //   try {
+    //     await this.mailService.sendVerificationMail(userExist.email, token);
 
-        // Restricts the user from logging in until their email is verified
-        return {
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.EMAIL_NOT_VERIFIED,
-          data: null,
-        };
-      } catch (error) {
-        return {
-          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
-          data: null,
-        };
-      }
-    }
+    //     // Restricts the user from logging in until their email is verified
+    //     return {
+    //       status_code: HttpStatus.FORBIDDEN,
+    //       message: SYS_MSG.EMAIL_NOT_VERIFIED,
+    //       data: null,
+    //     };
+    //   } catch (error) {
+    //     return {
+    //       status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+    //       message: SYS_MSG.EMAIL_VERIFICATION_FAILED,
+    //       data: null,
+    //     };
+    //   }
+    // }
 
     const { password, ...admin } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };

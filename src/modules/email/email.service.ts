@@ -12,14 +12,16 @@ export class EmailService {
         context,
         template,
       },
-      template: 'verify-email',
+     // template: 'verify-email',
+      template: 'welcome-email',
     });
   }
 
-  async sendVerificationMail(email: string, token: string): Promise<void> {
-    const verificationLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
-    await this.sendEmail(email, 'Verify Your Email', 'verify-email', { token: verificationLink });
-  }
+  // TODO
+  // async sendVerificationMail(email: string, token: string): Promise<void> {
+  //   const verificationLink = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+  //   await this.sendEmail(email, 'Verify Your Email', 'verify-email', { token: verificationLink });
+  // }
 
   async sendForgotPasswordMail(email: string, name: string, url: string, token: string) {
     const link = `${url}?token=${token}`;
