@@ -1,19 +1,10 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { exist, string } from 'joi';
-import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { IsNull, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { EmailService } from '../email/email.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -30,7 +21,6 @@ export class UserService {
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
-    private configService: ConfigService,
     private readonly mailService: EmailService,
   ) {}
 
@@ -62,13 +52,13 @@ export class UserService {
 
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
-    } catch (err) {
+    } catch {
       throw new InternalServerError(SYS_MSG.WELCOME_EMAIL_FAILED);
     }
 
     try {
       await this.mailService.sendVerificationMail(newAdmin.email, token);
-    } catch (err) {
+    } catch {
       throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
     }
 
@@ -104,12 +94,12 @@ export class UserService {
 
         // Restricts the user from logging in until their email is verified
         throw new InternalServerError(SYS_MSG.EMAIL_NOT_VERIFIED);
-      } catch (error) {
+      } catch {
         throw new InternalServerError(SYS_MSG.EMAIL_VERIFICATION_FAILED);
       }
     }
 
-    const { password, ...admin } = userExist;
+    const { id, email } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };
     const token = this.jwtService.sign(credentials);
 
@@ -117,8 +107,8 @@ export class UserService {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
       data: {
-        id: admin.id,
-        email: admin.email,
+        id,
+        email,
         token,
       },
     };
@@ -146,18 +136,18 @@ export class UserService {
   }
 
   async getUserById(
-    id: string,
+    userId: string,
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { password, ...userData } = user;
+    const { id, email, is_verified, created_elections, created_at, updated_at, deleted_at } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
-      data: userData,
+      data: { id, email, is_verified, created_elections, created_at, updated_at, deleted_at },
     };
   }
 

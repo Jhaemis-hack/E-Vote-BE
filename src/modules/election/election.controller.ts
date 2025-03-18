@@ -5,11 +5,11 @@ import {
   Delete,
   Get,
   HttpCode,
-  HttpException,
   HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -18,6 +18,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -29,16 +30,15 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
-import { UpdateElectionDto } from './dto/update-election.dto';
-import { ElectionResponse, ElectionService } from './election.service';
-import { Election } from './entities/election.entity';
-import { FileInterceptor } from '@nestjs/platform-express';
-import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
-import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+import { UpdateElectionDto } from './dto/update-election.dto';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
+import { ElectionService } from './election.service';
+import { Election } from './entities/election.entity';
 
 @ApiTags()
 @Controller('elections')
@@ -110,7 +110,7 @@ export class ElectionController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: SYS_MSG.BAD_REQUEST })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: SYS_MSG.ELECTION_NOT_FOUND })
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: SYS_MSG.INTERNAL_SERVER_ERROR })
-  async update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto, @Req() req: any) {
+  async update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto) {
     try {
       const updatedElection = await this.electionService.update(id, updateElectionDto);
 
@@ -162,7 +162,7 @@ export class ElectionController {
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiResponse({ status: 403, description: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
-  async getElectionByVoterLink(@Param('vote_id') vote_id: string) {
+  getElectionByVoterLink(@Param('vote_id', new ParseUUIDPipe()) vote_id: string) {
     return this.electionService.getElectionByVoterLink(vote_id);
   }
 

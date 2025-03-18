@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -28,7 +28,7 @@ describe('UserService', () => {
   let userService: UserService;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
-  let configService: ConfigService;
+  // let configService: ConfigService;
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
   let emailService: EmailService;
 
@@ -90,7 +90,7 @@ describe('UserService', () => {
     userService = module.get<UserService>(UserService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
-    configService = module.get<ConfigService>(ConfigService);
+    // configService = module.get<ConfigService>(ConfigService);
     forgotPasswordRepository = module.get<Repository<ForgotPasswordToken>>(getRepositoryToken(ForgotPasswordToken));
     emailService = module.get<EmailService>(EmailService);
   });
@@ -205,7 +205,9 @@ describe('UserService', () => {
         is_verified: false,
       };
 
-      await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Invalid email format'));
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(
+        new BadRequestError(SYS_MSG.INVALID_EMAIL_FORMAT),
+      );
     });
 
     it('❌ should throw an error if email is already in use', async () => {
@@ -217,7 +219,7 @@ describe('UserService', () => {
 
       userRepository.findOne = jest.fn().mockResolvedValue(userDto as User);
 
-      await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Email already in use'));
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestError(SYS_MSG.EMAIL_IN_USE));
     });
 
     it('❌ should throw an error for a weak password', async () => {
@@ -230,9 +232,7 @@ describe('UserService', () => {
       userRepository.findOne = jest.fn().mockResolvedValue(null);
 
       await expect(userService.registerAdmin(userDto)).rejects.toThrow(
-        new BadRequestException(
-          'Password must be at least 8 characters long and include a number and special character',
-        ),
+        new BadRequestError(SYS_MSG.INVALID_PASSWORD_FORMAT),
       );
     });
 
@@ -725,8 +725,8 @@ describe('UserService', () => {
     let jwtService: JwtService;
     let userRepository: any;
     let forgotPasswordTokenRepository: any;
-    let someService: any;
-    let configService: any;
+    // let someService: any;
+    // let configService: any;
 
     const mockToken = 'valid.jwt.token';
     const mockPayload = { email: 'test@example.com', sub: '123' };
@@ -747,16 +747,10 @@ describe('UserService', () => {
       jwtService = new JwtService();
       jest.spyOn(jwtService, 'verify').mockReturnValue(mockPayload);
 
-      someService = {};
-      configService = {};
+      // someService = {};
+      // configService = {};
 
-      userService = new UserService(
-        userRepository,
-        forgotPasswordTokenRepository,
-        jwtService,
-        configService,
-        emailService,
-      );
+      userService = new UserService(userRepository, forgotPasswordTokenRepository, jwtService, emailService);
     });
 
     it('✅ should verify email successfully', async () => {

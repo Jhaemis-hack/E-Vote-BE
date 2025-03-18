@@ -1,11 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import * as crypto from 'crypto';
@@ -28,6 +21,8 @@ import { Voter } from '../voter/entities/voter.entity';
 
 @Injectable()
 export class VoterService {
+  private logger = new Logger(VoterService.name);
+
   constructor(
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
@@ -128,11 +123,7 @@ export class VoterService {
     } else if (ext === 'xlsx') {
       return this.processExcel(file.buffer, electionId);
     } else {
-      throw new BadRequestException({
-        status_code: HttpStatus.BAD_REQUEST,
-        message: SYS_MSG.INVALID_VOTER_FILE_UPLOAD,
-        data: null,
-      });
+      throw new BadRequestError(SYS_MSG.INVALID_VOTER_FILE_UPLOAD);
     }
   }
 
@@ -160,7 +151,7 @@ export class VoterService {
           .on('data', row => {
             try {
               const name = row.name || row.Name || row.NAME;
-              const email = (row.email || row.Email || row.EMAIL)?.toLowerCase();
+              const email = (row.email || row.Email || row.EMAIL)?.toLowerCase().trim();
 
               if (email) {
                 if (emailOccurrences.has(email)) {
@@ -178,6 +169,7 @@ export class VoterService {
               }
               rowIndex++;
             } catch (error) {
+              console.log('Error:', error);
               reject(new InternalServerError(SYS_MSG.ERROR_CSV_PROCESSING));
             }
           })
@@ -186,7 +178,6 @@ export class VoterService {
               const duplicates = Array.from(emailOccurrences.entries())
                 .filter(([_, rows]) => rows.length > 1)
                 .map(([email, rows]) => ({ email, rows }));
-
               if (duplicates.length > 0) {
                 return reject(
                   new BadRequestError(
@@ -299,10 +290,11 @@ export class VoterService {
   ): Promise<any> {
     try {
       if (!data.length) {
-        throw new BadRequestException(SYS_MSG.NO_VOTERS_DATA);
+        throw new BadRequestError(SYS_MSG.NO_VOTERS_DATA);
       }
       const electionId = data[0].election.id;
       const emails = data.map(voter => voter.email);
+      console.log('emails from saveVoters:', data);
 
       const existingVoters = await this.voterRepository.find({
         where: { email: In(emails), election: { id: electionId } },
@@ -311,11 +303,12 @@ export class VoterService {
 
       if (existingVoters.length > 0) {
         const existingEmails = existingVoters.map(voter => voter.email);
-        throw new ConflictError(SYS_MSG.DUPLICATE_EMAILS_ELECTION);
+        throw new ConflictError(SYS_MSG.DUPLICATE_EMAILS_ELECTION, existingEmails);
       }
-      await this.voterRepository.insert(data);
+      await this.voterRepository.save(data);
     } catch (error) {
-      if (error instanceof HttpException) {
+      console.log('error from save voters', error);
+      if (error instanceof ConflictError) {
         throw error;
       }
       throw new InternalServerError(SYS_MSG.VOTER_INSERTION_ERROR);

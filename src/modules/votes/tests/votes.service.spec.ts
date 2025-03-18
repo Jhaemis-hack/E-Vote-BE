@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConflictException, HttpException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { VoteService } from '../votes.service';
 import { Vote } from '../entities/votes.entity';

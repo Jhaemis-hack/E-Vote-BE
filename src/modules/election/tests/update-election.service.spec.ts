@@ -1,6 +1,4 @@
-import { NotFoundException, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
@@ -8,12 +6,15 @@ import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UpdateElectionDto } from '../dto/update-election.dto';
 import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
+import { Voter } from '../../voter/entities/voter.entity';
+import { NotFoundError } from '../../../errors';
 
 describe('ElectionService - update', () => {
   let service: ElectionService;
   let electionRepository: Repository<Election>;
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
+  let voterRepository: Repository<Voter>;
   let electionStatusUpdaterService: ElectionStatusUpdaterService;
 
   beforeEach(() => {
@@ -24,6 +25,7 @@ describe('ElectionService - update', () => {
 
     candidateRepository = {} as Repository<Candidate>;
     voteRepository = {} as Repository<Vote>;
+    voterRepository = {} as Repository<Voter>;
 
     // Mock the ElectionStatusUpdaterService
     electionStatusUpdaterService = {
@@ -35,7 +37,8 @@ describe('ElectionService - update', () => {
       electionRepository,
       candidateRepository,
       voteRepository,
-      electionStatusUpdaterService, // Add the mocked service
+      voterRepository,
+      electionStatusUpdaterService,
     );
   });
 
@@ -134,7 +137,7 @@ describe('ElectionService - update', () => {
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
-    await expect(service.update(electionId, updateElectionDto)).rejects.toThrow(NotFoundException);
+    await expect(service.update(electionId, updateElectionDto)).rejects.toThrow(NotFoundError);
     expect(electionRepository.findOne).toHaveBeenCalledWith({ where: { id: electionId } });
   });
 

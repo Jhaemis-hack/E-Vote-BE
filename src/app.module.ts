@@ -7,13 +7,13 @@ import { ElectionModule } from './modules/election/election.module';
 import { UserModule } from './modules/user/user.module';
 // import * as Joi from 'joi';
 import { ScheduleModule } from '@nestjs/schedule';
-import { join } from 'path';
 import authConfig from './config/auth.config';
 import dataSource from './migrations/migration.config';
 import { VoteModule } from './modules/votes/votes.module';
 // import dataSource from './migrations/migration.config';
 import { EmailModule } from './modules/email/email.module';
 import { VoterModule } from './modules/voter/voter.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,6 +34,16 @@ import { VoterModule } from './modules/voter/voter.module';
         autoLoadEntities: true,
       }),
       dataSourceFactory: async () => dataSource,
+    }),
+    RedisModule.forRootAsync({
+      useFactory: async (configService: ConfigService) => ({
+        type: 'single', // Use a single Redis instance
+        url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`,
+        options: {
+          password: configService.get('REDIS_PASSWORD'), // Optional password
+        },
+      }),
+      inject: [ConfigService], // Inject ConfigService
     }),
     UserModule,
     ElectionModule,
