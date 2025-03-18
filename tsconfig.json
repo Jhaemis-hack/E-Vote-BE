@@ -19,9 +19,9 @@
     "noFallthroughCasesInSwitch": false
   },
   "paths": {
-      "@db/*": ["src/db/*"],
-      "@modules/*": ["src/modules/*"],
-      "@config/*": ["src/config/*"],
-      "@entities/*": ["src/entities/*"]
-    }
+    "@db/*": ["src/db/*"],
+    "@modules/*": ["src/modules/*"],
+    "@config/*": ["src/config/*"],
+    "@entities/*": ["src/entities/*"]
+  }
 }

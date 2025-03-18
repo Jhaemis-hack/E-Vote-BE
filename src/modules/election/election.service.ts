@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClient } from '@supabase/supabase-js';
@@ -24,13 +25,14 @@ import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
+import { VerifyVoterDto } from './dto/verify-voter.dto';
 import { EmailService } from '../email/email.service';
 import { Voter } from '../voter/entities/voter.entity';
 import { VoterService } from '../voter/voter.service';
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 
 config();
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
 @Injectable()
@@ -57,8 +59,18 @@ export class ElectionService {
   }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
-      createElectionDto;
+    const {
+      title,
+      description,
+      start_date,
+      end_date,
+      election_type,
+      candidates,
+      start_time,
+      end_time,
+      max_choices,
+      email_notification,
+    } = createElectionDto;
     const currentDate = moment().utc();
 
     const currentDateStartOfDay = moment.utc().startOf('day');
@@ -139,6 +151,7 @@ export class ElectionService {
       end_time: end_time,
       created_by: adminId,
       max_choices: election_type === ElectionType.MULTIPLECHOICE ? max_choices : undefined,
+      email_notification,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -175,6 +188,7 @@ export class ElectionService {
           name: candidate.name,
           photo_url: candidate.photo_url,
         })),
+        email_notification,
       },
     };
   }
@@ -200,6 +214,14 @@ export class ElectionService {
       });
     }
 
+    if (election.email_notification === false) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
+        data: null,
+      };
+    }
+
     const voters = await this.voterService.getVotersByElection(id);
     if (voters.length === 0) {
       return {
@@ -211,11 +233,9 @@ export class ElectionService {
 
     const jobPromises = voters.map(async voter => {
       try {
-        const votingLinkId = randomUUID();
-        voter.verification_token = votingLinkId;
-        await this.voterRepository.save(voter);
+        const votingLinkId = voter.verification_token;
 
-        const job = await this.emailService.sendVotingLink(
+        await this.emailService.sendVotingLink(
           voter.email,
           election.start_date,
           election.start_time,
@@ -397,22 +417,15 @@ export class ElectionService {
       });
     }
 
-    const candidateMap = new Map(candidates.map(c => [c.id, c.name]));
-
-    // Check if election is active based on dates and times
-    const now = new Date();
-
     const startDateTime = new Date(election.start_date);
     const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
     startDateTime.setHours(startHour, startMinute, startSecond || 0);
 
-    // For end datetime
     const endDateTime = new Date(election.end_date);
     const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
-    // Transform the election response
-    const mappedElection = this.transformElectionResponse(election);
+    const mappedElection = this.transformElectionResponseFindOne(election);
 
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
@@ -430,6 +443,7 @@ export class ElectionService {
     const result = candidates.map(candidate => ({
       candidate_id: candidate.id,
       name: candidate.name,
+      photo_url: candidate.photo_url,
       vote_count: voteCounts.get(candidate.id) || 0,
     }));
 
@@ -543,40 +557,21 @@ export class ElectionService {
   }
 
   async getElectionByVoterLink(vote_id: string) {
-    if (!isUUID(vote_id)) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const election = await this.electionRepository.findOne({
-      where: { vote_id: vote_id },
-      relations: ['candidates'],
+    const voter = await this.voterRepository.findOne({
+      where: { verification_token: vote_id },
+      relations: ['election', 'election.candidates'],
     });
+    if (!voter) throw new NotFoundException('Voter with given vote link not found');
+    if (voter.is_voted) throw new ForbiddenException('Voter has a vote for this election already.');
 
-    if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
-    }
+    const now = new Date(Date.now());
 
-    // Check if election is active based on dates and times
-    const now = new Date();
-
-    const startDateTime = new Date(election.start_date);
-    const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
+    const startDateTime = new Date(voter.election.start_date);
+    const [startHour, startMinute, startSecond] = voter.election.start_time.split(':').map(Number);
     startDateTime.setHours(startHour, startMinute, startSecond || 0);
 
-    // For end datetime
-    const endDateTime = new Date(election.end_date);
-    const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
+    const endDateTime = new Date(voter.election.end_date);
+    const [endHour, endMinute, endSecond] = voter.election.end_time.split(':').map(Number);
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
 
     let newStatus: ElectionStatus;
@@ -585,19 +580,20 @@ export class ElectionService {
       newStatus = ElectionStatus.UPCOMING;
     } else if (now >= startDateTime && now <= endDateTime) {
       newStatus = ElectionStatus.ONGOING;
-      message = 'Election is live. Vote now!';
+      message = SYS_MSG.ELECTION_IS_LIVE;
     } else {
       newStatus = ElectionStatus.COMPLETED;
-      message = 'Election has ended.';
+      message = SYS_MSG.ELECTION_HAS_ENDED;
     }
 
-    // If the status has changed, update it in the database
-    if (election.status !== newStatus) {
-      election.status = newStatus;
-      await this.electionRepository.update(election.id, { status: newStatus });
+    if (voter.election.status !== newStatus) {
+      voter.election.status = newStatus;
+      await this.electionRepository.update(voter.election.id, { status: newStatus });
     }
 
-    const mappedElection = this.transformElectionResponse(election);
+    const mappedElection = this.transformElectionResponse(voter.election);
+
+    mappedElection.vote_id = voter.verification_token;
     return {
       status_code: HttpStatus.OK,
       message: message,
@@ -622,19 +618,15 @@ export class ElectionService {
           console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
           electionType = ElectionType.SINGLECHOICE;
         }
-        // Check if election is active based on dates and times
-        const now = new Date();
 
         const startDateTime = new Date(election.start_date);
         const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
-        startDateTime.setHours(startHour, startMinute, startSecond || 0);
+        startDateTime.setHours(startHour - 1, startMinute, startSecond || 0);
 
-        // For end datetime
         const endDateTime = new Date(election.end_date);
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
-        endDateTime.setHours(endHour, endMinute, endSecond || 0);
+        endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
-        // Transform the election response
         const mappedElection = this.transformElectionResponse(election);
 
         return {
@@ -675,17 +667,7 @@ export class ElectionService {
       electionType = ElectionType.SINGLECHOICE;
     }
 
-    if (election.status === ElectionStatus.UPCOMING) {
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
-      };
-    } else if (election.status === ElectionStatus.COMPLETED) {
+    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
       return {
         election_id: election.id,
         title: election.title,
@@ -716,6 +698,50 @@ export class ElectionService {
               photo_url: candidate.photo_url,
             };
           }) || [],
+      };
+    } else {
+      console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
+    }
+  }
+
+  private transformElectionResponseFindOne(election: any): any {
+    if (!election) {
+      return null;
+    }
+
+    let electionType: ElectionType;
+    if (election.type === 'singlechoice') {
+      electionType = ElectionType.SINGLECHOICE;
+    } else if (election.type === 'multiplechoice') {
+      electionType = ElectionType.MULTIPLECHOICE;
+    } else {
+      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
+      electionType = ElectionType.SINGLECHOICE;
+    }
+
+    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+      };
+    } else if (election.status === ElectionStatus.ONGOING) {
+      return {
+        election_id: election.id,
+        title: election.title,
+        start_date: election.start_date,
+        end_date: election.end_date,
+        vote_id: election.vote_id,
+        status: election.status,
+        start_time: election.start_time,
+        end_time: election.end_time,
+        created_by: election.created_by,
+        max_choices: election.max_choices,
+        election_type: electionType,
       };
     } else {
       console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
@@ -834,5 +860,33 @@ export class ElectionService {
       data: { electionId: id },
       message: settings.email_notification ? SYS_MSG.EMAIL_NOTIFICATION_ENABLED : SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
     };
+  }
+
+  async verifyVoter(verifyVoterDto: VerifyVoterDto) {
+    const { vote_id, email } = verifyVoterDto;
+    const election = await this.electionRepository.findOne({
+      where: { vote_id: vote_id },
+      relations: ['voters'],
+    });
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+    if (election.voters.some(voter => voter.email === email)) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.VOTER_VERIFIED,
+        data: null,
+      };
+    } else {
+      throw new UnauthorizedException({
+        status_code: HttpStatus.UNAUTHORIZED,
+        message: SYS_MSG.VOTER_UNVERIFIED,
+        data: null,
+      });
+    }
   }
 }

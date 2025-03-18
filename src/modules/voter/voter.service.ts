@@ -5,8 +5,10 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
-import { Express } from 'express';
+import { isUUID } from 'class-validator';
+import { Election } from '../election/entities/election.entity';
 import * as csv from 'csv-parser';
 import * as xlsx from 'xlsx';
 import * as stream from 'stream';
@@ -14,11 +16,123 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Voter } from '../voter/entities/voter.entity';
 import { In, Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { isUUID } from 'class-validator';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class VoterService {
-  constructor(@InjectRepository(Voter) private voterRepository: Repository<Voter>) {}
+  private logger = new Logger(VoterService.name);
+
+  constructor(
+    @InjectRepository(Voter) private voterRepository: Repository<Voter>,
+    @InjectRepository(Election) private electionRepository: Repository<Election>,
+  ) {}
+
+  async findAll(
+    page: number,
+    pageSize: number,
+    adminId: string,
+    electionId: string,
+  ): Promise<{
+    status_code: number;
+    message: string;
+    data: {
+      current_page: number;
+      total_pages: number;
+      total_results: number;
+      election_id: string;
+      voter_list: any;
+      meta: any;
+    };
+  }> {
+    if (!adminId) {
+      throw new HttpException(
+        { status_code: 401, message: SYS_MSG.UNAUTHORIZED_USER, data: null },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (!isUUID(adminId)) {
+      throw new HttpException(
+        { status_code: 400, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (page < 1 || pageSize < 1) {
+      throw new HttpException(
+        {
+          status_code: 400,
+          message: 'Invalid pagination parameters. Page and pageSize must be greater than 0.',
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const skip = (page - 1) * pageSize;
+
+    const election = await this.electionRepository.findOne({
+      where: { id: electionId },
+    });
+
+    if (!election) {
+      throw new HttpException(
+        { status_code: 404, message: SYS_MSG.ELECTION_NOT_FOUND, data: null },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const admin_created_election = await this.electionRepository.findOne({
+      where: { created_by: adminId, id: electionId },
+    });
+
+    if (!admin_created_election) {
+      throw new HttpException(
+        { status_code: 403, message: SYS_MSG.ERROR_VOTER_LIST_FORBBIDEN_ACCESS, data: null },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const [voter_list, total] = await this.voterRepository.findAndCount({
+      where: { election: { id: electionId } },
+      skip,
+      take: pageSize,
+      relations: ['election'],
+    });
+
+    if (total === 0) {
+      throw new HttpException(
+        { status_code: 404, message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND, data: null },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const data = voter_list.map(voter => ({
+      voter_id: voter.id,
+      name: voter.name,
+      email: voter.email,
+    }));
+
+    const total_pages = Math.ceil(total / pageSize);
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_ELECTION_VOTER_LIST,
+      data: {
+        current_page: page,
+        total_pages,
+        total_results: total,
+        election_id: electionId,
+        voter_list: data,
+        meta: {
+          hasNext: page < total_pages,
+          total,
+          nextPage: page < total_pages ? page + 1 : null,
+          prevPage: page > 1 ? page - 1 : null,
+        },
+      },
+    };
+  }
 
   async findAllVoters() {
     const voters = await this.voterRepository.find({
@@ -70,7 +184,13 @@ export class VoterService {
     electionId: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
-      const voters: { name: string; email: string; election: { id: string } }[] = [];
+      const voters: {
+        id: string;
+        name: string;
+        email: string;
+        verification_token: string;
+        election: { id: string };
+      }[] = [];
       const emailOccurrences = new Map<string, number[]>();
       let rowIndex = 1;
 
@@ -90,11 +210,17 @@ export class VoterService {
                   emailOccurrences.get(email)!.push(rowIndex);
                 } else {
                   emailOccurrences.set(email, [rowIndex]);
-                  voters.push({ name, email, election: { id: electionId } });
+                  voters.push({
+                    id: crypto.randomUUID(),
+                    name,
+                    email,
+                    verification_token: crypto.randomUUID(),
+                    election: { id: electionId },
+                  });
                 }
               }
               rowIndex++;
-            } catch (error) {
+            } catch {
               reject(
                 new InternalServerErrorException({
                   status_code: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -107,7 +233,7 @@ export class VoterService {
           .on('end', async () => {
             try {
               const duplicates = Array.from(emailOccurrences.entries())
-                .filter(([_, rows]) => rows.length > 1)
+                .filter(([, rows]) => rows.length > 1)
                 .map(([email, rows]) => ({ email, rows }));
 
               if (duplicates.length > 0) {
@@ -183,7 +309,13 @@ export class VoterService {
 
       const rows = xlsx.utils.sheet_to_json(sheet);
       const emailOccurrences = new Map<string, number[]>();
-      const voters: { name: string; email: string; election: { id: string } }[] = [];
+      const voters: {
+        id: string;
+        name: string;
+        email: string;
+        verification_token: string;
+        election: { id: string };
+      }[] = [];
 
       rows.forEach((row: any, index: number) => {
         const name = row.name || row.Name || row.NAME;
@@ -194,13 +326,19 @@ export class VoterService {
             emailOccurrences.get(email)!.push(index + 1);
           } else {
             emailOccurrences.set(email, [index + 1]);
-            voters.push({ name, email, election: { id: electionId } });
+            voters.push({
+              id: crypto.randomUUID(),
+              name,
+              email,
+              verification_token: crypto.randomUUID(),
+              election: { id: electionId },
+            });
           }
         }
       });
 
       const duplicates = Array.from(emailOccurrences.entries())
-        .filter(([_, rows]) => rows.length > 1)
+        .filter(([, rows]) => rows.length > 1)
         .map(([email, rows]) => ({ email, rows }));
 
       if (duplicates.length > 0) {
@@ -236,7 +374,15 @@ export class VoterService {
     }
   }
 
-  async saveVoters(data: { name: string; email: string; election: { id: string } }[]): Promise<any> {
+  async saveVoters(
+    data: {
+      id: string;
+      name: string;
+      email: string;
+      verification_token: string;
+      election: { id: string };
+    }[],
+  ): Promise<any> {
     try {
       if (!data.length) {
         throw new BadRequestException({
@@ -254,7 +400,6 @@ export class VoterService {
       });
 
       if (existingVoters.length > 0) {
-        const existingEmails = existingVoters.map(voter => voter.email);
         throw new ConflictException({
           status_code: HttpStatus.CONFLICT,
           message: SYS_MSG.DUPLICATE_EMAILS_ELECTION,
@@ -265,6 +410,7 @@ export class VoterService {
       if (error instanceof HttpException) {
         throw error;
       }
+      this.logger.log(error);
       throw new InternalServerErrorException({
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
         message: SYS_MSG.VOTER_INSERTION_ERROR,

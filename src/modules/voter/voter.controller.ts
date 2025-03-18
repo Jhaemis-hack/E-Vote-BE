@@ -3,27 +3,42 @@ import {
   Get,
   UseInterceptors,
   Post,
-  Body,
-  Patch,
+  Query,
+  Req,
   Param,
-  Delete,
   UploadedFile,
   BadRequestException,
   UseGuards,
-  Query,
 } from '@nestjs/common';
 import { Express } from 'express';
 import { VoterService } from './voter.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AuthGuard } from '../../guards/auth.guard';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { ApiFile } from './dto/upload-file.schema';
 import { DuplicateEmailsErrorDto, VoterUploadErrorDto, VoterUploadResponseDto } from './dto/upload-response.dto';
 
 @Controller('voters')
 export class VoterController {
   constructor(private readonly voterService: VoterService) {}
+
+  @ApiBearerAuth()
+  @Get('/:electionId/voters')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: "Get Voters' List" })
+  @ApiResponse({ status: 200, description: 'List of all eligible voters' })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'page_size', required: false, example: 10, description: 'Number of items per page (default: 10)' })
+  async findAll(
+    @Query('page') page: number = 1,
+    @Query('page_size') pageSize: number = 10,
+    @Param('electionId') electionId: string,
+    @Req() req: any,
+  ): Promise<any> {
+    const adminId = req.user.sub;
+    return this.voterService.findAll(page, pageSize, adminId, electionId);
+  }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload voters via CSV or Excel file' })
@@ -55,9 +70,9 @@ export class VoterController {
     return this.voterService.processFile(file, electionId);
   }
 
-  @Get()
-  async findAllVoters(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
-    // return this.voterService.findAllVoters(page, limit);
-    // return this.voterService.findAllVoters();
-  }
+  // @Get()
+  // async findAllVoters(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
+  //   // return this.voterService.findAllVoters(page, limit);
+  //   // return this.voterService.findAllVoters();
+  // }
 }

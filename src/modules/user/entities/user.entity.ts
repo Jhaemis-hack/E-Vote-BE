@@ -1,7 +1,7 @@
 import { AbstractBaseEntity } from '../../../entities/base.entity';
-import * as bcrypt from 'bcryptjs';
+// import * as bcrypt from 'bcryptjs';
 import { Election } from '../../election/entities/election.entity';
-import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 
 @Entity({ name: 'admin' })
 export class User extends AbstractBaseEntity {

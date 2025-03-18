@@ -1,6 +1,5 @@
-import { NotFoundException, Injectable } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
 import { Candidate } from 'src/modules/candidate/entities/candidate.entity';
@@ -17,9 +16,9 @@ describe('ElectionService - update', () => {
   let electionRepository: Repository<Election>;
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
+  let voterRepository: Repository<Voter>;
   let electionStatusUpdaterService: ElectionStatusUpdaterService;
   let emailService: EmailService;
-  let voterRepository: Repository<Voter>;
   let voterService: VoterService;
 
   beforeEach(() => {
@@ -30,6 +29,7 @@ describe('ElectionService - update', () => {
 
     candidateRepository = {} as Repository<Candidate>;
     voteRepository = {} as Repository<Vote>;
+    voterRepository = {} as Repository<Voter>;
     voterRepository = {} as Repository<Voter>;
 
     // Mock the ElectionStatusUpdaterService

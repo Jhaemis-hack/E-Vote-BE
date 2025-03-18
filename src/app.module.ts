@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -7,7 +7,7 @@ import { ElectionModule } from './modules/election/election.module';
 import { UserModule } from './modules/user/user.module';
 // import * as Joi from 'joi';
 import { ScheduleModule } from '@nestjs/schedule';
-import { join } from 'path';
+// import { join } from 'path';
 import authConfig from './config/auth.config';
 import dataSource from './migrations/migration.config';
 import { VoteModule } from './modules/votes/votes.module';
