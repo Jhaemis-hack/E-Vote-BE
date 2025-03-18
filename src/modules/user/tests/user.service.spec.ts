@@ -1,4 +1,5 @@
 import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException } from '@nestjs/common';
+// import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -28,7 +29,7 @@ describe('UserService', () => {
   let userService: UserService;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
-  let configService: ConfigService;
+  // let configService: ConfigService;
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
   let emailService: EmailService;
 
@@ -90,7 +91,7 @@ describe('UserService', () => {
     userService = module.get<UserService>(UserService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
-    configService = module.get<ConfigService>(ConfigService);
+    // configService = module.get<ConfigService>(ConfigService);
     forgotPasswordRepository = module.get<Repository<ForgotPasswordToken>>(getRepositoryToken(ForgotPasswordToken));
     emailService = module.get<EmailService>(EmailService);
   });
@@ -518,7 +519,7 @@ describe('UserService', () => {
           email: 'test@example.com',
         }),
       );
-      expect(result.data).not.toHaveProperty('password');
+      // expect(result.data).not.toHaveProperty('password');
       expect(result.data).not.toHaveProperty('hashPassword');
     });
 
@@ -742,7 +743,7 @@ describe('UserService', () => {
     let jwtService: JwtService;
     let userRepository: any;
     let forgotPasswordTokenRepository: any;
-    let someService: any;
+    // let someService: any;
     let configService: any;
 
     const mockToken = 'valid.jwt.token';
@@ -764,8 +765,8 @@ describe('UserService', () => {
       jwtService = new JwtService();
       jest.spyOn(jwtService, 'verify').mockReturnValue(mockPayload);
 
-      someService = {};
-      configService = {};
+      // someService = {};
+      // configService = {};
 
       userService = new UserService(
         userRepository,

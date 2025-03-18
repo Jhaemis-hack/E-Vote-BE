@@ -66,25 +66,27 @@ export class EmailService {
     }
   }
 
-  async sendElectionEndEmails(election: any): Promise<void> {
-    this.logger.log(`Sending election end email for election ${election.id}`);
-
-    if (election.voters && election.voters.length > 0) {
+  async sendElectionReminderEmails(election: any, nonVotedVoters: any[]): Promise<void> {
+    if (nonVotedVoters && nonVotedVoters.length > 0) {
       await Promise.all(
-        election.voters.map(voter =>
+        nonVotedVoters.map(voter =>
           this.emailQueue.sendEmail({
             mail: {
               to: voter.email,
-              subject: `Election ${election.title} is Ending Soon!`,
+              subject: `Reminder: Election "${election.title}" ends soon!`,
               context: {
                 voterName: voter.name || voter.email,
                 electionTitle: election.title,
                 electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionEndTime: election.end_time,
                 electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
+                hoursRemaining: Math.ceil(
+                  (new Date(election.end_date).getTime() - new Date().getTime()) / (1000 * 60 * 60),
+                ),
               },
-              template: 'election-end',
+              template: 'election-reminder',
             },
-            template: 'election-end',
+            template: 'election-reminder',
           }),
         ),
       );

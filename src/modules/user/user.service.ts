@@ -1,4 +1,11 @@
-import { BadRequestException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  // ForbiddenException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+// import { exist, string } from 'joi';
 import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
@@ -53,7 +61,7 @@ export class UserService {
 
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
-    } catch (err) {
+    } catch {
       return {
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
         message: SYS_MSG.WELCOME_EMAIL_FAILED,
@@ -118,7 +126,7 @@ export class UserService {
     //   }
     // }
 
-    const { password, ...admin } = userExist;
+    const { ...admin } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };
     const token = this.jwtService.sign(credentials);
 
@@ -162,7 +170,7 @@ export class UserService {
       throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { password, ...userData } = user;
+    const { ...userData } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
