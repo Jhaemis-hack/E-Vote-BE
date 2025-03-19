@@ -42,6 +42,9 @@ describe('ElectionService - update', () => {
       sendElectionReminderEmails: jest.fn(),
     } as unknown as EmailService;
 
+
+    
+
     // Provide all 4 arguments to the ElectionService constructor
     service = new ElectionService(
       electionRepository,

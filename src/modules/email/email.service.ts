@@ -121,19 +121,24 @@ export class EmailService {
     }
   }
 
-  async sendElectionCreationEmail(email: string, election: any) {
-    const mailPayload: MailInterface = {
-      to: email,
+  async sendElectionCreationEmail(email:string, election: Election): Promise<void> {
+    const adminEmail = email;
+  if (adminEmail) {
+    const mail = {
+      to: adminEmail, 
+      subject: `Election "${election.title}" is live!`,
       context: {
-        adminName: email,
+        adminName: adminEmail,
         electionTitle: election.title,
         electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
         electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
         electionStartTime: election.start_time,
         electionEndTime: election.end_time,
-        dashboard: `${process.env.FRONTEND_URL}/dashboard`
+        dashboard: `${process.env.FRONTEND_URL}/elections`
       },
+      template: 'election-creation',
+    };
+    await this.emailQueue.sendEmail({ mail, template: 'election-creation' });
     }
-    await this.emailQueue.sendEmail({ mail: mailPayload, template: 'electon-creation'})
   }
 }

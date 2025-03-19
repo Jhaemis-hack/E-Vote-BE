@@ -157,21 +157,15 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
-    try {
-      const admin = await this.userRepository.findOne({
-        where: {id: election.created_by}
-      })
-      console.log(admin)
-      await this.emailService.sendElectionCreationEmail(admin!.email, savedElection)
-      console.log(admin)
-    } catch (err) {
-      return {
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.ELECTION_CREATED_EMAIL_FAILED,
-        data: null,
-      }
+    const admin = await this.userRepository.findOne({
+      where: { id: savedElection.created_by },
+    });
+    if (!admin) {
+      this.logger.error(`Admin with ID ${savedElection.created_by} not found`);
+      return;
+    } else {
+      await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
     }
-
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
