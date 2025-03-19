@@ -92,4 +92,20 @@ export class EmailService {
       );
     }
   }
+
+  async sendElectionCreationEmail(email: string, election: any) {
+    const mailPayload: MailInterface = {
+      to: email,
+      context: {
+        adminName: email,
+        electionTitle: election.title,
+        electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
+        electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+        electionStartTime: election.start_time,
+        electionEndTime: election.end_time,
+        dashboard: `${process.env.FRONTEND_URL}/dashboard`
+      },
+    }
+    await this.emailQueue.sendEmail({ mail: mailPayload, template: 'electon-creation'})
+  }
 }

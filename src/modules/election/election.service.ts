@@ -31,6 +31,7 @@ config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 import { Voter } from '../voter/entities/voter.entity';
 import { EmailService } from '../email/email.service';
+import { User } from '../user/entities/user.entity';
 
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
@@ -45,6 +46,7 @@ export class ElectionService {
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
+    @InjectRepository(User) private userRepository: Repository<User>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
     private emailService: EmailService,
   ) {
@@ -155,6 +157,20 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
+    try {
+      const admin = await this.userRepository.findOne({
+        where: {id: election.created_by}
+      })
+      console.log(admin)
+      await this.emailService.sendElectionCreationEmail(admin!.email, savedElection)
+      console.log(admin)
+    } catch (err) {
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.ELECTION_CREATED_EMAIL_FAILED,
+        data: null,
+      }
+    }
 
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 

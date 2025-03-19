@@ -83,4 +83,21 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - ElectionReminderEmailJob error: ${error.message}`);
     }
   }
+
+  @Process('election-creation')
+  async sendElectionStartJob(job: Job<MailInterface>) {
+    try {
+      const {
+        data: { mail },
+      } = job;
+      await this.mailerService.sendMail({
+        ...mail,
+        subject: 'Your election is live',
+        template: 'election-crearion',
+      });
+      this.logger.log(`Election creation email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - sendElectionCreationEmailJob error: ${error}`);
+    }
+  }
 }
