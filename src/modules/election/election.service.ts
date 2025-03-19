@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-// import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
@@ -26,13 +26,12 @@ import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
-import { EmailService } from '../email/email.service';
-import { Voter } from '../voter/entities/voter.entity';
-import { VoterService } from '../voter/voter.service';
-import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 
 config();
-// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+import { Voter } from '../voter/entities/voter.entity';
+import { EmailService } from '../email/email.service';
+
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
 @Injectable()
@@ -48,26 +47,19 @@ export class ElectionService {
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
     private emailService: EmailService,
-    private voterService: VoterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
-      this.bucketName = process.env.SUPABASE_BUCKET;
+      throw new Error('Supabase environment variables are not set.');
     }
+
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    this.bucketName = process.env.SUPABASE_BUCKET;
   }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const {
-      title,
-      description,
-      start_date,
-      end_date,
-      election_type,
-      candidates,
-      start_time,
-      end_time,
-      max_choices,
-      email_notification,
-    } = createElectionDto;
+    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
+      createElectionDto;
+
     const currentDate = moment().utc();
 
     const currentDateStartOfDay = moment.utc().startOf('day');
@@ -148,7 +140,6 @@ export class ElectionService {
       end_time: end_time,
       created_by: adminId,
       max_choices: election_type === ElectionType.MULTIPLECHOICE ? max_choices : undefined,
-      email_notification,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -187,78 +178,7 @@ export class ElectionService {
           photo_url: candidate.photo_url,
           bio: candidate.bio,
         })),
-        email_notification,
       },
-    };
-  }
-
-  async sendVotingLinkToVoters(id: string) {
-    if (!isUUID(id)) {
-      throw new HttpException(
-        {
-          status_code: 400,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const election = await this.electionRepository.findOne({ where: { id } });
-    if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
-    }
-
-    if (election.email_notification === false) {
-      return {
-        status_code: HttpStatus.OK,
-        message: SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
-        data: null,
-      };
-    }
-
-    const voters = await this.voterService.getVotersByElection(id);
-    if (voters.length === 0) {
-      return {
-        status_code: HttpStatus.NO_CONTENT,
-        message: SYS_MSG.NO_VOTERS_FOUND,
-        data: null,
-      };
-    }
-
-    const jobPromises = voters.map(async voter => {
-      try {
-        const votingLinkId = voter.verification_token;
-        const formattedStartDate = moment(election.start_date).format('MMMM Do YYYY');
-        const formattedStartTime = moment(election.start_time, 'HH:mm:ss').format('h:mm A');
-        const formattedEndDate = moment(election.end_date).format('MMMM Do YYYY');
-        const formattedEndTime = moment(election.end_time, 'HH:mm:ss').format('h:mm A');
-
-        await this.emailService.sendVotingLinkMail(
-          voter.email,
-          voter.name,
-          election.title,
-          formattedStartDate,
-          formattedStartTime,
-          formattedEndDate,
-          formattedEndTime,
-          votingLinkId,
-        );
-      } catch (error) {
-        this.logger.error(`Email job failed for ${voter.email}: ${error.message}`);
-      }
-    });
-
-    await Promise.all(jobPromises);
-
-    return {
-      status_code: HttpStatus.OK,
-      message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
-      data: null,
     };
   }
 
@@ -630,11 +550,9 @@ export class ElectionService {
         const startDateTime = new Date(election.start_date);
         const [startHour, startMinute, startSecond] = election.start_time.split(':').map(Number);
         startDateTime.setHours(startHour - 1, startMinute, startSecond || 0);
-        startDateTime.setHours(startHour - 1, startMinute, startSecond || 0);
 
         const endDateTime = new Date(election.end_date);
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
-        endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
         endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
         const mappedElection = this.transformElectionResponse(election);

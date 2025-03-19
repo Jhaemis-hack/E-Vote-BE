@@ -778,7 +778,7 @@ describe('UserService', () => {
       jest.spyOn(jwtService, 'verify').mockReturnValue(mockPayload);
 
       // someService = {};
-      configService = {};
+      // configService = {};
 
       userService = new UserService(
         userRepository,

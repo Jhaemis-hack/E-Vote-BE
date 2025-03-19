@@ -134,33 +134,6 @@ export class VoterService {
     };
   }
 
-  async findAllVoters() {
-    const voters = await this.voterRepository.find({
-      // order: { created_at: 'DESC' },
-      // select: ['id', 'email', 'created_at', 'election'],
-    });
-
-    return {
-      status_code: HttpStatus.OK,
-      message: SYS_MSG.RETRIEVED_VOTERS_SUCCESSFULLY,
-      data: voters,
-    };
-  }
-
-  async getVotersByElection(electionId: string) {
-    if (!isUUID(electionId)) {
-      throw new HttpException(
-        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    return await this.voterRepository.find({
-      where: { election: { id: electionId } },
-      relations: ['election'],
-    });
-  }
-
   async processFile(
     file: Express.Multer.File,
     electionId: string,
@@ -178,7 +151,6 @@ export class VoterService {
       });
     }
   }
-
   async processCSV(
     fileBuffer: Buffer,
     electionId: string,
@@ -220,7 +192,7 @@ export class VoterService {
                 }
               }
               rowIndex++;
-            } catch {
+            } catch (error) {
               reject(
                 new InternalServerErrorException({
                   status_code: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -233,7 +205,7 @@ export class VoterService {
           .on('end', async () => {
             try {
               const duplicates = Array.from(emailOccurrences.entries())
-                .filter(([, rows]) => rows.length > 1)
+                .filter(([_, rows]) => rows.length > 1)
                 .map(([email, rows]) => ({ email, rows }));
 
               if (duplicates.length > 0) {
@@ -248,8 +220,7 @@ export class VoterService {
                   ),
                 );
               }
-
-              await this.saveVoters(voters);
+              const savedVoters = await this.saveVoters(voters);
 
               resolve({
                 status_code: HttpStatus.CREATED,
@@ -338,7 +309,7 @@ export class VoterService {
       });
 
       const duplicates = Array.from(emailOccurrences.entries())
-        .filter(([, rows]) => rows.length > 1)
+        .filter(([_, rows]) => rows.length > 1)
         .map(([email, rows]) => ({ email, rows }));
 
       if (duplicates.length > 0) {

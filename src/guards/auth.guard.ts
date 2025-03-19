@@ -34,7 +34,7 @@ export class AuthGuard implements CanActivate {
       .verifyAsync(token, {
         secret: appConfig().jwtSecret,
       })
-      .catch(() => null);
+      .catch(err => null);
 
     if (!payload) throw new UnauthorizedException(SYS_MSG.UNAUTHENTICATED_MESSAGE);
 
