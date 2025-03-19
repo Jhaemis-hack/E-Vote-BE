@@ -1,10 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailService } from '../email.service';
 import { EmailQueue } from '../email.queue';
+import { User } from '../../user/entities/user.entity'
+import { Repository } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 describe('EmailService', () => {
   // let emailService: EmailService;
   // let emailQueueMock: jest.Mocked<EmailQueue>;
+  let userRepositoryMock: jest.Mocked<Repository<User>>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -16,11 +20,19 @@ describe('EmailService', () => {
             sendEmail: jest.fn().mockResolvedValue({ jobId: '12345' }), // Mocking sendEmail()
           },
         },
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            findOne: jest.fn(),
+            save: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     // emailService = module.get<EmailService>(EmailService);
     // emailQueueMock = module.get(EmailQueue);
+    // userRepositoryMock = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
   // TODO
