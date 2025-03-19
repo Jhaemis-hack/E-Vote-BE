@@ -58,7 +58,7 @@ export class SubscriptionController {
 
     return { url };
   }
-
+  //get plans
   @Get('plans')
   @ApiOperation({ summary: 'Get available subscription plans' })
   @ApiResponse({
