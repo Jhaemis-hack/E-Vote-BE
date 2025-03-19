@@ -11,7 +11,6 @@ export class EmailService {
   constructor(
     @InjectRepository(User)
     private emailQueue: EmailQueue,
-    private readonly userRepository: Repository<User>,
   ) {}
 
   async sendEmail(
