@@ -5,16 +5,15 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ElectionModule } from './modules/election/election.module';
 import { UserModule } from './modules/user/user.module';
-// import * as Joi from 'joi';
 import { ScheduleModule } from '@nestjs/schedule';
-import { join } from 'path';
 import authConfig from './config/auth.config';
 import dataSource from './migrations/migration.config';
 import { VoteModule } from './modules/votes/votes.module';
-// import dataSource from './migrations/migration.config';
 import { EmailModule } from './modules/email/email.module';
 import { VoterModule } from './modules/voter/voter.module';
 import { CandidateModule } from './modules/candidate/candidate.module';
+
+import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +42,7 @@ import { CandidateModule } from './modules/candidate/candidate.module';
     EmailModule,
     VoterModule,
     CandidateModule,
+    GoogleAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

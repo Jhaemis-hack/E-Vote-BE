@@ -1,6 +1,6 @@
 import {
   BadRequestException,
-  ForbiddenException,
+  // ForbiddenException,
   HttpStatus,
   Injectable,
   NotFoundException,
@@ -16,7 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-import { exist, string } from 'joi';
+// import { exist, string } from 'joi';
 import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
@@ -34,7 +34,8 @@ export class UserService {
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
-    const { email, password } = createAdminDto;
+    const { email: rawEmail, password } = createAdminDto;
+    const email = rawEmail.toLowerCase();
 
     if (!email.match(/^\S+@\S+\.\S+$/)) {
       throw new BadRequestException(SYS_MSG.INVALID_EMAIL_FORMAT);
@@ -56,12 +57,12 @@ export class UserService {
       is_verified: true,
     });
 
-    const credentials = { email: newAdmin.email, sub: newAdmin.id };
-    const token = this.jwtService.sign(credentials);
+    // const credentials = { email: newAdmin.email, sub: newAdmin.id };
+    // const token = this.jwtService.sign(credentials);
 
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
-    } catch (err) {
+    } catch {
       return {
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
         message: SYS_MSG.WELCOME_EMAIL_FAILED,
@@ -91,7 +92,7 @@ export class UserService {
 
   async login(payload: LoginDto) {
     const userExist = await this.userRepository.findOne({
-      where: { email: payload.email },
+      where: { email: payload.email.toLowerCase() },
     });
 
     if (!userExist) {
@@ -126,7 +127,7 @@ export class UserService {
     //   }
     // }
 
-    const { password, ...admin } = userExist;
+    const { ...admin } = userExist;
     const credentials = { email: userExist.email, sub: userExist.id };
     const token = this.jwtService.sign(credentials);
 
@@ -170,7 +171,7 @@ export class UserService {
       throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { password, ...userData } = user;
+    const { ...userData } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
