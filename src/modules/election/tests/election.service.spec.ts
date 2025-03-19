@@ -81,7 +81,7 @@ describe('ElectionService', () => {
 
   // Mock EmailService
   const mockEmailService = {
-    sendVotingLink: jest.fn().mockResolvedValue({
+    sendVotingLinkMail: jest.fn().mockResolvedValue({
       id: '12345',
       data: {},
       opts: {},
@@ -258,36 +258,43 @@ describe('ElectionService', () => {
       const election = {
         id: '550e8400-e29b-41d4-a716-446655440000',
         email_notification: true,
-        start_date: new Date(),
+        start_date: new Date('2025-03-19T10:13:13.473Z'),
         start_time: '09:00:00',
-        end_date: new Date(),
+        end_date: new Date('2025-03-19T10:13:13.473Z'),
         end_time: '17:00:00',
+        title: '2025 Presidential Election',
       } as Election;
+
       const voters = [
-        { email: 'voter1@example.com', verification_token: 'token1' },
-        { email: 'voter2@example.com', verification_token: 'token2' },
+        { name: 'Voter One', email: 'voter1@example.com', verification_token: 'token1' },
+        { name: 'Voter Two', email: 'voter2@example.com', verification_token: 'token2' },
       ] as Voter[];
+
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
       jest.spyOn(voterService, 'getVotersByElection').mockResolvedValue(voters);
-      jest.spyOn(emailService, 'sendVotingLink').mockResolvedValue({} as any);
+      jest.spyOn(emailService, 'sendVotingLinkMail').mockResolvedValue({} as any);
 
       const result = await service.sendVotingLinkToVoters('550e8400-e29b-41d4-a716-446655440000');
 
-      expect(emailService.sendVotingLink).toHaveBeenCalledTimes(2);
-      expect(emailService.sendVotingLink).toHaveBeenCalledWith(
+      expect(emailService.sendVotingLinkMail).toHaveBeenCalledTimes(voters.length);
+      expect(emailService.sendVotingLinkMail).toHaveBeenCalledWith(
         'voter1@example.com',
-        election.start_date,
-        election.start_time,
-        election.end_date,
-        election.end_time,
+        'Voter One',
+        '2025 Presidential Election',
+        'March 19th 2025',
+        '9:00 AM',
+        'March 19th 2025',
+        '5:00 PM',
         'token1',
       );
-      expect(emailService.sendVotingLink).toHaveBeenCalledWith(
+      expect(emailService.sendVotingLinkMail).toHaveBeenCalledWith(
         'voter2@example.com',
-        election.start_date,
-        election.start_time,
-        election.end_date,
-        election.end_time,
+        'Voter Two',
+        '2025 Presidential Election',
+        'March 19th 2025',
+        '9:00 AM',
+        'March 19th 2025',
+        '5:00 PM',
         'token2',
       );
       expect(result).toEqual({

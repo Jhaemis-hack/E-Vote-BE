@@ -238,7 +238,7 @@ export class ElectionService {
         const formattedEndDate = moment(election.end_date).format('MMMM Do YYYY');
         const formattedEndTime = moment(election.end_time, 'HH:mm:ss').format('h:mm A');
 
-        await this.emailService.sendVotingLink(
+        await this.emailService.sendVotingLinkMail(
           voter.email,
           voter.name,
           election.title,

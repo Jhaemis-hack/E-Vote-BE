@@ -68,7 +68,7 @@ export class EmailProcessor {
   }
 
   @Process('voter-invite')
-  async sendVotingLinkJob(job: Job<MailInterface>) {
+  async sendVotingLinkEmailJob(job: Job<MailInterface>) {
     try {
       const { mail } = job.data;
       await this.mailerService.sendMail({
@@ -78,7 +78,7 @@ export class EmailProcessor {
       });
       this.logger.log(`Voting link has been sent sucessfully to ${mail.to}`);
     } catch (sendVotingLinkJobError) {
-      this.logger.error(`EmailProcessor - sendVotingLinkJobError: ${sendVotingLinkJobError.message}`);
+      this.logger.error(`EmailProcessor - sendVotingLinkEmailJobError: ${sendVotingLinkJobError.message}`);
     }
   }
 

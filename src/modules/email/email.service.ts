@@ -46,7 +46,7 @@ export class EmailService {
     await this.sendEmail(email, 'Welcome to Resolve.vote', 'welcome-email', { email });
   }
 
-  async sendVotingLink(
+  async sendVotingLinkMail(
     email: string,
     name: string,
     title: string,
