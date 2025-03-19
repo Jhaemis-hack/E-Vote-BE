@@ -1,10 +1,11 @@
-import { Controller, Get, Query, Redirect, UseGuards, Req } from "@nestjs/common";
+import { Controller, Get, Query, Redirect, UseGuards, Req, UnauthorizedException } from "@nestjs/common";
 import { SubscriptionService } from "./subscription.service";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from "@nestjs/swagger";
 import { CheckoutQueryDto, PlanType, BillingInterval } from "./dto/checkout-query.dto";
 import { SubscriptionPlansResponseDto } from "./dto/subscription-plan.dto";
 import { AuthGuard } from "../../guards/auth.guard";
 import { Request } from "express";
+import { JwtPayload } from "../../shared/interfaces/jwt-payload.interface";
 
 @ApiTags("Subscription")
 @Controller("subscription")
@@ -20,8 +21,12 @@ export class SubscriptionController {
     status: 302,
     description: "Redirects to Stripe payment link",
   })
-  async getCheckoutLink(@Query() query: CheckoutQueryDto, @Req() request: Request) {
-    const userId = request["user"].id;
+  async getCheckoutLink(@Query() query: CheckoutQueryDto, @Req() request: Request & { user: JwtPayload }) {
+    const user = request.user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException("User not authenticated");
+    }
+    const userId = user.sub;
 
     await this.subscriptionService.createSubscriptionRecord(
       userId,
@@ -87,8 +92,12 @@ export class SubscriptionController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user subscription' })
-  async getCurrentSubscription(@Req() request: Request) {
-    const userId = request['user'].id;
+  async getCurrentSubscription(@Req() request: Request & { user: JwtPayload }) {
+    const user = request.user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException("User not authenticated");
+    }
+    const userId = user.sub;
     const subscription = await this.subscriptionService.getUserActiveSubscription(userId);
     
     if (!subscription) {

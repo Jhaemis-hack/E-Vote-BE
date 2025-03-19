@@ -1,6 +1,5 @@
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Election } from '../../election/entities/election.entity';
-import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import { Subscription } from '../../subscription/entities/subscription.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 
