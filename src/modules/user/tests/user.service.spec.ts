@@ -216,6 +216,18 @@ describe('UserService', () => {
       await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Email already in use'));
     });
 
+    it('❌ should throw an error if an existing email is used with different casing', async () => {
+      const userDto: CreateUserDto = {
+        email: 'Admin@example.com',
+        password: 'StrongPass1!',
+        //is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(userDto as User);
+
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestException('Email already in use'));
+    });
+
     it('❌ should throw an error for a weak password', async () => {
       const userDto: CreateUserDto = {
         email: 'admin@example.com',
