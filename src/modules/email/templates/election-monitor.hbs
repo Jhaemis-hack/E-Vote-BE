@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resolve Admin Reminder</title>
+  <style>
+    /* General Styles */
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      color: #000000;
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
+    /* Container */
+    .container {
+      max-width: 420px;
+      margin: 10px auto;
+      border: 1px solid #dddddd;
+    }
+    
+    /* Header */
+    .header {
+      height: 87px;
+      background-color: #002347;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+    }
+    
+    .header-content {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      height: 26.59px;
+      width: 109px;
+    }
+    
+    .website {
+      font-size: 10px;
+      color: #cccccc;
+    }
+    
+    /* Banner */
+    .banner {
+      height: 86px;
+      width: 100%;
+      background-color: #EEEDF8;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .banner-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .banner-text h2 {
+      max-width: 236px;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+      color: #000000;
+    }
+    
+    .banner-text p {
+      width: 220px;
+      font-size: 8px;
+      margin: 5px 0 0 0;
+      color: #1F2124;
+    }
+    
+    .banner-image {
+      margin-bottom: -6px;
+      height: 60px;
+    }
+    
+    /* Main Content */
+    .main-content {
+      padding: 0 20px;
+    }
+    
+    .main-title {
+      padding: 16px 0;
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .greeting {
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .intro {
+      padding: 8px 0;
+      font-size: 10px;
+      color: #1F2124;
+      margin: 0;
+    }
+    
+    /* Features Section */
+    .features-section {
+      padding: 0 20px;
+      margin-top: 12px;
+    }
+    
+    .features-title {
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .feature-item {
+      margin-bottom: 4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .check-icon {
+      height: 13px;
+      width: 13px;
+      background-color: #90B5FF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      margin-top: 2px;
+    }
+    
+    .feature-text {
+      font-size: 10px;
+      font-weight: 500;
+      color: #1F2124;
+      margin: 0;
+    }
+    
+    .feature-span {
+      color: #3a3c40;
+      font-weight: normal;
+    }
+    
+    /* Closing */
+    .closing p {
+      font-size: 10px;
+      color: #1F2124;
+      margin: 8px 0;
+    }
+    
+    /* Footer */
+    .footer {
+      margin-top: 8px;
+      height: 161px;
+      background-color: #002347;
+      padding: 24px 20px;
+      color: #ffffff;
+    }
+    
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .footer-logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .footer-logo {
+      height: 13.31px;
+      width: 56.61px;
+    }
+    
+    .footer-tagline {
+      font-size: 8px;
+      color: #cccccc;
+      text-align: center;
+      margin-top: 2px;
+    }
+    
+    .social-icons {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    
+    .social-icon {
+      height: 16.6px;
+      width: 16.6px;
+      background-color: #808080;
+      border-radius: 50%;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .footer-divider {
+      margin-top: 12px;
+      height: 1px;
+      width: 100%;
+      background-color: rgba(203, 213, 225, 0.1);
+    }
+    
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+    
+    .footer-description {
+      margin-top: 8px;
+      width: 164px;
+      font-size: 10px;
+      color: #cccccc;
+    }
+    
+    .copyright {
+      font-size: 8px;
+      color: #cccccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div>
+          <img src="https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png" alt="resolve-logo" class="logo">
+        </div>
+        <span class="website">https://resolve.vote/</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+      <!-- Banner -->
+      <div class="banner">
+        <div class="banner-content">
+          <div class="banner-text">
+            <h2>Resolve it all—easy elections, trusted results</h2>
+            <p>If you have any questions or need assistance, contact our support team at info.resolvevote@gmail.com.</p>
+          </div>
+          <img src="https://res.cloudinary.com/dueipgl4k/image/upload/v1741814246/FY25-Voter_Registration-frames-3-1000x1000_rgkk6c.png" alt="vote" class="banner-image">
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="main-content">
+        <h2 class="main-title">Election Update: Don't Forget to Monitor Your Resolve Election</h2>
+        <p class="greeting">Hi {{adminEmail}},</p>
+        <p class="intro">This is a quick reminder that your online election on Resolve is currently active.</p>
+      </div>
+
+      <!-- Features Section -->
+      <section class="features-section">
+        <h3 class="features-title">Here's what you can do:</h3>
+        <div>
+          <!-- Feature 1 -->
+          <div class="feature-item">
+            <div class="check-icon">✓</div>
+            <p class="feature-text">
+              Monitor Participation: 
+              <span class="feature-span">Log in to your admin dashboard to track voter activity.</span>
+            </p>
+          </div>
+          
+          <!-- Feature 2 -->
+          <div class="feature-item">
+            <div class="check-icon">✓</div>
+            <p class="feature-text">
+              Send Final Reminders: 
+              <span class="feature-span">Consider sending an automated follow-up email to voters who haven't cast their votes with resolve</span>
+            </p>
+          </div>
+          
+          <!-- Feature 3 -->
+          <div class="feature-item">
+            <div class="check-icon">✓</div>
+            <p class="feature-text">
+              Review Results: 
+              <span class="feature-span">Once voting closes, review the final tallies directly in Resolve.</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing -->
+      <div class="main-content closing">
+        <p>If you have any questions or need assistance, our support team is here to help.</p>
+        <p>Thanks for choosing Resolve to power your election!</p>
+        <p>
+          <span style="display: block;">Best regards,</span> 
+          The Resolve Team
+        </p>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-top">
+        <div class="footer-logo-container">
+          <div>
+            <img src="https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png " alt="resolve-logo" class="footer-logo">
+          </div>
+          <span class="footer-tagline">
+            Secure Elections, <br> Trusted Results
+          </span>
+        </div>
+        <div class="social-icons">
+          <div class="social-icon">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="24" height="24" fill="white"/>
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7ZM9 12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12Z" fill="white"/>
+              <path d="M18 5C17.4477 5 17 5.44772 17 6C17 6.55228 17.4477 7 18 7C18.5523 7 19 6.55228 19 6C19 5.44772 18.5523 5 18 5Z" fill="white"/>
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M5 1C2.79086 1 1 2.79086 1 5V19C1 21.2091 2.79086 23 5 23H19C21.2091 23 23 21.2091 23 19V5C23 2.79086 21.2091 1 19 1H5ZM19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" fill="white"/>
+            </svg>
+          </div>
+          <div class="social-icon">
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.19795 21.5H13.198V13.4901H16.8021L17.198 9.50977H13.198V7.5C13.198 6.94772 13.6457 6.5 14.198 6.5H17.198V2.5H14.198C11.4365 2.5 9.19795 4.73858 9.19795 7.5V9.50977H7.19795L6.80206 13.4901H9.19795V21.5Z" fill="white"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-divider"></div>
+      
+      <div class="footer-bottom">
+        <p class="footer-description">
+          Start with Resolve: Create, manage, and monitor your elections effortlessly.
+        </p>
+        <div class="copyright">
+          © Resolve Rights Reserved 2024
+        </div>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
