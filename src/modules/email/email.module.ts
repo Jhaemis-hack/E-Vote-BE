@@ -53,7 +53,7 @@ import { User } from '../user/entities/user.entity';
     }),
     ConfigModule, TypeOrmModule.forFeature([User]),
   ],
-  providers: [EmailQueue, EmailProcessor, EmailService],
+  providers: [EmailQueue, EmailProcessor, EmailService ],
   exports: [EmailService, EmailQueue],
 })
 export class EmailModule {}
