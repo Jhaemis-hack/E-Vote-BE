@@ -59,8 +59,6 @@ export class UserService {
       is_verified: true,
     });
 
-    this.logger.log('New Admin: ', newAdmin);
-
     // const credentials = { email: newAdmin.email, sub: newAdmin.id };
     // const token = this.jwtService.sign(credentials);
 
