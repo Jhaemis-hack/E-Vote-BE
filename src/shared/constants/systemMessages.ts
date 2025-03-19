@@ -90,3 +90,7 @@ export const DUPLICATE_EMAILS_ELECTION =
   'Duplicate Voter Registration Detected: The email(s) are already registered for this election.';
 export const FETCH_ADMINS = 'Admins fetched successfully';
 export const ERROR_VOTER_LIST_FORBBIDEN_ACCESS = "Only Election Creator can view Voter's list.";
+
+export const INVALID_CREDENTIALS = 'Invalid credentials';
+export const SERVER_ERROR = 'Sorry a server error occured';
+export const GOOGLE_AUTH_RESPONSE = 'Authentication successful';
