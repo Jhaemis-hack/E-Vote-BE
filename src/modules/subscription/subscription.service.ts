@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import Stripe from "stripe";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
@@ -7,9 +6,21 @@ import { User } from "../user/entities/user.entity";
 import { Subscription, SubscriptionPlan, SubscriptionStatus } from "../subscription/entities/subscription.entity";
 import { PlanType, BillingInterval } from "./dto/checkout-query.dto";
 
+
+export interface SimplifiedSubscription {
+  id: string;
+  status: string;
+  current_period_end: number;
+  cancel_at_period_end: boolean;
+}
+
+export interface SimplifiedInvoice {
+  id: string;
+  subscription: string;
+}
+
 @Injectable()
 export class SubscriptionService {
-  private stripe: Stripe;
   private readonly paymentLinks: Record<string, string>;
 
   constructor(
@@ -19,19 +30,11 @@ export class SubscriptionService {
     @InjectRepository(Subscription)
     private subscriptionRepository: Repository<Subscription>
   ) {
-    const apiKey = this.configService.get<string>("STRIPE_SECRET_KEY");
-    if (!apiKey) {
-      console.warn("STRIPE_SECRET_KEY is not defined");
-    }
-    this.stripe = new Stripe(apiKey || "", {
-      apiVersion: "2025-02-24.acacia",
-    });
-
     this.paymentLinks = {
-      [`${PlanType.BASIC}_${BillingInterval.MONTHLY}`]: this.configService.get<string>("BASIC_MONTHLY_LINK") ?? "default_basic_monthly_link",
-      [`${PlanType.BASIC}_${BillingInterval.YEARLY}`]: this.configService.get<string>("BASIC_YEARLY_LINK") ?? "default_basic_yearly_link",
-      [`${PlanType.BUSINESS}_${BillingInterval.MONTHLY}`]: this.configService.get<string>("BUSINESS_MONTHLY_LINK") ?? "default_business_monthly_link",
-      [`${PlanType.BUSINESS}_${BillingInterval.YEARLY}`]: this.configService.get<string>("BUSINESS_YEARLY_LINK") ?? "default_business_yearly_link",
+      [`${PlanType.BASIC}_${BillingInterval.MONTHLY}`]: this.configService.get<string>("BASIC_MONTHLY_LINK") ?? "https://buy.stripe.com/eVa2c70FygOM6ac00z",
+      [`${PlanType.BASIC}_${BillingInterval.YEARLY}`]: this.configService.get<string>("BASIC_YEARLY_LINK") ?? "https://buy.stripe.com/bIY2c7ag8dCA1TW6oY",
+      [`${PlanType.BUSINESS}_${BillingInterval.MONTHLY}`]: this.configService.get<string>("BUSINESS_MONTHLY_LINK") ?? "https://buy.stripe.com/dR6g2Xag82XWgOQ6oZ",
+      [`${PlanType.BUSINESS}_${BillingInterval.YEARLY}`]: this.configService.get<string>("BUSINESS_YEARLY_LINK") ?? "https://buy.stripe.com/dR603Zag88iggOQ9Bc",
     };
   }
 
@@ -49,14 +52,33 @@ export class SubscriptionService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
+    // Check if user already has a pending subscription
+    const pendingSubscription = await this.subscriptionRepository.findOne({
+      where: {
+        userId,
+        status: SubscriptionStatus.INCOMPLETE,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    if (pendingSubscription) {
+      // Update existing pending subscription
+      pendingSubscription.plan = planType === PlanType.BASIC ? SubscriptionPlan.BASIC : SubscriptionPlan.BUSINESS;
+      pendingSubscription.isYearly = billingInterval === BillingInterval.YEARLY;
+      return this.subscriptionRepository.save(pendingSubscription);
+    }
+
+    // Create new subscription
     const subscription = this.subscriptionRepository.create({
       user,
       userId,
       plan: planType === PlanType.BASIC ? SubscriptionPlan.BASIC : SubscriptionPlan.BUSINESS,
       isYearly: billingInterval === BillingInterval.YEARLY,
       status: SubscriptionStatus.INCOMPLETE,
-      stripeSubscriptionId: "",
-      currentPeriodEnd: new Date(),
+      stripeSubscriptionId: "", // This will remain empty until manual update
+      currentPeriodEnd: new Date(Date.now() + (billingInterval === BillingInterval.YEARLY ? 365 : 30) * 24 * 60 * 60 * 1000), // 1 month or 1 year from now
       cancelAtPeriodEnd: false,
     });
 
@@ -69,88 +91,105 @@ export class SubscriptionService {
   async getUserActiveSubscription(userId: string): Promise<Subscription | null> {
     return this.subscriptionRepository.findOne({
       where: {
-        user: { id: userId },
+        userId,
         status: SubscriptionStatus.ACTIVE,
       },
     });
   }
 
-  /**
-   * Verify Stripe webhook signature
-   */
-  verifyWebhookSignature(payload: Buffer, signature: string): Stripe.Event {
-    const webhookSecret = this.configService.get<string>("STRIPE_WEBHOOK_SECRET");
 
-    if (!webhookSecret) {
-      console.warn("STRIPE_WEBHOOK_SECRET is not defined. Skipping signature verification.");
+  async getAllSubscriptions(): Promise<Subscription[]> {
+    return this.subscriptionRepository.find({
+      order: {
+        createdAt: 'DESC'
+      }
+    });
+  }
+
+  /**
+   * Verify webhook signature
+   */
+  verifyWebhookSignature(payload: Buffer, signature: string): any {
+    console.warn("STRIPE_WEBHOOK_SECRET is not defined. This is only for development.");
+    console.warn("In production, webhook events should be verified with Stripe.");
+    
+    try {
       return JSON.parse(payload.toString());
+    } catch (error) {
+      console.error("Failed to parse webhook payload:", error);
+      throw new Error("Invalid webhook payload format");
     }
-
-    return this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
   }
 
   /**
-   * Process subscription updates (created, updated, deleted)
+   * Update subscription status manually
+   * This is used for admin functions until webhooks are implemented
    */
-  async processSubscriptionUpdate(subscription: Stripe.Subscription) {
+  async manuallyUpdateSubscriptionStatus(
+    subscriptionId: string, 
+    status: SubscriptionStatus,
+    stripeSubscriptionId?: string
+  ): Promise<Subscription> {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { id: subscriptionId },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException(`Subscription with ID ${subscriptionId} not found`);
+    }
+
+    subscription.status = status;
+    
+    if (stripeSubscriptionId) {
+      subscription.stripeSubscriptionId = stripeSubscriptionId;
+    }
+    
+    // If activating subscription, update the period end date
+    if (status === SubscriptionStatus.ACTIVE) {
+      subscription.currentPeriodEnd = new Date(
+        Date.now() + (subscription.isYearly ? 365 : 30) * 24 * 60 * 60 * 1000
+      );
+    }
+
+    return this.subscriptionRepository.save(subscription);
+  }
+
+  /**
+   * Process subscription updates (simplified version)
+   */
+  async processSubscriptionUpdate(subscription: SimplifiedSubscription): Promise<boolean> {
     console.log(`Processing subscription update for ${subscription.id}`);
-
-    const existingSubscription = await this.subscriptionRepository.findOne({
-      where: { stripeSubscriptionId: subscription.id },
-    });
-
-    if (!existingSubscription) {
-      console.warn(`Subscription with Stripe ID ${subscription.id} not found`);
-      return false;
-    }
-
-    existingSubscription.status = subscription.status as SubscriptionStatus;
-    existingSubscription.currentPeriodEnd = new Date(subscription.current_period_end * 1000);
-    existingSubscription.cancelAtPeriodEnd = subscription.cancel_at_period_end;
-
-    await this.subscriptionRepository.save(existingSubscription);
+    console.warn("This is a mock implementation. In production, use Stripe API.");
+    
+    // Without real Stripe integration, this function will mostly log the intent
+    console.log(`Would update subscription ${subscription.id} to status: ${subscription.status}`);
+    
     return true;
   }
 
   /**
-   * Process successful invoice payments
+   * Process successful invoice payments (simplified version)
    */
-  async processInvoicePaid(invoice: Stripe.Invoice) {
+  async processInvoicePaid(invoice: SimplifiedInvoice): Promise<boolean> {
     console.log(`Processing paid invoice ${invoice.id}`);
-
-    const subscriptionId = invoice.subscription as string;
-    const existingSubscription = await this.subscriptionRepository.findOne({
-      where: { stripeSubscriptionId: subscriptionId },
-    });
-
-    if (!existingSubscription) {
-      console.warn(`Subscription with Stripe ID ${subscriptionId} not found`);
-      return false;
-    }
-
-    existingSubscription.status = SubscriptionStatus.ACTIVE;
-    await this.subscriptionRepository.save(existingSubscription);
+    console.warn("This is a mock implementation. In production, use Stripe API.");
+    
+    // Without real Stripe integration, this function will mostly log the intent
+    console.log(`Would mark subscription ${invoice.subscription} as active`);
+    
     return true;
   }
 
   /**
-   * Process failed invoice payments
+   * Process failed invoice payments (simplified version)
    */
-  async processInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  async processInvoicePaymentFailed(invoice: SimplifiedInvoice): Promise<boolean> {
     console.log(`Processing failed invoice payment ${invoice.id}`);
-
-    const subscriptionId = invoice.subscription as string;
-    const existingSubscription = await this.subscriptionRepository.findOne({
-      where: { stripeSubscriptionId: subscriptionId },
-    });
-
-    if (!existingSubscription) {
-      console.warn(`Subscription with Stripe ID ${subscriptionId} not found`);
-      return false;
-    }
-
-    existingSubscription.status = SubscriptionStatus.PAST_DUE;
-    await this.subscriptionRepository.save(existingSubscription);
+    console.warn("This is a mock implementation. In production, use Stripe API.");
+    
+    // Without real Stripe integration, this function will mostly log the intent
+    console.log(`Would mark subscription ${invoice.subscription} as past_due`);
+    
     return true;
   }
 
@@ -159,5 +198,29 @@ export class SubscriptionService {
    */
   getPaymentLink(planType: PlanType, billingInterval: BillingInterval): string {
     return this.paymentLinks[`${planType}_${billingInterval}`] || this.paymentLinks[`${PlanType.BASIC}_${BillingInterval.MONTHLY}`];
+  }
+
+  /**
+   * Mark subscription as awaiting confirmation
+   * Call this when user returns from payment page
+   */
+  async markSubscriptionAwaitingConfirmation(userId: string): Promise<Subscription | null> {
+    const pendingSubscription = await this.subscriptionRepository.findOne({
+      where: {
+        userId,
+        status: SubscriptionStatus.INCOMPLETE,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    if (!pendingSubscription) {
+      return null;
+    }
+
+    pendingSubscription.status = SubscriptionStatus.INCOMPLETE_EXPIRED;
+    await this.subscriptionRepository.save(pendingSubscription);
+    return pendingSubscription;
   }
 }

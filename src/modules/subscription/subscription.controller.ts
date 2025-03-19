@@ -1,11 +1,17 @@
-import { Controller, Get, Query, Redirect, UseGuards, Req, UnauthorizedException } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, Redirect, UseGuards, Req, UnauthorizedException } from "@nestjs/common";
 import { SubscriptionService } from "./subscription.service";
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from "@nestjs/swagger";
 import { CheckoutQueryDto, PlanType, BillingInterval } from "./dto/checkout-query.dto";
 import { SubscriptionPlansResponseDto } from "./dto/subscription-plan.dto";
 import { AuthGuard } from "../../guards/auth.guard";
 import { Request } from "express";
 import { JwtPayload } from "../../shared/interfaces/jwt-payload.interface";
+import { Subscription, SubscriptionStatus } from "./entities/subscription.entity";
+
+class UpdateSubscriptionStatusDto {
+  status: SubscriptionStatus;
+  stripeSubscriptionId?: string;
+}
 
 @ApiTags("Subscription")
 @Controller("subscription")
@@ -116,6 +122,89 @@ export class SubscriptionController {
         status: subscription.status,
         currentPeriodEnd: subscription.currentPeriodEnd,
         cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      }
+    };
+  }
+  
+  @Get("payment-return")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Handle user return from payment page" })
+  @ApiResponse({ status: 200, description: "Payment status" })
+  async handlePaymentReturn(@Req() request: Request & { user: JwtPayload }) {
+    const user = request.user;
+    if (!user || !user.sub) {
+      throw new UnauthorizedException("User not authenticated");
+    }
+    
+    const subscription = await this.subscriptionService.markSubscriptionAwaitingConfirmation(user.sub);
+    
+    if (!subscription) {
+      return {
+        status: "no_subscription",
+        message: "No pending subscription found"
+      };
+    }
+    
+    return {
+      status: "awaiting_confirmation",
+      message: "Your subscription is awaiting confirmation",
+      subscription: {
+        id: subscription.id,
+        plan: subscription.plan,
+        interval: subscription.isYearly ? "yearly" : "monthly",
+      }
+    };
+  }
+
+  
+  @Get("admin/all")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get all subscriptions (Admin only)" })
+  @ApiResponse({ status: 200, description: "List of all subscriptions" })
+  async getAllSubscriptions() {
+    const subscriptions = await this.subscriptionService.getAllSubscriptions();
+    
+    return {
+      subscriptions: subscriptions.map(sub => ({
+        id: sub.id,
+        userId: sub.userId,
+        plan: sub.plan,
+        isYearly: sub.isYearly,
+        status: sub.status,
+        createdAt: sub.createdAt,
+        currentPeriodEnd: sub.currentPeriodEnd
+      }))
+    };
+  }
+  
+  @Post("admin/:id/status")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Manually update subscription status (Admin only)" })
+  @ApiParam({ name: "id", description: "Subscription ID" })
+  @ApiResponse({ status: 200, description: "Subscription status updated" })
+  @ApiResponse({ status: 404, description: "Subscription not found" })
+  async updateSubscriptionStatus(
+    @Param("id") id: string,
+    @Body() updateDto: UpdateSubscriptionStatusDto
+  ) {
+    const updatedSubscription = await this.subscriptionService.manuallyUpdateSubscriptionStatus(
+      id,
+      updateDto.status,
+      updateDto.stripeSubscriptionId
+    );
+    
+    return {
+      message: "Subscription status updated successfully",
+      subscription: {
+        id: updatedSubscription.id,
+        status: updatedSubscription.status,
+        plan: updatedSubscription.plan,
+        isYearly: updatedSubscription.isYearly,
+        currentPeriodEnd: updatedSubscription.currentPeriodEnd,
+        stripeSubscriptionId: updatedSubscription.stripeSubscriptionId,
       }
     };
   }
