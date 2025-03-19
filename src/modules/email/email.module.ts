@@ -7,6 +7,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { EmailService } from './email.service';
 import { join } from 'path';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '../user/entities/user.entity';
 
 @Module({
   imports: [
@@ -50,6 +52,7 @@ import { join } from 'path';
       }),
     }),
     ConfigModule,
+    TypeOrmModule.forFeature([User]),
   ],
   providers: [EmailQueue, EmailProcessor, EmailService],
   exports: [EmailService, EmailQueue],

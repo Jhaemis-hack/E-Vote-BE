@@ -19,5 +19,6 @@ export interface EmailSender {
     | 'welcome-email'
     | 'voter-invite'
     | 'election-start'
-    | 'election-reminder';
+    | 'election-reminder'
+    | 'election-monitor';
 }
