@@ -31,6 +31,7 @@ config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 import { Voter } from '../voter/entities/voter.entity';
 import { EmailService } from '../email/email.service';
+import { User } from '../user/entities/user.entity';
 
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
@@ -45,6 +46,7 @@ export class ElectionService {
     @InjectRepository(Candidate) private candidateRepository: Repository<Candidate>,
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
+    @InjectRepository(User) private userRepository: Repository<User>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
     private emailService: EmailService,
   ) {
@@ -155,7 +157,15 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
-
+    const admin = await this.userRepository.findOne({
+      where: { id: savedElection.created_by },
+    });
+    if (!admin) {
+      this.logger.error(`Admin with ID ${savedElection.created_by} not found`);
+      return;
+    } else {
+      await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
+    }
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
