@@ -31,6 +31,7 @@ describe('ElectionService - update', () => {
     voteRepository = {} as Repository<Vote>;
     voterRepository = {} as Repository<Voter>;
     voterRepository = {} as Repository<Voter>;
+    electionStatusUpdaterService = {} as ElectionStatusUpdaterService;
 
     // Mock the ElectionStatusUpdaterService
     electionStatusUpdaterService = {
@@ -39,6 +40,7 @@ describe('ElectionService - update', () => {
 
     emailService = {
       sendEmail: jest.fn(),
+      sendElectionReminderEmails: jest.fn(),
     } as unknown as EmailService;
 
     voterService = {} as VoterService;

@@ -519,6 +519,7 @@ describe('UserService', () => {
           email: 'test@example.com',
         }),
       );
+      // expect(result.data).not.toHaveProperty('password');
       expect(result.data).not.toHaveProperty('hashPassword');
     });
 

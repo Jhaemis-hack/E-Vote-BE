@@ -232,4 +232,9 @@ export class ElectionController {
   async verifyVoter(@Body() verifyVoterDto: VerifyVoterDto) {
     return this.electionService.verifyVoter(verifyVoterDto);
   }
+
+  @Post(':id/send-reminders')
+  async sendReminders(@Param('id') id: string) {
+    return this.electionService.sendReminderEmails(id);
+  }
 }

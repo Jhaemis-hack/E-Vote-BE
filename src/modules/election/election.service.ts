@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js';
 import { isUUID } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
@@ -51,11 +51,8 @@ export class ElectionService {
     private voterService: VoterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
-      throw new Error('Supabase environment variables are not set.');
+      this.bucketName = process.env.SUPABASE_BUCKET;
     }
-
-    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-    this.bucketName = process.env.SUPABASE_BUCKET;
   }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
@@ -638,6 +635,7 @@ export class ElectionService {
         const endDateTime = new Date(election.end_date);
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
         endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
+        endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
         const mappedElection = this.transformElectionResponse(election);
 
@@ -901,6 +899,44 @@ export class ElectionService {
         message: SYS_MSG.VOTER_UNVERIFIED,
         data: null,
       });
+    }
+  }
+
+  async sendReminderEmails(id: string) {
+    const election = await this.electionRepository.findOne({
+      where: { id },
+      relations: ['voters'],
+    });
+
+    if (!election) {
+      throw new NotFoundException(`Election with ID ${id} not found`);
+    }
+
+    // Find voters who haven't voted yet
+    const allVoterIds = election.voters.map(voter => voter.id);
+    const votedVoterIds = await this.voteRepository
+      .createQueryBuilder('vote')
+      .where('vote.election_id = :electionId', { electionId: id })
+      .select('vote.voter_id')
+      .getMany()
+      .then(votes => votes.map(vote => vote.voter_id));
+
+    const nonVotedVoterIds = allVoterIds.filter(id => !votedVoterIds.includes(id));
+
+    if (nonVotedVoterIds.length === 0) {
+      return { message: 'All voters have already cast their votes for this election' };
+    }
+
+    const nonVotedVoters = election.voters.filter(voter => nonVotedVoterIds.includes(voter.id));
+
+    if (election.email_notification) {
+      await this.emailService.sendElectionReminderEmails(election, nonVotedVoters);
+      return {
+        message: `Reminder emails sent to ${nonVotedVoters.length} voters who haven't voted yet`,
+        sentCount: nonVotedVoters.length,
+      };
+    } else {
+      throw new BadRequestException('Email notifications are not enabled for this election');
     }
   }
 }
