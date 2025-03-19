@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EmailQueue } from './email.queue';
-import { MailInterface } from './interface/email.interface';
+import { EmailSender, MailInterface } from './interface/email.interface';
 import { Election } from '../election/entities/election.entity';
 import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,23 +10,25 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   constructor(
     @InjectRepository(User)
-    private emailQueue: EmailQueue,
+    private readonly userRepository: Repository<User>,
+    @Inject(EmailQueue)
+    private readonly emailQueue: EmailQueue,
   ) {}
 
   async sendEmail(
     email: string,
     subject: string,
-    template: 'verify-email' | 'reset-password' | 'welcome-email' | 'voter-invite' | 'election-start',
+    template: EmailSender['template'],
     context: Record<string, any>,
   ): Promise<void> {
     await this.emailQueue.sendEmail({
       mail: {
         to: email,
         subject,
-        template,
         context,
+        template,
       },
-      template,
+      template: template,
     });
   }
 
