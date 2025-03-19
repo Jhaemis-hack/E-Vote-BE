@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Election Ended</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #ffffff;
+      padding: 20px;
+      border: 1px solid #dddddd;
+    }
+    h1 {
+      color: #333333;
+    }
+    p {
+      color: #666666;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 20px 0;
+      background-color: #007bff;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Election Ended</h1>
+    <p>Dear Voter,</p>
+    <p>The election <strong>{{electionTitle}}</strong> has concluded. The election started on <strong>{{electionStartDate}}</strong> and ended on <strong>{{electionEndDate}}</strong>.</p>
+    <p>You can now view the results by clicking the button below:</p>
+    <a href="{{electionResultLink}}" class="btn">View Results</a>
+    <p>Thank you for your participation in the election.</p>
+    <p>Best regards,<br/>Election Committee</p>
+  </div>
+</body>
+</html>

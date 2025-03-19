@@ -7,6 +7,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { EmailService } from './email.service';
 import { join } from 'path';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '../user/entities/user.entity';
 
 @Module({
   imports: [
@@ -16,10 +18,13 @@ import { join } from 'path';
         transport: {
           host: configService.get<string>('SMTP_HOST'),
           port: configService.get<number>('SMTP_PORT'),
-          secure: false,
+          secure: configService.get<number>('SMTP_PORT') === 465,
           auth: {
             user: configService.get<string>('SMTP_USER'),
             pass: configService.get<string>('SMTP_PASS'),
+          },
+          tls: {
+            rejectUnauthorized: false,
           },
         },
         defaults: {
@@ -46,9 +51,9 @@ import { join } from 'path';
         },
       }),
     }),
-    ConfigModule,
+    ConfigModule, TypeOrmModule.forFeature([User]),
   ],
-  providers: [EmailQueue, EmailProcessor, EmailService],
+  providers: [EmailQueue, EmailProcessor, EmailService ],
   exports: [EmailService, EmailQueue],
 })
 export class EmailModule {}
