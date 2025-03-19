@@ -5,15 +5,16 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ElectionModule } from './modules/election/election.module';
 import { UserModule } from './modules/user/user.module';
-// import * as Joi from 'joi';
 import { ScheduleModule } from '@nestjs/schedule';
 import authConfig from './config/auth.config';
 import dataSource from './migrations/migration.config';
 import { VoteModule } from './modules/votes/votes.module';
-// import dataSource from './migrations/migration.config';
 import { EmailModule } from './modules/email/email.module';
 import { VoterModule } from './modules/voter/voter.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
+
+import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -51,6 +52,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     ScheduleModule.forRoot(),
     EmailModule,
     VoterModule,
+    GoogleAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

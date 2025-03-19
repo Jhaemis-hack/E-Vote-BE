@@ -5,8 +5,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/helpers/global.filter';
 import { initializeDataSource } from './migrations/migration.config';
-import { HttpExceptionFilter } from './shared/helpers/http-exception-filter';
-import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

@@ -2,7 +2,6 @@ import { AuthGuard } from '../auth.guard';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import * as SYS_MSG from '../../shared/constants/systemMessages';
 describe('AuthGuard', () => {
   let authGuard: AuthGuard;
   let jwtService: JwtService;

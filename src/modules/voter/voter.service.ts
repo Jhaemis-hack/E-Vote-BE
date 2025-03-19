@@ -294,7 +294,6 @@ export class VoterService {
       }
       const electionId = data[0].election.id;
       const emails = data.map(voter => voter.email);
-      console.log('emails from saveVoters:', data);
 
       const existingVoters = await this.voterRepository.find({
         where: { email: In(emails), election: { id: electionId } },

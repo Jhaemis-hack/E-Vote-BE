@@ -17,6 +17,7 @@ import { EmailService } from '../../email/email.service';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { DeleteResult } from 'typeorm';
 import { HttpStatus } from '@nestjs/common';
+import { EmailQueue } from '../../email/email.queue';
 
 interface CreateUserDto {
   id?: string;
@@ -165,12 +166,12 @@ describe('UserService', () => {
       });
     });
 
-    // it('❌ should handle error when sending verification email fails during registration', async () => {
+    // test.skip('❌ should handle error when sending verification email fails during registration', async () => {
     //   const adminDto: CreateUserDto = {
     //     id: randomUUID(),
     //     email: 'admin@example.com',
     //     password: 'StrongPass1!',
-    //     is_verified: false,
+    //     // is_verified: false,
     //   };
 
     //   userRepository.findOne = jest.fn().mockResolvedValue(null);
@@ -209,6 +210,18 @@ describe('UserService', () => {
         email: 'admin@example.com',
         password: 'StrongPass1!',
         // is_verified: false,
+      };
+
+      userRepository.findOne = jest.fn().mockResolvedValue(userDto as User);
+
+      await expect(userService.registerAdmin(userDto)).rejects.toThrow(new BadRequestError(SYS_MSG.EMAIL_IN_USE));
+    });
+
+    it('❌ should throw an error if an existing email is used with different casing', async () => {
+      const userDto: CreateUserDto = {
+        email: 'Admin@example.com',
+        password: 'StrongPass1!',
+        //is_verified: false,
       };
 
       userRepository.findOne = jest.fn().mockResolvedValue(userDto as User);
@@ -715,13 +728,20 @@ describe('UserService', () => {
   });
 
   describe('UserService - verifyEmail', () => {
+    class MockEmailQueue extends EmailQueue {
+      constructor() {
+        super({} as any); // Pass a mock Queue object to the constructor
+      }
+
+      sendEmail = jest.fn().mockResolvedValue({ jobId: 'mockJobId' });
+    }
+
     let userService: UserService;
     let jwtService: JwtService;
     let userRepository: any;
     let forgotPasswordTokenRepository: any;
 
     let emailService: EmailService;
-    // let someService: any;
     let configService: any;
 
     const mockToken = 'valid.jwt.token';
@@ -730,28 +750,36 @@ describe('UserService', () => {
     beforeEach(() => {
       jest.clearAllMocks();
 
+      // Mock userRepository
       userRepository = {
         findOne: jest.fn(),
         save: jest.fn(),
       };
 
+      // Mock forgotPasswordTokenRepository
       forgotPasswordTokenRepository = {
         findOne: jest.fn(),
         save: jest.fn(),
       };
 
+      // Mock JwtService
       jwtService = new JwtService();
       jest.spyOn(jwtService, 'verify').mockReturnValue(mockPayload);
 
-      // someService = {};
+      const newEmailQueue = new MockEmailQueue();
+      // Instantiate EmailService with the mocked EmailQueue
+      emailService = new EmailService(newEmailQueue);
+
+      // Mock configService
       configService = {};
 
+      // Instantiate UserService with all dependencies
       userService = new UserService(
         userRepository,
         forgotPasswordTokenRepository,
         jwtService,
-        emailService,
         configService,
+        emailService,
       );
     });
 

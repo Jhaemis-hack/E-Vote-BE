@@ -1,20 +1,20 @@
-import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { IsNull, Repository } from 'typeorm';
-import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginDto } from './dto/login-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
-import { EmailService } from '../email/email.service';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { EmailService } from '../email/email.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ForgotPasswordToken } from './entities/forgot-password.entity';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -27,7 +27,8 @@ export class UserService {
   ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
-    const { email, password } = createAdminDto;
+    const { email: rawEmail, password } = createAdminDto;
+    const email = rawEmail.toLowerCase();
 
     if (!email.match(/^\S+@\S+\.\S+$/)) {
       throw new BadRequestError(SYS_MSG.INVALID_EMAIL_FORMAT);
@@ -52,7 +53,11 @@ export class UserService {
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
     } catch {
-      throw new InternalServerError(SYS_MSG.WELCOME_EMAIL_FAILED);
+      return {
+        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: SYS_MSG.WELCOME_EMAIL_FAILED,
+        data: null,
+      };
     }
 
     //TODO
@@ -75,7 +80,7 @@ export class UserService {
 
   async login(payload: LoginDto) {
     const userExist = await this.userRepository.findOne({
-      where: { email: payload.email },
+      where: { email: payload.email.toLowerCase() },
     });
 
     if (!userExist) {
@@ -146,11 +151,35 @@ export class UserService {
       throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { id, email, is_verified, created_elections, created_at, updated_at, deleted_at } = user;
+    const {
+      id,
+      email,
+      is_verified,
+      created_elections,
+      created_at,
+      updated_at,
+      deleted_at,
+      profile_picture,
+      first_name,
+      last_name,
+      google_id,
+    } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
-      data: { id, email, is_verified, created_elections, created_at, updated_at, deleted_at },
+      data: {
+        id,
+        google_id,
+        first_name,
+        last_name,
+        profile_picture,
+        email,
+        is_verified,
+        created_elections,
+        created_at,
+        updated_at,
+        deleted_at,
+      },
     };
   }
 

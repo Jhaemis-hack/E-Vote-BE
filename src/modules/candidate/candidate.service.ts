@@ -11,7 +11,7 @@ export class CandidateService {
     return `This action returns a #${id} candidate`;
   }
 
-  update(id: number, updateUserDto: UpdateCandidateDto) {
+  update(id: number, _: UpdateCandidateDto) {
     return `This action updates a #${id} candidate`;
   }
 
