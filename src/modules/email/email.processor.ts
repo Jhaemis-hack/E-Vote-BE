@@ -27,13 +27,11 @@ export class EmailProcessor {
   @Process('reset-password')
   async sendResetPasswordEmailJob(job: Job<MailInterface>) {
     try {
-      const {
-        data: { mail },
-      } = job;
+      const { mail } = job.data;
       await this.mailerService.sendMail({
         ...mail,
         subject: 'Reset Password',
-        template: 'Reset-Password-Template',
+        template: 'reset-password',
       });
       this.logger.log(`Reset password email sent successfully to ${mail.to}`);
     } catch (sendResetPasswordEmailJobError) {
@@ -44,9 +42,7 @@ export class EmailProcessor {
   @Process('welcome-email')
   async sendWelcomeEmailJob(job: Job<MailInterface>) {
     try {
-      const {
-        data: { mail },
-      } = job;
+      const { mail } = job.data;
       await this.mailerService.sendMail({
         ...mail,
         subject: 'Welcome to our platform',
@@ -68,6 +64,21 @@ export class EmailProcessor {
       this.logger.log(`Election start email sent successfully to ${mail.to}`);
     } catch (error) {
       this.logger.error(`EmailProcessor - ElectionStartEmailJob error: ${error.message}`);
+    }
+  }
+
+  @Process('voter-invite')
+  async sendVotingLinkEmailJob(job: Job<MailInterface>) {
+    try {
+      const { mail } = job.data;
+      await this.mailerService.sendMail({
+        ...mail,
+        subject: `You have been invited to vote in the ${mail.context.title}`,
+        template: 'voter-invite',
+      });
+      this.logger.log(`Voting link has been sent sucessfully to ${mail.to}`);
+    } catch (sendVotingLinkJobError) {
+      this.logger.error(`EmailProcessor - sendVotingLinkEmailJobError: ${sendVotingLinkJobError.message}`);
     }
   }
 

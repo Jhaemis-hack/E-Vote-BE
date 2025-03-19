@@ -81,7 +81,7 @@ export class ElectionController {
   @ApiOperation({ summary: 'Retrieve election details by ID, including candidates and their respective vote counts.' })
   @ApiResponse({ status: 200, description: 'Election found', type: SingleElectionResponseDto })
   @ApiResponse({ status: 404, description: 'Election not found', type: ElectionNotFound })
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.electionService.findOne(id);
   }
 
@@ -150,7 +150,7 @@ export class ElectionController {
   @ApiResponse({ status: 403, description: SYS_MSG.UNAUTHORIZED_ACCESS })
   @ApiResponse({ status: 404, description: SYS_MSG.ELECTION_NOT_FOUND })
   @ApiResponse({ status: 500, description: SYS_MSG.INTERNAL_SERVER_ERROR })
-  remove(@Param('id') id: string, @Req() req: any) {
+  async remove(@Param('id') id: string, @Req() req: any) {
     const adminId = req.user.sub;
     return this.electionService.remove(id, adminId);
   }
@@ -211,6 +211,16 @@ export class ElectionController {
   async uploadPhoto(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     const adminId = req.user.sub;
     return this.electionService.uploadPhoto(file, adminId);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/send-voting-links')
+  // @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Send voting link to all voters' })
+  @ApiResponse({ status: 200, description: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY })
+  @ApiResponse({ status: 500, description: SYS_MSG.FAILED_TO_SEND_VOTING_LINK })
+  async sendVotingLinks(@Param('id') id: string) {
+    return await this.electionService.sendVotingLinkToVoters(id);
   }
 
   @Post('voters/verify')

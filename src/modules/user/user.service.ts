@@ -3,6 +3,7 @@ import {
   // ForbiddenException,
   HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -25,6 +26,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
@@ -62,7 +64,7 @@ export class UserService {
 
     try {
       await this.mailService.sendWelcomeMail(newAdmin.email);
-    } catch {
+    } catch (error) {
       return {
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
         message: SYS_MSG.WELCOME_EMAIL_FAILED,
