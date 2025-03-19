@@ -12,8 +12,7 @@ export class CandidateService {
   }
 
   update(id: number, updateUserDto: UpdateCandidateDto) {
-    // Use updateUserDto to update the candidate
-    return `This action updates a #${id} candidate with data: ${JSON.stringify(updateUserDto)}`;
+    return `This action updates a #${id} candidate`;
   }
 
   remove(id: number) {

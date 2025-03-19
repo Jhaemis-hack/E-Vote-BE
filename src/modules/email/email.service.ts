@@ -1,26 +1,19 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EmailQueue } from './email.queue';
-import { EmailSender, MailInterface } from './interface/email.interface';
+import { MailInterface } from './interface/email.interface';
 import { Election } from '../election/entities/election.entity';
 import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 @Injectable()
+
 export class EmailService {
-  private readonly logger = new Logger(EmailService.name);
   constructor(
+    private emailQueue: EmailQueue,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @Inject(EmailQueue)
-    private readonly emailQueue: EmailQueue,
   ) {}
-
-  async sendEmail(
-    email: string,
-    subject: string,
-    template: EmailSender['template'],
-    context: Record<string, any>,
-  ): Promise<void> {
+  async sendEmail(email: string, subject: string, template: string, context: Record<string, any>): Promise<void> {
     await this.emailQueue.sendEmail({
       mail: {
         to: email,
@@ -28,7 +21,8 @@ export class EmailService {
         context,
         template,
       },
-      template: template,
+      // template: 'verify-email',
+      template: 'welcome-email',
     });
   }
 
@@ -56,28 +50,6 @@ export class EmailService {
     await this.sendEmail(email, 'Welcome to Resolve.vote', 'welcome-email', { email });
   }
 
-  async sendVotingLinkMail(
-    email: string,
-    name: string,
-    title: string,
-    start_date: string,
-    start_time: string,
-    end_date: string,
-    end_time: string,
-    votingLinkId: string,
-  ) {
-    const votingLink = `${process.env.FRONTEND_URL}/vote/${votingLinkId}`;
-    return this.emailQueue.sendEmail({
-      mail: {
-        to: email,
-        subject: `You have been invited to vote in the ${title}`,
-        template: 'voter-invite',
-        context: { name: name || email, title, start_date, start_time, end_date, end_time, votingLink },
-      },
-      template: 'voter-invite',
-    });
-  }
-
   async sendElectionStartEmails(election: any): Promise<void> {
     if (election.voters && election.voters.length > 0) {
       await Promise.all(
@@ -91,8 +63,9 @@ export class EmailService {
                 electionTitle: election.title,
                 electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
                 electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
-                electionLink: `${process.env.FRONTEND_URL}/vote/${voter.verification_token}`,
+                electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
               },
+              template: 'election-start',
             },
             template: 'election-start',
           }),
@@ -102,22 +75,22 @@ export class EmailService {
   }
 
   async sendAdminElectionMonitorEmails(election: Election): Promise<void> {
-    const adminUser = election.created_by_user;
+    const adminUser = election.created_by_user; 
 
-    if (adminUser && adminUser.email) {
-      const mail = {
-        to: adminUser.email,
-        subject: `Election "${election.title}" has started!`,
-        context: {
-          adminEmail: adminUser.email,
-          electionTitle: election.title,
-          electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
-          electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
-        },
-        template: 'election-monitor',
-      };
+  if (adminUser && adminUser.email) {
+    const mail = {
+      to: adminUser.email, 
+      subject: `Election "${election.title}" has started!`,
+      context: {
+        adminEmail: adminUser.email,
+        electionTitle: election.title,
+        electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
+        electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+      },
+      template: 'election-monitor',
+    };
 
-      await this.emailQueue.sendEmail({ mail, template: 'election-monitor' });
+    await this.emailQueue.sendEmail({ mail, template: 'election-monitor' });
     }
   }
 

@@ -1,5 +1,4 @@
 import { AbstractBaseEntity } from '../../../entities/base.entity';
-// import * as bcrypt from 'bcryptjs';
 import { Election } from '../../election/entities/election.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 

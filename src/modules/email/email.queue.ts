@@ -21,6 +21,6 @@ export class EmailQueue {
         removeOnFail: false,
       },
     );
-    return emailJob;
+    return { jobId: emailJob.id };
   }
 }

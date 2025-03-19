@@ -11,9 +11,11 @@ import {
   HttpStatus,
   HttpCode,
   ParseUUIDPipe,
+  UsePipes,
   ValidationPipe,
   BadRequestException,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,6 +26,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { STATUS_CODES } from 'http';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('Auth')
