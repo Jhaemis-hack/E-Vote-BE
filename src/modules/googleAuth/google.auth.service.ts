@@ -14,32 +14,6 @@ export class GoogleService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(details: any): Promise<User> {
-    const { googleId, email, firstName, lastName, profilePicture } = details;
-
-    let user = await this.usersRepository.findOne({ where: { email } });
-
-    if (user) {
-      user.is_verified = true;
-      user.google_id = googleId;
-      user.profile_picture = profilePicture;
-      await this.usersRepository.save(user);
-      return user;
-    }
-
-    // Create a new user if they don't exist
-    const newUser = this.usersRepository.create({
-      email,
-      first_name: firstName,
-      last_name: lastName,
-      google_id: googleId,
-      profile_picture: profilePicture,
-      is_verified: true,
-    });
-
-    return this.usersRepository.save(newUser);
-  }
-
   async googleAuth(googleAuthPayload: GoogleAuthPayload) {
     const idToken = googleAuthPayload.id_token;
 
