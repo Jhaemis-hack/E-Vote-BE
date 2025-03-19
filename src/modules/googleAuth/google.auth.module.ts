@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
-import { GoogleStrategy } from './strategies/google.strategies';
 import { GoogleController } from './google.auth.controller';
 import { GoogleService } from './google.auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -22,7 +21,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
   ],
   controllers: [GoogleController],
-  providers: [GoogleStrategy, GoogleService],
+  providers: [GoogleService],
   exports: [GoogleService],
 })
 export class GoogleAuthModule {}
