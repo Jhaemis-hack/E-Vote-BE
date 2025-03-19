@@ -14,7 +14,7 @@ import { VoteModule } from './modules/votes/votes.module';
 // import dataSource from './migrations/migration.config';
 import { EmailModule } from './modules/email/email.module';
 import { VoterModule } from './modules/voter/voter.module';
-import { PaymentModule } from './modules/payment/payment.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,7 +42,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     ScheduleModule.forRoot(),
     EmailModule,
     VoterModule,
-    PaymentModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
