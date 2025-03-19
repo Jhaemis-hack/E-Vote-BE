@@ -92,4 +92,18 @@ export class EmailService {
       );
     }
   }
+
+  async sendResultsToAdminEmail(adminEmail: string, election: any): Promise<void> {
+    const mailPayload: MailInterface = {
+      to: adminEmail,
+      context: {
+        electionTitle: election.title,
+        electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
+        electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+        resultsLink: `${process.env.FRONTEND_URL}/results/${election.id}`,
+      },
+    };
+
+    await this.emailQueue.sendEmail({ mail: mailPayload, template: 'results-to-admin' });
+  }
 }
