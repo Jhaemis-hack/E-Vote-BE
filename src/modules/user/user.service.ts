@@ -64,7 +64,7 @@ export class UserService {
     // const token = this.jwtService.sign(credentials);
 
     try {
-      // await this.mailService.sendWelcomeMail(newAdmin.email);
+      await this.mailService.sendWelcomeMail(newAdmin.email);
     } catch {
       return {
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
