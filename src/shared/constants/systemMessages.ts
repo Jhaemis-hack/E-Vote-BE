@@ -112,3 +112,4 @@ export const MAX_ELECTIONS_LIMIT_REACHED =
 
 export const VOTING_LINK_SENT_SUCCESSFULLY = 'Voting link sent successfully';
 export const FAILED_TO_SEND_VOTING_LINK = 'Failed to send voting link to voters';
+export const SUBSCRIPTION_SUCCESSFUL = 'User subscription payment successful';
