@@ -16,7 +16,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-// import { exist, string } from 'joi';
 import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
@@ -24,6 +23,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { omit } from 'lodash';
+import { ElectionStatus } from '../election/entities/election.entity';
 @Injectable()
 export class UserService {
   constructor(
@@ -167,16 +167,19 @@ export class UserService {
   async getUserById(
     id: string,
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({
+      where: { id, created_elections: { status: ElectionStatus.ONGOING || ElectionStatus.UPCOMING } },
+      relations: ['created_elections'],
+    });
     if (!user) {
       throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { ...userData } = user;
+    const { password: _, ...rest } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
-      data: userData,
+      data: rest,
     };
   }
 
