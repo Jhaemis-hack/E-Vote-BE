@@ -743,7 +743,7 @@ describe('UserService', () => {
 
       expect(sendMailSpy).toHaveBeenCalledWith(
         mockUser.email,
-        'Admin',
+        mockUser.email,
         `${process.env.FRONTEND_URL}/reset-password`,
         expect.any(String),
       );
