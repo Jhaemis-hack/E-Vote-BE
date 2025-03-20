@@ -246,12 +246,9 @@ describe('UserService', () => {
 
     it('❌ should throw BadRequestException for password without number', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
-      const updateUserDto: UpdateUserDto = {
+      const createUserDto: CreateUserDto = {
+        email: 'admin@example.com',
         password: 'password!',
-      };
-      const currentUser = {
-        sub: userId,
-        user_type: 'admin',
       };
       const mockUser = {
         id: userId,
@@ -259,9 +256,9 @@ describe('UserService', () => {
         password: 'hashedPassword',
       };
 
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+      await expect(userService.registerAdmin(createUserDto)).rejects.toThrow(
         new BadRequestException({
           status_code: HttpStatus.BAD_REQUEST,
           message: SYS_MSG.INVALID_PASSWORD_FORMAT,
@@ -272,12 +269,9 @@ describe('UserService', () => {
 
     it('❌ should throw BadRequestException for password without special character', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
-      const updateUserDto: UpdateUserDto = {
+      const createUserDto: CreateUserDto = {
+        email: 'admin@example.com',
         password: 'pass1234',
-      };
-      const currentUser = {
-        sub: userId,
-        user_type: 'admin',
       };
       const mockUser = {
         id: userId,
@@ -285,9 +279,9 @@ describe('UserService', () => {
         password: 'hashedPassword',
       };
 
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
+      await expect(userService.registerAdmin(createUserDto)).rejects.toThrow(
         new BadRequestException({
           status_code: HttpStatus.BAD_REQUEST,
           message: SYS_MSG.INVALID_PASSWORD_FORMAT,
@@ -570,6 +564,8 @@ describe('UserService', () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
       const updateUserDto: UpdateUserDto = {
         email: 'new@example.com',
+        first_name: 'john',
+        last_name: 'Doe',
       };
       const currentUser = {
         sub: userId,
@@ -651,11 +647,10 @@ describe('UserService', () => {
       );
     });
 
-    it('should throw BadRequestException for an invalid password', async () => {
+    it('should update first_name if provided and valid', async () => {
+      // Arrange
       const userId = '550e8400-e29b-41d4-a716-446655440000';
-      const updateUserDto: UpdateUserDto = {
-        password: 'short',
-      };
+      const updateUserDto: UpdateUserDto = { first_name: 'John' };
       const currentUser = {
         sub: userId,
         user_type: 'admin',
@@ -663,19 +658,39 @@ describe('UserService', () => {
       const mockUser = {
         id: userId,
         email: 'old@example.com',
-        password: 'hashedPassword',
+        first_name: 'OldName',
+        last_name: 'Doe',
       };
 
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+      jest.spyOn(userRepository, 'save').mockResolvedValue({ ...mockUser, ...updateUserDto } as any);
+      await userService.update(userId, updateUserDto, currentUser);
 
-      await expect(userService.update(userId, updateUserDto, currentUser)).rejects.toThrow(
-        new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
-          data: null,
-        }),
-      );
+      expect(userRepository.save).toHaveBeenCalledWith({ ...mockUser, first_name: 'John' });
     });
+
+    it('should update last_name if provided and valid', async () => {
+      // Arrange
+      const userId = '550e8400-e29b-41d4-a716-446655440000';
+      const updateUserDto: UpdateUserDto = { last_name: 'Smith' };
+      const currentUser = {
+        sub: userId,
+        user_type: 'admin',
+      };
+      const mockUser = {
+        id: userId,
+        email: 'old@example.com',
+        first_name: 'John',
+        last_name: 'Doe',
+      };
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as any);
+      jest.spyOn(userRepository, 'save').mockResolvedValue({ ...mockUser, ...updateUserDto } as any);
+      await userService.update(userId, updateUserDto, currentUser);
+
+      expect(userRepository.save).toHaveBeenCalledWith({ ...mockUser, last_name: 'Smith' });
+    });
+  
 
     it('should throw BadRequestException for an invalid email', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
