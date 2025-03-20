@@ -97,7 +97,7 @@ export class ElectionService {
       throw new HttpException(
         {
           status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED ,
+          message: SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED,
           data: null,
         },
         HttpStatus.BAD_REQUEST,
