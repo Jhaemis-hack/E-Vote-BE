@@ -1,5 +1,6 @@
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 import { Election } from '../../election/entities/election.entity';
+import { Subscription } from '../../subscription/entities/subscription.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 
 @Entity({ name: 'admin' })
@@ -27,4 +28,7 @@ export class User extends AbstractBaseEntity {
 
   @OneToMany(() => Election, election => election.created_by_user)
   created_elections: Election[];
+
+  @OneToMany(() => Subscription, subscription => subscription.user)
+  subscriptions: Subscription[];
 }
