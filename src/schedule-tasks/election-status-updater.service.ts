@@ -43,7 +43,7 @@ export class ElectionStatusUpdaterService {
   }
 
   private async loadAndScheduleElections() {
-    const elections = await this.electionRepository.find({ relations: ['voters'] });
+    const elections = await this.electionRepository.find({ relations: ['voters', 'created_by_user'] });
     this.logger.log(`Found ${elections.length} elections to schedule`);
 
     for (const election of elections) {
@@ -73,12 +73,25 @@ export class ElectionStatusUpdaterService {
           if (statusType === 'start') {
             this.logger.log(`Updating election ${electionId} from UPCOMING to ONGOING`);
             await this.updateElectionStatus(electionId, ElectionStatus.ONGOING);
+
+            // Send admin monitoring emails when election starts
+            const election = await this.electionRepository.findOne({
+              where: { id: electionId },
+              relations: ['voters', 'created_by_user'],
+            });
+
+            if (election) {
+              await this.emailService.sendAdminElectionMonitorEmails(election);
+            }
           } else if (statusType === 'end') {
             this.logger.log(`Updating election ${electionId} from ONGOING to COMPLETED`);
             await this.updateElectionStatus(electionId, ElectionStatus.COMPLETED);
           } else if (statusType === 'reminder') {
             this.logger.log(`Sending reminder for election ${electionId}`);
             await this.sendReminderEmails(electionId);
+          } else if (statusType === 'admin_monitor') {
+            this.logger.log(`Sending admin monitoring emails for election ${electionId}`);
+            await this.sendAdminMonitoringEmails(electionId);
           }
         } catch (error) {
           this.logger.error(`Failed to process expired key ${message}: ${error.message}`);
@@ -126,10 +139,23 @@ export class ElectionStatusUpdaterService {
 
       this.logger.log(`Scheduling start update for election ${id} in ${ttlSeconds} seconds`);
       await this.redis.set(startKey, '1', 'EX', ttlSeconds);
+
+      // Schedule admin monitoring emails to be sent at the same time
+      const adminMonitorKey = `${this.redisKeyPrefix}${id}:admin_monitor`;
+      await this.redis.set(adminMonitorKey, '1', 'EX', ttlSeconds);
     } else {
       this.logger.log(`Start date/time for election ${id} is in the past`);
       if (election.status === ElectionStatus.UPCOMING) {
         await this.updateElectionStatus(id, ElectionStatus.ONGOING);
+
+        // Send admin monitoring emails immediately if election should be ongoing
+        const updatedElection = await this.electionRepository.findOne({
+          where: { id },
+          relations: ['voters', 'created_by_user'],
+        });
+        if (updatedElection) {
+          await this.emailService.sendAdminElectionMonitorEmails(updatedElection);
+        }
       }
     }
 
@@ -159,7 +185,7 @@ export class ElectionStatusUpdaterService {
   }
 
   private async checkAndUpdateElections() {
-    const elections = await this.electionRepository.find();
+    const elections = await this.electionRepository.find({ relations: ['voters', 'created_by_user'] });
     const currentTime = moment().utc();
 
     for (const election of elections) {
@@ -174,6 +200,9 @@ export class ElectionStatusUpdaterService {
       } else if (startDateTime.isBefore(currentTime) && election.status === ElectionStatus.UPCOMING) {
         this.logger.log(`Periodic check: Updating election ${election.id} to ONGOING`);
         await this.updateElectionStatus(election.id, ElectionStatus.ONGOING);
+
+        // Send admin monitoring emails
+        await this.emailService.sendAdminElectionMonitorEmails(election);
       }
     }
   }
@@ -243,6 +272,25 @@ export class ElectionStatusUpdaterService {
           this.logger.error(`Failed to send reminder emails for election ${electionId}: ${error.message}`);
         }
       }
+    }
+  }
+
+  private async sendAdminMonitoringEmails(electionId: string) {
+    const election = await this.electionRepository.findOne({
+      where: { id: electionId },
+      relations: ['voters', 'created_by_user'],
+    });
+
+    if (!election) {
+      this.logger.error(`Election with id ${electionId} not found!`);
+      return;
+    }
+
+    try {
+      await this.emailService.sendAdminElectionMonitorEmails(election);
+      this.logger.log(`Admin monitoring emails sent for election ${electionId}`);
+    } catch (error) {
+      this.logger.error(`Failed to send admin monitoring emails for election ${electionId}: ${error.message}`);
     }
   }
 

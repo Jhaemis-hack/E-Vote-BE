@@ -768,7 +768,7 @@ describe('UserService', () => {
 
       const newEmailQueue = new MockEmailQueue();
       // Instantiate EmailService with the mocked EmailQueue
-      emailService = new EmailService(newEmailQueue);
+      emailService = new EmailService(newEmailQueue, userRepository);
 
       // Mock configService
       configService = {};

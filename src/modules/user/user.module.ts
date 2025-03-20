@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { UserService } from './user.service';
@@ -10,8 +10,9 @@ import { ForgotPasswordToken } from './entities/forgot-password.entity';
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([User, ForgotPasswordToken]),
-    EmailModule,
+    forwardRef(() => EmailModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -20,7 +21,6 @@ import { ForgotPasswordToken } from './entities/forgot-password.entity';
         signOptions: { expiresIn: configService.get<string>('auth.jwtExpiry') },
       }),
     }),
-    EmailModule,
   ],
   providers: [UserService],
   controllers: [UserController],
