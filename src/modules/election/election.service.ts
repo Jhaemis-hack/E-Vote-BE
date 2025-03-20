@@ -160,6 +160,7 @@ export class ElectionService {
     const admin = await this.userRepository.findOne({
       where: { id: savedElection.created_by },
     });
+
     if (!admin) {
       this.logger.error(`Admin with ID ${savedElection.created_by} not found`);
       return;
