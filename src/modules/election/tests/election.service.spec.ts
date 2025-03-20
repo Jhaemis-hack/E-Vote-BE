@@ -29,7 +29,7 @@ describe('ElectionService', () => {
   let voteRepository: Repository<Vote>;
   let voterRepository: Repository<Voter>;
   let userRepository: Repository<User>;
-  let emailService: EmailService
+  let emailService: EmailService;
 
   const mockElectionRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
@@ -72,8 +72,8 @@ describe('ElectionService', () => {
   });
 
   const mockUserRepository = () => ({
-    findOne: jest.fn()
-  })
+    findOne: jest.fn(),
+  });
 
   // Mock ElectionStatusUpdaterService
   const mockElectionStatusUpdaterService = {
@@ -84,7 +84,6 @@ describe('ElectionService', () => {
     sendElectionCreationEmail: jest.fn().mockResolvedValue(undefined),
   };
 
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -93,7 +92,7 @@ describe('ElectionService', () => {
         { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
         { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
         { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
-        { provide: getRepositoryToken(User), useFactory: mockUserRepository},
+        { provide: getRepositoryToken(User), useFactory: mockUserRepository },
         { provide: ElectionStatusUpdaterService, useValue: mockElectionStatusUpdaterService },
         { provide: EmailService, useValue: mockEmailService },
       ],
@@ -104,7 +103,7 @@ describe('ElectionService', () => {
     candidateRepository = module.get<Repository<Candidate>>(getRepositoryToken(Candidate));
     voteRepository = module.get<Repository<Vote>>(getRepositoryToken(Vote));
     voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
-    userRepository = module.get<Repository<User>>(getRepositoryToken(User))
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     emailService = module.get<EmailService>(EmailService);
   });
 
@@ -132,7 +131,7 @@ describe('ElectionService', () => {
       userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
 
       const result = await service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e');
-      console.log(result)
+      console.log(result);
 
       expect(result).toEqual({
         status_code: 201,
@@ -166,17 +165,20 @@ describe('ElectionService', () => {
 
       expect(electionRepository.save).toHaveBeenCalled();
       expect(candidateRepository.save).toHaveBeenCalled();
-      expect(emailService.sendElectionCreationEmail).toHaveBeenCalledWith(mockUser.email, expect.objectContaining({
-        title: createElectionDto.title,
-        description: createElectionDto.description,
-        start_date: createElectionDto.start_date,
-        end_date: createElectionDto.end_date,
-        start_time: createElectionDto.start_time,
-        vote_id: expect.any(String),
-        end_time: createElectionDto.end_time,
-        type: createElectionDto.election_type,
-        created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
-      }));
+      expect(emailService.sendElectionCreationEmail).toHaveBeenCalledWith(
+        mockUser.email,
+        expect.objectContaining({
+          title: createElectionDto.title,
+          description: createElectionDto.description,
+          start_date: createElectionDto.start_date,
+          end_date: createElectionDto.end_date,
+          start_time: createElectionDto.start_time,
+          vote_id: expect.any(String),
+          end_time: createElectionDto.end_time,
+          type: createElectionDto.election_type,
+          created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
+        }),
+      );
       expect(mockElectionStatusUpdaterService.scheduleElectionUpdates);
     });
 
@@ -888,10 +890,9 @@ describe('ElectionService', () => {
           start_time: '09:00:00',
           end_time: '17:00:00',
         };
-        await service.create(dto, adminId)
+        await service.create(dto, adminId);
         expect(electionRepository.create).toHaveBeenCalled();
-        expect(electionRepository.save).toHaveBeenCalled()
-
+        expect(electionRepository.save).toHaveBeenCalled();
       });
 
       it('should accept when start time is after end time but on different days', async () => {
@@ -902,10 +903,9 @@ describe('ElectionService', () => {
           start_time: '17:00:00',
           end_time: '09:00:00',
         };
-        await service.create(dto, adminId)
+        await service.create(dto, adminId);
         expect(electionRepository.create).toHaveBeenCalled();
         expect(electionRepository.save).toHaveBeenCalled();
-
       });
     });
   });

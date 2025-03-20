@@ -16,10 +16,9 @@ describe('ElectionService - update', () => {
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
   let voterRepository: Repository<Voter>;
-  let userRepository: Repository<User>
+  let userRepository: Repository<User>;
   let electionStatusUpdaterService: ElectionStatusUpdaterService;
   let emailService: EmailService;
-
 
   beforeEach(() => {
     electionRepository = {
@@ -41,9 +40,6 @@ describe('ElectionService - update', () => {
     emailService = {
       sendElectionReminderEmails: jest.fn(),
     } as unknown as EmailService;
-
-
-    
 
     // Provide all 4 arguments to the ElectionService constructor
     service = new ElectionService(
