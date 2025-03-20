@@ -93,3 +93,4 @@ export const ERROR_VOTER_LIST_FORBBIDEN_ACCESS = "Only Election Creator can view
 export const PAGE_SIZE_ERROR = 'Invalid pagination parameters. Page and pageSize must be greater than 0.';
 export const VOTE_LINK_NOT_FOUND = 'Voter with given vote link not found';
 export const VOTE_ALREADY_CAST = 'Voter has a vote for this election already.';
+export const ELECTION_CREATED_EMAIL_FAILED = 'Election created email failed to send';

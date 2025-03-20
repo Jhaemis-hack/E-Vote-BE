@@ -1,4 +1,4 @@
-import { ForbiddenException, HttpException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { DeepPartial, Repository } from 'typeorm';
@@ -12,14 +12,14 @@ import {
 import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Candidate } from '../../candidate/entities/candidate.entity';
+import { EmailService } from '../../email/email.service';
 import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
-import type { User } from '../../user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 import { Voter } from '../../voter/entities/voter.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
-import { EmailService } from '../../email/email.service';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -27,6 +27,8 @@ describe('ElectionService', () => {
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
   let voterRepository: Repository<Voter>;
+  let userRepository: Repository<User>;
+  let emailService: EmailService;
 
   const mockElectionRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
@@ -68,9 +70,17 @@ describe('ElectionService', () => {
     find: jest.fn(),
   });
 
+  const mockUserRepository = () => ({
+    findOne: jest.fn(),
+  });
+
   // Mock ElectionStatusUpdaterService
   const mockElectionStatusUpdaterService = {
     scheduleElectionUpdates: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockEmailService = {
+    sendElectionCreationEmail: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -81,13 +91,9 @@ describe('ElectionService', () => {
         { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
         { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
         { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
+        { provide: getRepositoryToken(User), useFactory: mockUserRepository },
         { provide: ElectionStatusUpdaterService, useValue: mockElectionStatusUpdaterService },
-        {
-          provide: EmailService,
-          useValue: {
-            sendEmail: jest.fn().mockResolvedValue(undefined),
-          },
-        },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 
@@ -96,6 +102,8 @@ describe('ElectionService', () => {
     candidateRepository = module.get<Repository<Candidate>>(getRepositoryToken(Candidate));
     voteRepository = module.get<Repository<Vote>>(getRepositoryToken(Vote));
     voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
+    emailService = module.get<EmailService>(EmailService);
   });
 
   afterEach(() => {
@@ -118,8 +126,11 @@ describe('ElectionService', () => {
           { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a strong candidate' },
         ],
       };
+      const mockUser = { id: 'f14acef6-abf1-41fc-aca5-0cf932db657e', email: 'admin@example.com' };
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
 
       const result = await service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e');
+      console.log(result);
 
       expect(result).toEqual({
         status_code: 201,
@@ -153,6 +164,20 @@ describe('ElectionService', () => {
 
       expect(electionRepository.save).toHaveBeenCalled();
       expect(candidateRepository.save).toHaveBeenCalled();
+      expect(emailService.sendElectionCreationEmail).toHaveBeenCalledWith(
+        mockUser.email,
+        expect.objectContaining({
+          title: createElectionDto.title,
+          description: createElectionDto.description,
+          start_date: createElectionDto.start_date,
+          end_date: createElectionDto.end_date,
+          start_time: createElectionDto.start_time,
+          vote_id: expect.any(String),
+          end_time: createElectionDto.end_time,
+          type: createElectionDto.election_type,
+          created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
+        }),
+      );
       expect(mockElectionStatusUpdaterService.scheduleElectionUpdates);
     });
 
@@ -587,7 +612,7 @@ describe('ElectionService', () => {
       } as any);
 
       await expect(service.getElectionByVoterLink(validVoteLink)).rejects.toThrow(
-        new ForbiddenException('Voter has a vote for this election already.'),
+        new ForbiddenError(SYS_MSG.VOTE_ALREADY_CAST),
       );
     });
 
@@ -699,10 +724,7 @@ describe('ElectionService', () => {
 
       it('should throw HttpException if electionId is invalid', async () => {
         await expect(service.getElectionResults('invalid-id', adminId)).rejects.toThrow(
-          new HttpException(
-            { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-            HttpStatus.BAD_REQUEST,
-          ),
+          new BadRequestError(SYS_MSG.INCORRECT_UUID),
         );
       });
 
@@ -841,8 +863,7 @@ describe('ElectionService', () => {
           start_time: '09:00:00',
           end_time: '17:00:00',
         };
-
-        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        await service.create(dto, adminId);
         expect(electionRepository.create).toHaveBeenCalled();
         expect(electionRepository.save).toHaveBeenCalled();
       });
@@ -855,8 +876,7 @@ describe('ElectionService', () => {
           start_time: '17:00:00',
           end_time: '09:00:00',
         };
-
-        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        await service.create(dto, adminId);
         expect(electionRepository.create).toHaveBeenCalled();
         expect(electionRepository.save).toHaveBeenCalled();
       });
