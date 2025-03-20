@@ -600,7 +600,6 @@ export class ElectionService {
         endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
         const vote_count = await this.voteRepository.findAndCount({ where: { election_id: election.id } });
-
         const mappedElection = this.transformElectionResponse(election);
 
         return {
@@ -622,9 +621,9 @@ export class ElectionService {
               name: candidate.name,
               photo_url: candidate.photo_url,
               bio: candidate.bio,
-          })) || [],
+            })) || [],
         };
-      })
+      }),
     );
     return mappedElections.filter(election => election !== null);
   }
