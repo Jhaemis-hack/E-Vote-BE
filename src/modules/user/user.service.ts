@@ -176,7 +176,22 @@ export class UserService {
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
-      data: userData,
+      data: {
+        id: userData.id,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at,
+        deleted_at: userData.deleted_at,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        email: userData.email,
+        is_verified: userData.is_verified,
+        google_id: userData.google_id,
+        profile_picture: userData.profile_picture,
+        plan: userData.plan,
+        created_elections: [],
+        subscriptions: [],
+        billing_Interval: userData.billing_Interval,
+      },
     };
   }
 
