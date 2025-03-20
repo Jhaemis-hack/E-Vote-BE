@@ -10,18 +10,19 @@ export class EmailProcessor {
 
   constructor(private readonly mailerService: MailerService) {}
 
-  @Process('verify-email')
-  async sendVeriFyEmailJob(job: Job<MailInterface>) {
-    const { mail } = job.data;
-    try {
-      await this.mailerService.sendMail({
-        ...mail,
-      });
-      this.logger.log(`Verify Email successfully sent to ${mail.to}`);
-    } catch (SendVerifyEmailError) {
-      this.logger.error(`EmailProcessor - SendVerifyEmailError: ${SendVerifyEmailError.message}`);
-    }
-  }
+  //  TODO
+  // @Process('verify-email')
+  // async sendVeriFyEmailJob(job: Job<MailInterface>) {
+  //   const { mail } = job.data;
+  //   try {
+  //     await this.mailerService.sendMail({
+  //       ...mail,
+  //     });
+  //     this.logger.log(`Verify Email successfully sent to ${mail.to}`);
+  //   } catch (SendVerifyEmailError) {
+  //     this.logger.error(`EmailProcessor - SendVerifyEmailError: ${SendVerifyEmailError.message}`);
+  //   }
+  // }
 
   @Process('reset-password')
   async sendResetPasswordEmailJob(job: Job<MailInterface>) {
@@ -54,6 +55,58 @@ export class EmailProcessor {
       this.logger.log(`Welcome email sent successfully to ${mail.to}`);
     } catch (sendWelcomeEmailJobError) {
       this.logger.error(`EmailProcessor - sendWelcomeEmailJobError: ${sendWelcomeEmailJobError}`);
+    }
+  }
+
+  @Process('election-start')
+  async sendElectionStartEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Election start email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ElectionStartEmailJob error: ${error.message}`);
+    }
+  }
+
+  @Process('election-monitor')
+  async sendAdminElectionMonitorEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Admin Election Monitor email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - AdminElectionMonitorEmailJob error: ${error.message}`);
+    }
+  }
+
+  @Process('election-reminder')
+  async sendElectionReminderEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Election reminder email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ElectionReminderEmailJob error: ${error.message}`);
+    }
+  }
+
+  @Process('election-creation')
+  async sendElectionCreationEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Election creation email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ElectionCreationEmailJob error: ${error.message}`);
     }
   }
 }

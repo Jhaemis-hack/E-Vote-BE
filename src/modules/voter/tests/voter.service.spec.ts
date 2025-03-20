@@ -10,8 +10,6 @@ import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestException } from '@nestjs/common';
 import * as xlsx from 'xlsx';
-import * as csv from 'csv-parser';
-import * as stream from 'stream';
 
 describe('VoterService', () => {
   let service: VoterService;
@@ -298,10 +296,11 @@ describe('VoterService', () => {
     it('should save voters successfully', async () => {
       const voters = [
         {
+          id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'John Doe',
           email: 'john@example.com',
+          verification_token: '123e4567-e89b-12d3-a456-426614174001',
           election: { id: '123' },
-          verification_token: '340e8400-e29b-41d4-a716-446655440990',
         },
       ];
 

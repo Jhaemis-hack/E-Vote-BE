@@ -5,10 +5,10 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { isUUID } from 'class-validator';
 import { Election } from '../election/entities/election.entity';
-import { Express } from 'express';
 import * as csv from 'csv-parser';
 import * as xlsx from 'xlsx';
 import * as stream from 'stream';
@@ -16,14 +16,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Voter } from '../voter/entities/voter.entity';
 import { In, Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { randomUUID } from 'crypto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class VoterService {
+  private logger = new Logger(VoterService.name);
+
   constructor(
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
-  ) {}
+  ) { }
 
   async findAll(
     page: number,
@@ -109,7 +111,6 @@ export class VoterService {
       voter_id: voter.id,
       name: voter.name,
       email: voter.email,
-      verification_token: voter.verification_token,
     }));
 
     const total_pages = Math.ceil(total / pageSize);
@@ -155,7 +156,13 @@ export class VoterService {
     electionId: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
-      const voters: { name: string; email: string; election: { id: string }; verification_token: string }[] = [];
+      const voters: {
+        id: string;
+        name: string;
+        email: string;
+        verification_token: string;
+        election: { id: string };
+      }[] = [];
       const emailOccurrences = new Map<string, number[]>();
       let rowIndex = 1;
 
@@ -176,10 +183,11 @@ export class VoterService {
                 } else {
                   emailOccurrences.set(email, [rowIndex]);
                   voters.push({
+                    id: crypto.randomUUID(),
                     name,
                     email,
+                    verification_token: crypto.randomUUID(),
                     election: { id: electionId },
-                    verification_token: randomUUID(),
                   });
                 }
               }
@@ -212,8 +220,7 @@ export class VoterService {
                   ),
                 );
               }
-
-              await this.saveVoters(voters);
+              const savedVoters = await this.saveVoters(voters);
 
               resolve({
                 status_code: HttpStatus.CREATED,
@@ -225,10 +232,10 @@ export class VoterService {
                 error instanceof HttpException
                   ? error
                   : new InternalServerErrorException({
-                      status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-                      message: SYS_MSG.ERROR_CSV_PROCESSING,
-                      data: null,
-                    }),
+                    status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: SYS_MSG.ERROR_CSV_PROCESSING,
+                    data: null,
+                  }),
               );
             }
           })
@@ -237,10 +244,10 @@ export class VoterService {
               error instanceof HttpException
                 ? error
                 : new InternalServerErrorException({
-                    status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: SYS_MSG.ERROR_CSV_PROCESSING,
-                    data: null,
-                  }),
+                  status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+                  message: SYS_MSG.ERROR_CSV_PROCESSING,
+                  data: null,
+                }),
             );
           });
       });
@@ -273,7 +280,13 @@ export class VoterService {
 
       const rows = xlsx.utils.sheet_to_json(sheet);
       const emailOccurrences = new Map<string, number[]>();
-      const voters: { name: string; email: string; election: { id: string }; verification_token: string }[] = [];
+      const voters: {
+        id: string;
+        name: string;
+        email: string;
+        verification_token: string;
+        election: { id: string };
+      }[] = [];
 
       rows.forEach((row: any, index: number) => {
         const name = row.name || row.Name || row.NAME;
@@ -285,10 +298,11 @@ export class VoterService {
           } else {
             emailOccurrences.set(email, [index + 1]);
             voters.push({
+              id: crypto.randomUUID(),
               name,
               email,
+              verification_token: crypto.randomUUID(),
               election: { id: electionId },
-              verification_token: randomUUID(),
             });
           }
         }
@@ -332,7 +346,13 @@ export class VoterService {
   }
 
   async saveVoters(
-    data: { name: string; email: string; election: { id: string }; verification_token: string }[],
+    data: {
+      id: string;
+      name: string;
+      email: string;
+      verification_token: string;
+      election: { id: string };
+    }[],
   ): Promise<any> {
     try {
       if (!data.length) {
@@ -351,7 +371,6 @@ export class VoterService {
       });
 
       if (existingVoters.length > 0) {
-        const existingEmails = existingVoters.map(voter => voter.email);
         throw new ConflictException({
           status_code: HttpStatus.CONFLICT,
           message: SYS_MSG.DUPLICATE_EMAILS_ELECTION,
@@ -362,6 +381,7 @@ export class VoterService {
       if (error instanceof HttpException) {
         throw error;
       }
+      this.logger.log(error);
       throw new InternalServerErrorException({
         status_code: HttpStatus.INTERNAL_SERVER_ERROR,
         message: SYS_MSG.VOTER_INSERTION_ERROR,
@@ -370,3 +390,4 @@ export class VoterService {
     }
   }
 }
+

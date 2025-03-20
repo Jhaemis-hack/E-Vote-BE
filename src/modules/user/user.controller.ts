@@ -78,6 +78,7 @@ export class UserController {
 
   @Patch('/user/:id')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiResponse({ status: 200, description: 'The user has been successfully updated.', type: User })
