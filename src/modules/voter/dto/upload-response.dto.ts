@@ -25,6 +25,21 @@ export class VoterUploadErrorDto {
   data: any;
 }
 
+export class VoterUploadLimitErrorDto {
+  @ApiProperty({ description: 'HTTP status code of the response', example: 400 })
+  status_code: number;
+
+  @ApiProperty({
+    description: 'Error message detailing the issue',
+    example:
+      'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.',
+  })
+  message: string;
+
+  @ApiProperty({ description: 'Additional error details if available, otherwise null', example: null, nullable: true })
+  data: any;
+}
+
 export class DuplicateEmailsErrorDto {
   @ApiProperty({ description: 'HTTP status code of the response', example: 400 })
   status_code: number;

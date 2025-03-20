@@ -5,20 +5,26 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiProperty({
+    description: 'The first name of the user',
+    example: 'John',
+  })
+  @IsOptional()
+  @IsString()
+  first_name?: string;
+
+  @ApiProperty({
+    description: 'The last name of the user',
+    example: 'Doe',
+  })
+  @IsOptional()
+  @IsString()
+  last_name?: string;
+
+  @ApiProperty({
     description: 'The email address of the user',
     example: 'user@example.com',
   })
   @IsOptional()
   @IsEmail({}, { message: 'Invalid email format' })
   email?: string;
-
-  @ApiProperty({
-    description: 'The password for the user account',
-    example: 'p@ssw0rd!',
-    minLength: 8,
-  })
-  @IsOptional()
-  @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  password?: string;
 }
