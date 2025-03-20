@@ -144,7 +144,6 @@ export class VoterService {
     const ext = file.originalname.split('.').pop()?.toLowerCase();
     const user = await this.userService.getUserById(userid);
     const plan = user.data.plan.toLowerCase();
-    console.log(plan);
     if (ext === 'csv') {
       return this.processCSV(file.buffer, electionId, plan);
     } else if (ext === 'xlsx') {

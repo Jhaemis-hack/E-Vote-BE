@@ -17,7 +17,12 @@ import { memoryStorage } from 'multer';
 import { AuthGuard } from '../../guards/auth.guard';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { ApiFile } from './dto/upload-file.schema';
-import { DuplicateEmailsErrorDto, VoterUploadErrorDto, VoterUploadResponseDto } from './dto/upload-response.dto';
+import {
+  DuplicateEmailsErrorDto,
+  VoterUploadErrorDto,
+  VoterUploadLimitErrorDto,
+  VoterUploadResponseDto,
+} from './dto/upload-response.dto';
 
 @Controller('voters')
 export class VoterController {
@@ -53,6 +58,12 @@ export class VoterController {
     status: 400,
     description: 'Invalid file format',
     type: VoterUploadErrorDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.',
+    type: VoterUploadLimitErrorDto,
   })
   @ApiResponse({
     status: 409,
