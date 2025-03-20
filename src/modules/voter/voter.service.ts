@@ -389,4 +389,18 @@ export class VoterService {
       });
     }
   }
+
+  async getVotersByElection(electionId: string) {
+    if (!isUUID(electionId)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.voterRepository.find({
+      where: { election: { id: electionId } },
+      relations: ['election'],
+    });
+  }
 }
