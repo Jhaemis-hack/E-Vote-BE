@@ -14,7 +14,7 @@ export class VoteService {
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
-  ) {}
+  ) { }
 
   async createVote(vote_link: string, createVoteDto: CreateVoteDto) {
     const voter = await this.getVoter(vote_link);
@@ -139,9 +139,6 @@ export class VoteService {
         data: null,
       });
     }
-
-    voterExist.is_verified = true;
-    await this.voterRepository.save(voterExist);
 
     return voterExist;
   }

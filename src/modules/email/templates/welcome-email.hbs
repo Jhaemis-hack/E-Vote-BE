@@ -1,354 +1,503 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Resolve Welcome Email</title>
-  <style type="text/css">
-    /* Client-specific resets */
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; border: 0; }
-    
-    /* Reset styles */
-    body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
-    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    table { border-collapse: collapse !important; }
-    
-    /* Outlook-specific fixes */
-    .ExternalClass { width: 100%; }
-    .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div { line-height: 100%; }
-    
-    /* iOS blue link fix */
-    a[x-apple-data-detectors] {
-      color: inherit !important;
-      text-decoration: none !important;
-      font-size: inherit !important;
-      font-family: inherit !important;
-      font-weight: inherit !important;
-      line-height: inherit !important;
-    }
-  </style>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f8f8f8;">
-  <!-- Main container -->
-  <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f8f8f8">
-    <tr>
-      <td align="center" valign="top" style="padding: 20px 0;">
-        <!-- Email body -->
-        <table width="420" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="border: 1px solid #dddddd;">
-          <!-- Header -->
-          <tr>
-            <td bgcolor="#051C2C" style="padding: 20px 24px; height: 87px;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <img src="https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png" alt="Resolve Logo" width="109" height="27" style="display: block;" />
-                  </td>
-                  <td align="right">
-                    <span style="font-size: 10px; color: #9ca3af;">https://resolve.vote/</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- Hero section -->
-          <tr>
-            <td bgcolor="#EEEDF8" style="padding: 20px 24px; height: 86px;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td width="70%" valign="middle">
-                    <h2 style="margin: 0; font-size: 13px; font-weight: bold; color: #000000; max-width: 236px;">Resolve it all—easy elections, trusted results</h2>
-                    <p style="margin: 5px 0 0 0; font-size: 8px; color: #1F2124; max-width: 236px;">If you have any questions kindly reach out to our support team at support@resolve.com</p>
-                  </td>
-                  <td width="30%" align="right" valign="middle">
-                    <img src="https://res.cloudinary.com/dueipgl4k/image/upload/v1741814246/FY25-Voter_Registration-frames-3-1000x1000_rgkk6c.png" alt="Vote icon" width="120" height="auto" style="display: block; margin-left: auto;" />
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- Welcome section -->
-          <tr>
-            <td style="padding: 0 24px;">
-              <h2 style="padding: 24px 0; margin: 0; font-size: 16px; font-weight: bold;">Welcome to Resolve! Your Elections Just Got Better.</h2>
-              <p style="margin: 0; font-size: 14px;">Hi {{email}},</p>
-              <p style="margin: 8px 0; font-size: 10px; color: #1F2124;">
-                Welcome to Resolve! You've just taken the first step towards
-                simplifying your election process, and we're here to guide you every
-                step of the way.
-              </p>
-            </td>
-          </tr>
-          
-          <!-- Features section -->
-          <tr>
-            <td style="padding: 10px 24px 0 24px;">
-              <h3 style="margin: 0 0 10px 0; font-size: 12px; font-weight: bold;">Why it Matters:</h3>
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <!-- Feature 1 -->
-                <tr>
-                  <td valign="top" style="padding-bottom: 8px;">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td width="20" valign="top">
-                          <table width="13" height="13" border="0" cellpadding="0" cellspacing="0" bgcolor="#90B5FF" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">✓</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td width="10"></td>
-                        <td valign="middle">
-                          <span style="font-size: 10px; color: #1F2124; font-weight: medium;">Multi-Device Accessibility: </span>
-                          <span style="font-size: 10px; color: #1F2124;">Vote from any device, anytime, anywhere</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                
-                <!-- Feature 2 -->
-                <tr>
-                  <td valign="top" style="padding-bottom: 8px;">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td width="20" valign="top">
-                          <table width="13" height="13" border="0" cellpadding="0" cellspacing="0" bgcolor="#90B5FF" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">✓</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td width="10"></td>
-                        <td valign="middle">
-                          <span style="font-size: 10px; color: #1F2124; font-weight: medium;">Real-Time Results: </span>
-                          <span style="font-size: 10px; color: #1F2124;">Upload real-time results for transparency.</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                
-                <!-- Feature 3 -->
-                <tr>
-                  <td valign="top" style="padding-bottom: 8px;">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td width="20" valign="top">
-                          <table width="13" height="13" border="0" cellpadding="0" cellspacing="0" bgcolor="#90B5FF" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">✓</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td width="10"></td>
-                        <td valign="middle">
-                          <span style="font-size: 10px; color: #1F2124; font-weight: medium;">End-to-End Encryption: </span>
-                          <span style="font-size: 10px; color: #1F2124;">Your votes remain private and secure.</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- Next Steps section -->
-          <tr>
-            <td style="padding: 20px 24px;">
-              <h3 style="margin: 0 0 16px 0; font-size: 12px; font-weight: bold;">What's Next?</h3>
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <!-- Step 1 -->
-                <tr>
-                  <td valign="top" style="padding-bottom: 8px;">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td width="20" valign="top">
-                          <table width="16" height="16" border="0" cellpadding="0" cellspacing="0" bgcolor="#90B5FF" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">1</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td width="8"></td>
-                        <td valign="middle">
-                          <span style="font-size: 10px; color: #1F2124; font-weight: medium;">Explore the Platform:</span>
-                          <span style="font-size: 10px; color: #1F2124;"> Log in to </span>
-                          <a href="https://resolve.vote/" style="font-size: 10px; color: #214D8E; text-decoration: none;">Resolve</a>
-                          <span style="font-size: 10px; color: #1F2124;"> and get familiar with key features.</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                
-                <!-- Step 2 -->
-                <tr>
-                  <td valign="top" style="padding-bottom: 8px;">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td width="20" valign="top">
-                          <table width="16" height="16" border="0" cellpadding="0" cellspacing="0" bgcolor="#90B5FF" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">2</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td width="8"></td>
-                        <td valign="middle">
-                          <span style="font-size: 10px; color: #1F2124; font-weight: medium;">Create Your Election:</span>
-                          <span style="font-size: 10px; color: #1F2124;"> Set up your first </span>
-                          <a href="#" style="font-size: 10px; color: #214D8E; text-decoration: none;">election</a>
-                          <span style="font-size: 10px; color: #1F2124;"> in minutes.</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                
-                <!-- Step 3 -->
-                <tr>
-                  <td valign="top" style="padding-bottom: 8px;">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td width="20" valign="top">
-                          <table width="16" height="16" border="0" cellpadding="0" cellspacing="0" bgcolor="#90B5FF" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">3</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td width="8"></td>
-                        <td valign="middle">
-                          <span style="font-size: 10px; color: #1F2124; font-weight: medium;">Visit Help Center:</span>
-                          <span style="font-size: 10px; color: #1F2124;"> Find answers and step-by-step guides with </span>
-                          <a href="#" style="font-size: 10px; color: #214D8E; text-decoration: none;">help.</a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                
-                <!-- Step 4 -->
-                <tr>
-                  <td valign="top">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td width="20" valign="top">
-                          <table width="16" height="16" border="0" cellpadding="0" cellspacing="0" bgcolor="#90B5FF" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">4</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td width="8"></td>
-                        <td valign="middle">
-                          <span style="font-size: 10px; color: #1F2124; font-weight: medium;">Watch Tutorial Video:</span>
-                          <span style="font-size: 10px; color: #1F2124;"> Learn how to create an election in under 5 minutes.</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- CTA Button -->
-          <tr>
-            <td align="center" style="padding: 20px 0;">
-              <table border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" bgcolor="#002347" style="border-radius: 6px;">
-                    <a href="https://resolve.vote/" target="_blank" style="display: inline-block; padding: 12px 24px; font-size: 14px; color: #ffffff; text-decoration: none; font-weight: normal; width: 280px;">Launch Your First Election</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td bgcolor="#002347" style="padding: 24px; height: 161px;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center">
-                          <img src="https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png" alt="Resolve Logo" width="57" height="14" style="display: block;" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td align="center">
-                          <span style="font-size: 8px; color: #9ca3af;">Secure Elections, <br/> Trusted Results</span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                  <td align="right">
-                    <table border="0" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td>
-                          <table width="16.6" height="16.6" border="0" cellpadding="0" cellspacing="0" bgcolor="#6b7280" style="border-radius: 50%; margin-right: 4px;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">I</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <td>
-                          <table width="16.6" height="16.6" border="0" cellpadding="0" cellspacing="0" bgcolor="#6b7280" style="border-radius: 50%;">
-                            <tr>
-                              <td align="center" valign="middle">
-                                <span style="color: #ffffff; font-size: 10px;">f</span>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                
-                <tr>
-                  <td colspan="2" style="padding: 12px 0 8px 0; border-bottom: 1px solid #9ca3af;"></td>
-                </tr>
-                
-                <tr>
-                  <td style="padding-top: 8px;">
-                    <p style="margin: 0; font-size: 10px; color: #9ca3af; width: 164px;">Start with Resolve: Create, manage, and monitor your elections effortlessly.</p>
-                  </td>
-                  <td align="right" valign="bottom">
-                    <span style="font-size: 8px; color: #9ca3af;">© Resolve Rights Reserved 2024</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+  <head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Resolve Welcome Email</title>
+    <style type='text/css'>
+      /* Client-specific resets */
+      body,
+      table,
+      td,
+      a {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      table,
+      td {
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+        border: 0;
+      }
 
+      /* Reset styles */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+      }
+      img {
+        border: 0;
+        height: auto;
+        line-height: 100%;
+        outline: none;
+        text-decoration: none;
+      }
+      table {
+        border-collapse: collapse !important;
+      }
+
+      /* Outlook-specific fixes */
+      .ExternalClass {
+        width: 100%;
+      }
+      .ExternalClass,
+      .ExternalClass p,
+      .ExternalClass span,
+      .ExternalClass font,
+      .ExternalClass td,
+      .ExternalClass div {
+        line-height: 100%;
+      }
+
+      /* iOS blue link fix */
+      a[x-apple-data-detectors] {
+        color: inherit !important;
+        text-decoration: none !important;
+        font-size: inherit !important;
+        font-family: inherit !important;
+        font-weight: inherit !important;
+        line-height: inherit !important;
+      }
+    </style>
+  </head>
+  <body style='margin: 0; padding: 0; background-color: #f8f8f8;'>
+    <!-- Main container -->
+    <table width='100%' border='0' cellpadding='0' cellspacing='0' bgcolor='#f8f8f8'>
+      <tr>
+        <td align='center' valign='top' style='padding: 20px 0;'>
+          <!-- Email body -->
+          <table
+            width='420'
+            border='0'
+            cellpadding='0'
+            cellspacing='0'
+            bgcolor='#ffffff'
+            style='border: 1px solid #dddddd;'
+          >
+            <!-- Header -->
+            <tr>
+              <td bgcolor='#051C2C' style='padding: 20px 24px; height: 87px;'>
+                <table width='100%' border='0' cellpadding='0' cellspacing='0'>
+                  <tr>
+                    <td>
+                      <img
+                        src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png'
+                        alt='Resolve Logo'
+                        width='109'
+                        height='27'
+                        style='display: block;'
+                      />
+                    </td>
+                    <td align='right'>
+                      <span style='font-size: 10px; color: #9ca3af;'>https://resolve.vote/</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Hero section -->
+            <tr>
+              <td bgcolor='#EEEDF8' style='padding: 20px 24px; height: 86px;'>
+                <table width='100%' border='0' cellpadding='0' cellspacing='0'>
+                  <tr>
+                    <td width='70%' valign='middle'>
+                      <h2
+                        style='margin: 0; font-size: 13px; font-weight: bold; color: #000000; max-width: 236px;'
+                      >Resolve it all—easy elections, trusted results</h2>
+                      <p style='margin: 5px 0 0 0; font-size: 8px; color: #1F2124; max-width: 236px;'>If you have any
+                        questions kindly reach out to our support team at support@resolve.com</p>
+                    </td>
+                    <td width='30%' align='right' valign='middle'>
+                      <img
+                        src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814246/FY25-Voter_Registration-frames-3-1000x1000_rgkk6c.png'
+                        alt='Vote icon'
+                        width='120'
+                        height='auto'
+                        style='display: block; margin-left: auto;'
+                      />
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Welcome section -->
+            <tr>
+              <td style='padding: 0 24px;'>
+                <h2 style='padding: 24px 0; margin: 0; font-size: 16px; font-weight: bold;'>Welcome to Resolve! Your
+                  Elections Just Got Better.</h2>
+                <p style='margin: 0; font-size: 14px;'>Hi {{email}},</p>
+                <p style='margin: 8px 0; font-size: 10px; color: #1F2124;'>
+                  Welcome to Resolve! You've just taken the first step towards simplifying your election process, and
+                  we're here to guide you every step of the way.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Features section -->
+            <tr>
+              <td style='padding: 10px 24px 0 24px;'>
+                <h3 style='margin: 0 0 10px 0; font-size: 12px; font-weight: bold;'>Why it Matters:</h3>
+                <table width='100%' border='0' cellpadding='0' cellspacing='0'>
+                  <!-- Feature 1 -->
+                  <tr>
+                    <td valign='top' style='padding-bottom: 8px;'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td width='20' valign='top'>
+                            <table
+                              width='13'
+                              height='13'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#90B5FF'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>✓</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='10'></td>
+                          <td valign='middle'>
+                            <span style='font-size: 10px; color: #1F2124; font-weight: medium;'>Multi-Device
+                              Accessibility:
+                            </span>
+                            <span style='font-size: 10px; color: #1F2124;'>Vote from any device, anytime, anywhere</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Feature 2 -->
+                  <tr>
+                    <td valign='top' style='padding-bottom: 8px;'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td width='20' valign='top'>
+                            <table
+                              width='13'
+                              height='13'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#90B5FF'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>✓</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='10'></td>
+                          <td valign='middle'>
+                            <span style='font-size: 10px; color: #1F2124; font-weight: medium;'>Real-Time Results:
+                            </span>
+                            <span style='font-size: 10px; color: #1F2124;'>Upload real-time results for transparency.</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Feature 3 -->
+                  <tr>
+                    <td valign='top' style='padding-bottom: 8px;'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td width='20' valign='top'>
+                            <table
+                              width='13'
+                              height='13'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#90B5FF'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>✓</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='10'></td>
+                          <td valign='middle'>
+                            <span style='font-size: 10px; color: #1F2124; font-weight: medium;'>End-to-End Encryption:
+                            </span>
+                            <span style='font-size: 10px; color: #1F2124;'>Your votes remain private and secure.</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Next Steps section -->
+            <tr>
+              <td style='padding: 20px 24px;'>
+                <h3 style='margin: 0 0 16px 0; font-size: 12px; font-weight: bold;'>What's Next?</h3>
+                <table width='100%' border='0' cellpadding='0' cellspacing='0'>
+                  <!-- Step 1 -->
+                  <tr>
+                    <td valign='top' style='padding-bottom: 8px;'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td width='20' valign='top'>
+                            <table
+                              width='16'
+                              height='16'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#90B5FF'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>1</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='8'></td>
+                          <td valign='middle'>
+                            <span style='font-size: 10px; color: #1F2124; font-weight: medium;'>Explore the Platform:</span>
+                            <span style='font-size: 10px; color: #1F2124;'> Log in to </span>
+                            <a
+                              href='https://resolve.vote/'
+                              style='font-size: 10px; color: #214D8E; text-decoration: none;'
+                            >Resolve</a>
+                            <span style='font-size: 10px; color: #1F2124;'> and get familiar with key features.</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Step 2 -->
+                  <tr>
+                    <td valign='top' style='padding-bottom: 8px;'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td width='20' valign='top'>
+                            <table
+                              width='16'
+                              height='16'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#90B5FF'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>2</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='8'></td>
+                          <td valign='middle'>
+                            <span style='font-size: 10px; color: #1F2124; font-weight: medium;'>Create Your Election:</span>
+                            <span style='font-size: 10px; color: #1F2124;'> Set up your first </span>
+                            <a href='#' style='font-size: 10px; color: #214D8E; text-decoration: none;'>election</a>
+                            <span style='font-size: 10px; color: #1F2124;'> in minutes.</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Step 3 -->
+                  <tr>
+                    <td valign='top' style='padding-bottom: 8px;'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td width='20' valign='top'>
+                            <table
+                              width='16'
+                              height='16'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#90B5FF'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>3</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='8'></td>
+                          <td valign='middle'>
+                            <span style='font-size: 10px; color: #1F2124; font-weight: medium;'>Visit Help Center:</span>
+                            <span style='font-size: 10px; color: #1F2124;'>
+                              Find answers and step-by-step guides with
+                            </span>
+                            <a href='#' style='font-size: 10px; color: #214D8E; text-decoration: none;'>help.</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Step 4 -->
+                  <tr>
+                    <td valign='top'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td width='20' valign='top'>
+                            <table
+                              width='16'
+                              height='16'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#90B5FF'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>4</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='8'></td>
+                          <td valign='middle'>
+                            <span style='font-size: 10px; color: #1F2124; font-weight: medium;'>Watch Tutorial Video:</span>
+                            <span style='font-size: 10px; color: #1F2124;'>
+                              Learn how to create an election in under 5 minutes.</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- CTA Button -->
+            <tr>
+              <td align='center' style='padding: 20px 0;'>
+                <table border='0' cellpadding='0' cellspacing='0'>
+                  <tr>
+                    <td align='center' bgcolor='#002347' style='border-radius: 6px;'>
+                      <a
+                        href='https://resolve.vote/'
+                        target='_blank'
+                        style='display: inline-block; padding: 12px 24px; font-size: 14px; color: #ffffff; text-decoration: none; font-weight: normal; width: 280px;'
+                      >Launch Your First Election</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td bgcolor='#002347' style='padding: 24px; height: 161px;'>
+                <table width='100%' border='0' cellpadding='0' cellspacing='0'>
+                  <tr>
+                    <td>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td align='center'>
+                            <img
+                              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png'
+                              alt='Resolve Logo'
+                              width='57'
+                              height='14'
+                              style='display: block;'
+                            />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align='center'>
+                            <span style='font-size: 8px; color: #9ca3af;'>Secure Elections,
+                              <br />
+                              Trusted Results</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td align='right'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td>
+                            <table
+                              width='16.6'
+                              height='16.6'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#6b7280'
+                              style='border-radius: 50%; margin-right: 4px;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>I</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td>
+                            <table
+                              width='16.6'
+                              height='16.6'
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              bgcolor='#6b7280'
+                              style='border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <span style='color: #ffffff; font-size: 10px;'>f</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td colspan='2' style='padding: 12px 0 8px 0; border-bottom: 1px solid #9ca3af;'></td>
+                  </tr>
+
+                  <tr>
+                    <td style='padding-top: 8px;'>
+                      <p style='margin: 0; font-size: 10px; color: #9ca3af; width: 164px;'>Start with Resolve: Create,
+                        manage, and monitor your elections effortlessly.</p>
+                    </td>
+                    <td align='right' valign='bottom'>
+                      <span style='font-size: 8px; color: #9ca3af;'>© Resolve Rights Reserved 2025</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
