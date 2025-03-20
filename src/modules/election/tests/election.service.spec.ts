@@ -66,6 +66,7 @@ describe('ElectionService', () => {
 
   const mockVoteRepository = () => ({
     find: jest.fn(),
+    findAndCount: jest.fn(),
   });
 
   const mockVoterRepository = () => ({
@@ -238,6 +239,7 @@ describe('ElectionService', () => {
               max_choices: 1,
               election_type: ElectionType.SINGLECHOICE,
               candidates: [],
+              vote_count: 0
             },
             {
               election_id: '550e8400-e29b-41d4-a716-446655440001',
@@ -252,6 +254,7 @@ describe('ElectionService', () => {
               max_choices: 1,
               election_type: ElectionType.SINGLECHOICE,
               candidates: [],
+              vote_count: 0
             },
           ],
           meta: {
