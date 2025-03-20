@@ -37,7 +37,9 @@ export class EmailService {
       to: email,
       context: {
         name,
+
         link,
+
         email,
       },
     };
