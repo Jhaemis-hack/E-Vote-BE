@@ -96,3 +96,6 @@ export const ELECTION_CREATED_EMAIL_FAILED = 'Election created email failed to s
 export const INVALID_CREDENTIALS = 'Invalid credentials';
 export const SERVER_ERROR = 'Sorry a server error occured';
 export const GOOGLE_AUTH_RESPONSE = 'Authentication successful';
+
+
+export const MAX_ELECTIONS_LIMIT_REACHED = 'You have reached the maximum number of elections for your plan. Upgrade to create more.'

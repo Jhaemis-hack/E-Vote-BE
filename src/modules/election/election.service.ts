@@ -62,10 +62,38 @@ export class ElectionService {
     const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
       createElectionDto;
 
+    const admin = await this.userRepository.findOne({ where: { id: adminId } });
+
+    if (!admin) {
+      throw new HttpException({ status_code: 404, message: 'Admin not found', data: null }, HttpStatus.NOT_FOUND);
+    }
+
+    const createdElectionCount = await this.electionRepository.count({
+      where: { created_by: adminId },
+    });
+
+    const planLimits = {
+      FREE: 1,
+      BASIC: 5,
+      BUSINESS: Infinity,
+    };
+
+    const userPlan = admin.plan || 'FREE';
+    const maxAllowed = planLimits[userPlan];
+
+    if (createdElectionCount >= maxAllowed) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED ,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const currentDate = moment().utc();
-
     const currentDateStartOfDay = moment.utc().startOf('day');
-
     const startDate = moment.utc(start_date);
     const endDate = moment.utc(end_date);
 
@@ -157,15 +185,7 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
-    const admin = await this.userRepository.findOne({
-      where: { id: savedElection.created_by },
-    });
-    if (!admin) {
-      this.logger.error(`Admin with ID ${savedElection.created_by} not found`);
-      return;
-    } else {
-      await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
-    }
+    await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
