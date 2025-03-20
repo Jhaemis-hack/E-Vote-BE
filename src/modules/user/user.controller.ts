@@ -22,10 +22,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from '../../guards/auth.guard';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags, ApiBody } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { STATUS_CODES } from 'http';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -138,5 +139,21 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Invalid token' })
   async verifyEmail(@Query('token') token: string) {
     return this.userService.verifyEmail(token);
+  }
+
+  @Patch('/change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update User password' })
+  @ApiResponse({ status: 200, description: 'Password successfully updated.' })
+  @ApiResponse({ status: 403, description: 'User not Authenticated.' })
+  async changePassword(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    changePasswordDto: ChangePasswordDto,
+    @Req() req: any,
+  ) {
+    const adminEmail = req.user.email;
+    return await this.userService.changePassword(changePasswordDto, adminEmail);
   }
 }

@@ -112,13 +112,11 @@ describe('VoterService', () => {
               voter_id: '340e8400-e29b-765w-a716-446655440990',
               name: 'Bayo',
               email: 'Bayo@gmail.com',
-              verification_token: '6d33c7c5-b7c9-479e-969f-7c354fd57e3b',
             },
             {
               voter_id: '340e8400-e29b-41d4-a716-446655440990',
               name: 'Tayo',
               email: 'Tayo@gmail.com',
-              verification_token: '6d33c7c5-b7c9-339e-969f-7c354fd57e3b',
             },
           ],
           meta: {

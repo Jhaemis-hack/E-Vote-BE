@@ -22,6 +22,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
@@ -31,7 +32,7 @@ export class UserService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly mailService: EmailService,
-  ) { }
+  ) {}
 
   async registerAdmin(createAdminDto: CreateUserDto) {
     const { email: rawEmail, password } = createAdminDto;
@@ -278,7 +279,7 @@ export class UserService {
 
     await this.mailService.sendForgotPasswordMail(
       user.email,
-      'Admin',
+      user.email,
       `${process.env.FRONTEND_URL}/reset-password`,
       resetToken,
     );
@@ -314,6 +315,42 @@ export class UserService {
     await this.userRepository.save(adminExist);
     await this.forgotPasswordRepository.delete({ reset_token });
     return {
+      message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
+      data: null,
+    };
+  }
+
+  async changePassword(
+    changePassword: ChangePasswordDto,
+    adminEmail: string,
+  ): Promise<{ status_code: Number; message: string; data: null }> {
+    const { old_password, new_password } = changePassword;
+
+    const adminExist = await this.userRepository.findOne({ where: { email: adminEmail } });
+
+    if (!adminExist) {
+      throw new UnauthorizedException({
+        status_code: HttpStatus.FORBIDDEN,
+        message: SYS_MSG.USER_NOT_FOUND,
+      });
+    }
+
+    const isVerifiedPassword = await bcrypt.compare(old_password, adminExist.password);
+
+    if (!isVerifiedPassword) {
+      throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
+    }
+
+    if (new_password) {
+      this.validatePassword(new_password);
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    adminExist.password = hashedPassword;
+    await this.userRepository.save(adminExist);
+    return {
+      status_code: HttpStatus.CREATED,
       message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
       data: null,
     };

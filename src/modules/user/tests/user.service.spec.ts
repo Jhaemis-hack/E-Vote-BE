@@ -17,6 +17,7 @@ import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { EmailService } from '../../email/email.service';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { DeleteResult } from 'typeorm';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 
 interface CreateUserDto {
   id?: string;
@@ -296,6 +297,7 @@ describe('UserService', () => {
       );
     });
   });
+
   describe('resetPassword', () => {
     const resetPasswordDto: ResetPasswordDto = {
       email: 'test@example.com',
@@ -565,6 +567,7 @@ describe('UserService', () => {
       await expect(userService.deactivateUser('non-existent-uuid')).rejects.toThrow(NotFoundException);
     });
   });
+
   describe('update', () => {
     it('should update a user successfully', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
@@ -703,6 +706,7 @@ describe('UserService', () => {
       );
     });
   });
+
   describe('forgotPassword', () => {
     const email = 'test@example.com';
     const forgotPasswordDto: ForgotPasswordDto = {
@@ -743,7 +747,7 @@ describe('UserService', () => {
 
       expect(sendMailSpy).toHaveBeenCalledWith(
         mockUser.email,
-        'Admin',
+        mockUser.email,
         `${process.env.FRONTEND_URL}/reset-password`,
         expect.any(String),
       );
@@ -817,7 +821,7 @@ describe('UserService', () => {
     // });
 
     it('❌ should throw NotFoundException if user does not exist', async () => {
-      userRepository.findOne.mockResolvedValue(null);
+      (userRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       await expect(userService.verifyEmail(mockToken)).rejects.toThrow(new NotFoundException(SYS_MSG.USER_NOT_FOUND));
 
@@ -870,6 +874,65 @@ describe('UserService', () => {
       );
 
       expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
+    });
+  });
+
+  describe('UserService - changePassword', () => {
+    it('should throw UnauthorizedException if user is not found', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+      const changePasswordDto: ChangePasswordDto = {
+        old_password: 'oldPassword123',
+        new_password: 'newPassword123!',
+      };
+
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).rejects.toThrow(
+        new UnauthorizedException({
+          status_code: 403,
+          message: 'User not found',
+        }),
+      );
+    });
+
+    it('should throw UnauthorizedException if old password is incorrect', async () => {
+      const changePasswordDto = {
+        old_password: 'oldPassword123',
+        new_password: 'newPassword123!',
+      };
+
+      const hashedPassword = await bcrypt.hash(changePasswordDto.old_password, 10);
+
+      const mockUser = { email: 'admin@example.com', password: hashedPassword } as User;
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => false);
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).rejects.toThrow(
+        new UnauthorizedException('Incorrect credentials'),
+      );
+    });
+
+    it('should update password successfully', async () => {
+      const changePasswordDto: ChangePasswordDto = {
+        old_password: 'oldPassword123',
+        new_password: 'newPassword123!',
+      };
+
+      const hashedOldPassword = await bcrypt.hash(changePasswordDto.old_password, 10);
+
+      const mockUser = { email: 'admin@example.com', password: hashedOldPassword } as User;
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => true);
+
+      const hashedNewPassword = await bcrypt.hash(changePasswordDto.new_password, 10);
+
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).resolves.toEqual({
+        status_code: 201,
+        message: 'Admin Password Updated Successfully,please proceed to login',
+        data: null,
+      });
+
+      expect(userRepository.save).toHaveBeenCalledWith({
+        ...mockUser,
+        password: 'hashedPassword',
+      });
     });
   });
 });
