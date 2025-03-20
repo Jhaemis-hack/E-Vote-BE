@@ -93,9 +93,9 @@ export class EmailService {
     }
   }
 
-  async sendResultsToAdminEmail(adminEmail: string, election: any): Promise<void> {
+  async sendResultsToAdminEmail(email: string, election: any): Promise<void> {
     const mailPayload: MailInterface = {
-      to: adminEmail,
+      to: email,
       context: {
         electionTitle: election.title,
         electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
