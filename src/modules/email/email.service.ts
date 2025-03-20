@@ -142,4 +142,26 @@ export class EmailService {
       await this.emailQueue.sendEmail({ mail, template: 'election-creation' });
     }
   }
+
+  async sendVotingLinkMail(
+    email: string,
+    name: string,
+    title: string,
+    start_date: string,
+    start_time: string,
+    end_date: string,
+    end_time: string,
+    votingLinkId: string,
+  ) {
+    const votingLink = `${process.env.FRONTEND_URL}/vote/${votingLinkId}`;
+    return this.emailQueue.sendEmail({
+      mail: {
+        to: email,
+        subject: `You have been invited to vote in the ${title}`,
+        template: 'voter-invite',
+        context: { name: name || email, title, start_date, start_time, end_date, end_time, votingLink },
+      },
+      template: 'voter-invite',
+    });
+  }
 }
