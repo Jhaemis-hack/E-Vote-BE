@@ -13,6 +13,7 @@ import { EmailModule } from './modules/email/email.module';
 import { VoterModule } from './modules/voter/voter.module';
 import { CandidateModule } from './modules/candidate/candidate.module';
 
+import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
     EmailModule,
     VoterModule,
     CandidateModule,
+    SubscriptionModule,
     GoogleAuthModule,
   ],
   controllers: [AppController],

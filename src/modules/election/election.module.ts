@@ -10,10 +10,12 @@ import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status
 import { EmailModule } from '../email/email.module';
 import { Voter } from '../voter/entities/voter.entity';
 import { ConfigModule } from '@nestjs/config';
+import { User } from '../user/entities/user.entity';
+import { VoterService } from '../voter/voter.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Election, Candidate, Vote, Voter]), UserModule, EmailModule, ConfigModule],
+  imports: [TypeOrmModule.forFeature([Election, Candidate, Vote, Voter, User]), UserModule, EmailModule, ConfigModule],
   controllers: [ElectionController],
-  providers: [ElectionService, ElectionStatusUpdaterService],
+  providers: [ElectionService, ElectionStatusUpdaterService, VoterService],
 })
 export class ElectionModule {}

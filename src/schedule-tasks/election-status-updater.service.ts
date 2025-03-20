@@ -25,7 +25,7 @@ export class ElectionStatusUpdaterService {
 
   async onModuleInit() {
     // Load all elections and schedule tasks for them
-    const elections = await this.electionRepository.find({ relations: ['voters'] });
+    const elections = await this.electionRepository.find({ relations: ['voters', 'created_by_user'] });
     for (const election of elections) {
       await this.scheduleElectionUpdates(election);
     }
@@ -42,7 +42,7 @@ export class ElectionStatusUpdaterService {
         await this.electionRepository.update(id, { status: ElectionStatus.ONGOING });
         const updatedElection = await this.electionRepository.findOne({
           where: { id },
-          relations: ['voters'],
+          relations: ['voters', 'created_by_user'],
         });
         if (!updatedElection) {
           this.logger.error(`Election with id ${id} not found!`);
@@ -51,6 +51,8 @@ export class ElectionStatusUpdaterService {
         if (updatedElection.email_notification) {
           await this.emailService.sendElectionStartEmails(updatedElection);
         }
+        await this.emailService.sendAdminElectionMonitorEmails(updatedElection);
+
         this.schedulerRegistry.deleteCronJob(`start-${id}`);
       });
       this.schedulerRegistry.addCronJob(`start-${id}`, startJob);

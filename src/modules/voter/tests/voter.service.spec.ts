@@ -10,11 +10,13 @@ import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestException } from '@nestjs/common';
 import * as xlsx from 'xlsx';
+import { UserService } from '../../user/user.service';
 
 describe('VoterService', () => {
   let service: VoterService;
   let voterRepository: Repository<Voter>;
   let electionRepository: Repository<Election>;
+  let userService: UserService;
 
   const mockVoterRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
@@ -31,12 +33,19 @@ describe('VoterService', () => {
     find: jest.fn(),
   };
 
+  const mockUserService = {
+    getUserById: jest.fn().mockResolvedValue({
+      data: { plan: 'free' },
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VoterService,
         { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
         { provide: getRepositoryToken(Election), useValue: mockElectionRepository },
+        { provide: UserService, useValue: mockUserService },
         {
           provide: getRepositoryToken(Voter),
           useClass: Repository,
@@ -202,10 +211,9 @@ describe('VoterService', () => {
         message: 'Voters uploaded successfully',
         data: null,
       });
-
-      const result = await service.processFile(file, '123');
+      const result = await service.processFile(file, '123', 'user-id');
       expect(result.status_code).toBe(201);
-      expect(service.processCSV).toHaveBeenCalledWith(fileBuffer, '123');
+      expect(service.processCSV).toHaveBeenCalledWith(fileBuffer, '123', 'free');
     });
 
     it('should process Excel file successfully', async () => {
@@ -225,15 +233,15 @@ describe('VoterService', () => {
         data: null,
       });
 
-      const result = await service.processFile(file, '123');
+      const result = await service.processFile(file, '123', 'user-id');
       expect(result.status_code).toBe(201);
-      expect(service.processExcel).toHaveBeenCalledWith(fileBuffer, '123');
+      expect(service.processExcel).toHaveBeenCalledWith(fileBuffer, '123', 'free');
     });
 
     it('should throw BadRequestException for invalid file format', async () => {
       const file = { originalname: 'invalid.txt', buffer: Buffer.from('test') } as Express.Multer.File;
 
-      await expect(service.processFile(file, '123')).rejects.toThrow(BadRequestException);
+      await expect(service.processFile(file, '123', 'user-id')).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -244,7 +252,7 @@ describe('VoterService', () => {
       jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
-      const result = await service.processCSV(fileBuffer, '123');
+      const result = await service.processCSV(fileBuffer, '123', 'free');
 
       expect(result.status_code).toBe(201);
       expect(voterRepository.insert).toHaveBeenCalledTimes(1);
@@ -253,7 +261,7 @@ describe('VoterService', () => {
     it('should reject duplicate emails in CSV', async () => {
       const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,john@example.com');
 
-      await expect(service.processCSV(fileBuffer, '123')).rejects.toThrow(HttpException);
+      await expect(service.processCSV(fileBuffer, '123', 'free')).rejects.toThrow(HttpException);
     });
   });
 
@@ -271,7 +279,7 @@ describe('VoterService', () => {
       jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
       jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
 
-      const result = await service.processExcel(fileBuffer, '123');
+      const result = await service.processExcel(fileBuffer, '123', 'free');
       expect(result.status_code).toBe(201);
       expect(voterRepository.insert).toHaveBeenCalledTimes(1);
     });
@@ -286,7 +294,7 @@ describe('VoterService', () => {
       xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-      await expect(service.processExcel(fileBuffer, '123')).rejects.toThrow(HttpException);
+      await expect(service.processExcel(fileBuffer, '123', 'free')).rejects.toThrow(HttpException);
     });
   });
 
