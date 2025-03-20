@@ -66,6 +66,8 @@ export const NO_PHOTO_URL = 'No photo url';
 export const INVALID_PHOTO_URL = 'Invalid photo url';
 export const FETCH_PROFILE_URL = 'successfully stored profile URL';
 export const FAILED_PHOTO_UPLOAD = 'Failed to upload photo to Supabase.';
+export const UPDATE_PROFILE_URL = 'successfully Updated profile URL';
+export const FAILED_PHOTO_UPDATE = 'Failed to update photo to Supabase.';
 export const PHOTO_SIZE_LIMIT = 'File size exceeds 2MB limit.';
 export const INVALID_FILE_TYPE = 'Invalid file type. Only JPEG and PNG are allowed.';
 export const NO_FILE_UPLOADED = 'No file uploaded';
@@ -91,8 +93,12 @@ export const DUPLICATE_EMAILS_ELECTION =
 export const FETCH_ADMINS = 'Admins fetched successfully';
 export const ERROR_VOTER_LIST_FORBBIDEN_ACCESS = "Only Election Creator can view Voter's list.";
 export const ELECTION_CREATED_EMAIL_FAILED = 'Election created email failed to send';
-
-
 export const INVALID_CREDENTIALS = 'Invalid credentials';
 export const SERVER_ERROR = 'Sorry a server error occured';
 export const GOOGLE_AUTH_RESPONSE = 'Authentication successful';
+
+export const MAX_ELECTIONS_LIMIT_REACHED =
+  'You have reached the maximum number of elections for your plan. Upgrade to create more.';
+
+export const VOTING_LINK_SENT_SUCCESSFULLY = 'Voting link sent successfully';
+export const FAILED_TO_SEND_VOTING_LINK = 'Failed to send voting link to voters';

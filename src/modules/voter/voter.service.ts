@@ -25,7 +25,7 @@ export class VoterService {
   constructor(
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
-  ) { }
+  ) {}
 
   async findAll(
     page: number,
@@ -232,10 +232,10 @@ export class VoterService {
                 error instanceof HttpException
                   ? error
                   : new InternalServerErrorException({
-                    status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: SYS_MSG.ERROR_CSV_PROCESSING,
-                    data: null,
-                  }),
+                      status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+                      message: SYS_MSG.ERROR_CSV_PROCESSING,
+                      data: null,
+                    }),
               );
             }
           })
@@ -244,10 +244,10 @@ export class VoterService {
               error instanceof HttpException
                 ? error
                 : new InternalServerErrorException({
-                  status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-                  message: SYS_MSG.ERROR_CSV_PROCESSING,
-                  data: null,
-                }),
+                    status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+                    message: SYS_MSG.ERROR_CSV_PROCESSING,
+                    data: null,
+                  }),
             );
           });
       });
@@ -389,5 +389,18 @@ export class VoterService {
       });
     }
   }
-}
 
+  async getVotersByElection(electionId: string) {
+    if (!isUUID(electionId)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return await this.voterRepository.find({
+      where: { election: { id: electionId } },
+      relations: ['election'],
+    });
+  }
+}
