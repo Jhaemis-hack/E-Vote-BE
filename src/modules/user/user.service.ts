@@ -278,7 +278,7 @@ export class UserService {
 
     await this.mailService.sendForgotPasswordMail(
       user.email,
-      'Admin',
+      user.email,
       `${process.env.FRONTEND_URL}/reset-password`,
       resetToken,
     );

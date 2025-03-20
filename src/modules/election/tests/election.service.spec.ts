@@ -13,7 +13,7 @@ import { DeepPartial, Repository } from 'typeorm';
 import { ElectionStatusUpdaterService } from '../../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Candidate } from '../../candidate/entities/candidate.entity';
-import type { User } from '../../user/entities/user.entity';
+import { User } from '../../user/entities/user.entity';
 import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
@@ -21,6 +21,7 @@ import { Election, ElectionStatus, ElectionType } from '../entities/election.ent
 import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
 import { EmailService } from '../../email/email.service';
 import { Voter } from '../../voter/entities/voter.entity';
+import { VoterService } from '../../voter/voter.service';
 
 describe('ElectionService', () => {
   let service: ElectionService;
@@ -28,6 +29,9 @@ describe('ElectionService', () => {
   let candidateRepository: Repository<Candidate>;
   let voteRepository: Repository<Vote>;
   let voterRepository: Repository<Voter>;
+  let userRepository: Repository<User>;
+  let emailService: EmailService;
+  let voterService: VoterService;
 
   const mockElectionRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
@@ -69,9 +73,22 @@ describe('ElectionService', () => {
     find: jest.fn(),
   });
 
+  const mockUserRepository = () => ({
+    findOne: jest.fn(),
+  });
+
   // Mock ElectionStatusUpdaterService
   const mockElectionStatusUpdaterService = {
     scheduleElectionUpdates: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockEmailService = {
+    sendVotingLinkMail: jest.fn().mockResolvedValue(undefined),
+    sendElectionCreationEmail: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockVoterService = {
+    getVotersByElection: jest.fn().mockResolvedValue({}),
   };
 
   beforeEach(async () => {
@@ -82,13 +99,10 @@ describe('ElectionService', () => {
         { provide: getRepositoryToken(Candidate), useFactory: mockCandidateRepository },
         { provide: getRepositoryToken(Vote), useFactory: mockVoteRepository },
         { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
+        { provide: getRepositoryToken(User), useFactory: mockUserRepository },
         { provide: ElectionStatusUpdaterService, useValue: mockElectionStatusUpdaterService },
-        {
-          provide: EmailService,
-          useValue: {
-            sendEmail: jest.fn().mockResolvedValue(undefined),
-          },
-        },
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: VoterService, useValue: mockVoterService },
       ],
     }).compile();
 
@@ -97,6 +111,9 @@ describe('ElectionService', () => {
     candidateRepository = module.get<Repository<Candidate>>(getRepositoryToken(Candidate));
     voteRepository = module.get<Repository<Vote>>(getRepositoryToken(Vote));
     voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
+    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
+    emailService = module.get<EmailService>(EmailService);
+    voterService = module.get<VoterService>(VoterService);
   });
 
   afterEach(() => {
@@ -119,8 +136,11 @@ describe('ElectionService', () => {
           { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a strong candidate' },
         ],
       };
+      const mockUser = { id: 'f14acef6-abf1-41fc-aca5-0cf932db657e', email: 'admin@example.com' };
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
 
       const result = await service.create(createElectionDto, 'f14acef6-abf1-41fc-aca5-0cf932db657e');
+      console.log(result);
 
       expect(result).toEqual({
         status_code: 201,
@@ -154,6 +174,20 @@ describe('ElectionService', () => {
 
       expect(electionRepository.save).toHaveBeenCalled();
       expect(candidateRepository.save).toHaveBeenCalled();
+      expect(emailService.sendElectionCreationEmail).toHaveBeenCalledWith(
+        mockUser.email,
+        expect.objectContaining({
+          title: createElectionDto.title,
+          description: createElectionDto.description,
+          start_date: createElectionDto.start_date,
+          end_date: createElectionDto.end_date,
+          start_time: createElectionDto.start_time,
+          vote_id: expect.any(String),
+          end_time: createElectionDto.end_time,
+          type: createElectionDto.election_type,
+          created_by: 'f14acef6-abf1-41fc-aca5-0cf932db657e',
+        }),
+      );
       expect(mockElectionStatusUpdaterService.scheduleElectionUpdates);
     });
 
@@ -865,8 +899,7 @@ describe('ElectionService', () => {
           start_time: '09:00:00',
           end_time: '17:00:00',
         };
-
-        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        await service.create(dto, adminId);
         expect(electionRepository.create).toHaveBeenCalled();
         expect(electionRepository.save).toHaveBeenCalled();
       });
@@ -879,8 +912,7 @@ describe('ElectionService', () => {
           start_time: '17:00:00',
           end_time: '09:00:00',
         };
-
-        await expect(service.create(dto, adminId)).resolves.toBeDefined();
+        await service.create(dto, adminId);
         expect(electionRepository.create).toHaveBeenCalled();
         expect(electionRepository.save).toHaveBeenCalled();
       });
@@ -943,6 +975,97 @@ describe('ElectionService', () => {
       expect(electionRepository.findOne).toHaveBeenCalledWith({
         where: { vote_id: verifyVoteDto.vote_id },
         relations: ['voters'],
+      });
+    });
+  });
+
+  describe('sendVotingLinkToVoters', () => {
+    it('should throw an error if the id is not a valid UUID', async () => {
+      await expect(service.sendVotingLinkToVoters('invalid-uuid')).rejects.toThrow(HttpException);
+    });
+
+    it('should throw an error if the election is not found', async () => {
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(service.sendVotingLinkToVoters('550e8400-e29b-41d4-a716-446655440000')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should return a message if email notifications are disabled', async () => {
+      const election = { id: '550e8400-e29b-41d4-a716-446655440000', email_notification: false } as Election;
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
+
+      const result = await service.sendVotingLinkToVoters('550e8400-e29b-41d4-a716-446655440000');
+
+      expect(result).toEqual({
+        status_code: 200,
+        message: SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
+        data: null,
+      });
+    });
+
+    it('should return a message if no voters are found', async () => {
+      const election = { id: '550e8400-e29b-41d4-a716-446655440000', email_notification: true } as Election;
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
+      jest.spyOn(voterService, 'getVotersByElection').mockResolvedValue([]);
+
+      const result = await service.sendVotingLinkToVoters('550e8400-e29b-41d4-a716-446655440000');
+
+      expect(result).toEqual({
+        status_code: 204,
+        message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND,
+        data: null,
+      });
+    });
+
+    it('should send voting links to all voters successfully', async () => {
+      const election = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        email_notification: true,
+        start_date: new Date('2025-03-19T10:13:13.473Z'),
+        start_time: '09:00:00',
+        end_date: new Date('2025-03-19T10:13:13.473Z'),
+        end_time: '17:00:00',
+        title: '2025 Presidential Election',
+      } as Election;
+
+      const voters = [
+        { name: 'Voter One', email: 'voter1@example.com', verification_token: 'token1' },
+        { name: 'Voter Two', email: 'voter2@example.com', verification_token: 'token2' },
+      ] as Voter[];
+
+      jest.spyOn(electionRepository, 'findOne').mockResolvedValue(election);
+      jest.spyOn(voterService, 'getVotersByElection').mockResolvedValue(voters);
+      jest.spyOn(emailService, 'sendVotingLinkMail').mockResolvedValue({} as any);
+
+      const result = await service.sendVotingLinkToVoters('550e8400-e29b-41d4-a716-446655440000');
+
+      expect(emailService.sendVotingLinkMail).toHaveBeenCalledTimes(voters.length);
+      expect(emailService.sendVotingLinkMail).toHaveBeenCalledWith(
+        'voter1@example.com',
+        'Voter One',
+        '2025 Presidential Election',
+        'March 19th 2025',
+        '9:00 AM',
+        'March 19th 2025',
+        '5:00 PM',
+        'token1',
+      );
+      expect(emailService.sendVotingLinkMail).toHaveBeenCalledWith(
+        'voter2@example.com',
+        'Voter Two',
+        '2025 Presidential Election',
+        'March 19th 2025',
+        '9:00 AM',
+        'March 19th 2025',
+        '5:00 PM',
+        'token2',
+      );
+      expect(result).toEqual({
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
+        data: null,
       });
     });
   });
