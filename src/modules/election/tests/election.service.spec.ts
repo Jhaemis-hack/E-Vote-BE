@@ -136,7 +136,7 @@ describe('ElectionService', () => {
           { name: 'Ben', photo_url: 'https://ben.com', bio: 'Ben is a strong candidate' },
         ],
       };
-      const mockUser = { id: 'f14acef6-abf1-41fc-aca5-0cf932db657e', email: 'admin@example.com',  plan: 'FREE' };
+      const mockUser = { id: 'f14acef6-abf1-41fc-aca5-0cf932db657e', email: 'admin@example.com', plan: 'FREE' };
       userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
       electionRepository.count = jest.fn().mockResolvedValue(0);
       electionRepository.create = jest.fn().mockReturnValue({});
@@ -145,9 +145,9 @@ describe('ElectionService', () => {
         ...createElectionDto,
         created_by: mockUser.id,
       });
-  
+
       const result = await service.create(createElectionDto, mockUser.id);
-      
+
       expect(result).toEqual({
         status_code: 201,
         message: 'Election creation successful',
@@ -157,7 +157,6 @@ describe('ElectionService', () => {
       });
     });
   });
-  
 
   describe('Get all elections', () => {
     it('should return all elections', async () => {
@@ -490,32 +489,30 @@ describe('ElectionService', () => {
 
   describe('getElectionByVoterLink', () => {
     const validVoteToken = 'valid-vote-token';
-  
+
     beforeEach(() => {
-      (service as any).transformElectionResponse = jest.fn((election) => ({ ...election }));
+      (service as any).transformElectionResponse = jest.fn(election => ({ ...election }));
     });
-  
+
     it('should throw NotFoundException if voter is not found', async () => {
       (voterRepository.findOne as jest.Mock).mockResolvedValue(null);
-  
-      await expect(service.getElectionByVoterLink(validVoteToken))
-        .rejects.toThrow(NotFoundException);
+
+      await expect(service.getElectionByVoterLink(validVoteToken)).rejects.toThrow(NotFoundException);
     });
-  
+
     it('should throw ForbiddenException if voter has already voted', async () => {
       (voterRepository.findOne as jest.Mock).mockResolvedValue({
         is_voted: true,
         verification_token: validVoteToken,
         election: {},
       });
-  
-      await expect(service.getElectionByVoterLink(validVoteToken))
-        .rejects.toThrow(ForbiddenException);
+
+      await expect(service.getElectionByVoterLink(validVoteToken)).rejects.toThrow(ForbiddenException);
     });
-  
+
     describe('when voter is valid', () => {
       let voter: any;
-  
+
       beforeEach(() => {
         voter = {
           is_voted: false,
@@ -533,19 +530,16 @@ describe('ElectionService', () => {
         };
         (voterRepository.findOne as jest.Mock).mockResolvedValue(voter);
       });
-  
+
       it('should return UPCOMING status if election has not started yet', async () => {
         const fakeNow = new Date('2025-03-20T08:00:00Z');
         jest.useFakeTimers().setSystemTime(fakeNow);
-        
+
         voter.election.status = ElectionStatus.ONGOING;
-        
+
         const result = await service.getElectionByVoterLink(validVoteToken);
-        
-        expect(electionRepository.update).toHaveBeenCalledWith(
-          voter.election.id,
-          { status: ElectionStatus.UPCOMING }
-        );
+
+        expect(electionRepository.update).toHaveBeenCalledWith(voter.election.id, { status: ElectionStatus.UPCOMING });
         expect(result).toEqual({
           status_code: HttpStatus.OK,
           message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
@@ -553,15 +547,14 @@ describe('ElectionService', () => {
         });
         jest.useRealTimers();
       });
-      
-  
+
       it('should return ONGOING status if election is live', async () => {
         const fakeNow = new Date('2025-03-20T12:30:00Z');
         jest.useFakeTimers().setSystemTime(fakeNow);
         voter.election.status = ElectionStatus.UPCOMING;
-  
+
         const result = await service.getElectionByVoterLink(validVoteToken);
-  
+
         expect(electionRepository.update).toHaveBeenCalledWith(voter.election.id, { status: ElectionStatus.ONGOING });
         expect(result).toEqual({
           status_code: HttpStatus.OK,
@@ -570,14 +563,14 @@ describe('ElectionService', () => {
         });
         jest.useRealTimers();
       });
-  
+
       it('should return COMPLETED status if election has ended', async () => {
         const fakeNow = new Date('2025-03-20T16:00:00Z');
         jest.useFakeTimers().setSystemTime(fakeNow);
         voter.election.status = ElectionStatus.ONGOING;
-  
+
         const result = await service.getElectionByVoterLink(validVoteToken);
-  
+
         expect(electionRepository.update).toHaveBeenCalledWith(voter.election.id, { status: ElectionStatus.COMPLETED });
         expect(result).toEqual({
           status_code: HttpStatus.OK,
@@ -587,7 +580,7 @@ describe('ElectionService', () => {
         jest.useRealTimers();
       });
     });
-  });  
+  });
 
   describe('verify voter', () => {
     const mockElection = {

@@ -97,7 +97,18 @@ export const INVALID_CREDENTIALS = 'Invalid credentials';
 export const SERVER_ERROR = 'Sorry a server error occured';
 export const GOOGLE_AUTH_RESPONSE = 'Authentication successful';
 
-export const MAX_ELECTIONS_LIMIT_REACHED = 'You have reached the maximum number of elections for your plan. Upgrade to create more.'
+export const INVALID_FIRST_NAME = 'First name must be a valid non-empty string.';
+export const FIRST_NAME_TOO_SHORT = 'First name must be at least 2 characters long.';
+export const FIRST_NAME_TOO_LONG = 'First name cannot exceed 50 characters.';
+export const FIRST_NAME_INVALID_CHARACTERS = 'First name can only contain letters and spaces.';
+
+export const INVALID_LAST_NAME = 'Last name must be a string';
+export const LAST_NAME_TOO_SHORT = 'Last name must be at least 2 characters long.';
+export const LAST_NAME_TOO_LONG = 'Last name cannot exceed 50 characters.';
+export const LAST_NAME_INVALID_CHARACTERS = 'Last name can only contain letters and spaces.';
+
+export const MAX_ELECTIONS_LIMIT_REACHED =
+  'You have reached the maximum number of elections for your plan. Upgrade to create more.';
 
 export const VOTING_LINK_SENT_SUCCESSFULLY = 'Voting link sent successfully';
 export const FAILED_TO_SEND_VOTING_LINK = 'Failed to send voting link to voters';

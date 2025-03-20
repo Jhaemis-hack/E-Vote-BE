@@ -39,9 +39,9 @@ export class User extends AbstractBaseEntity {
   })
   plan: UserPlan;
 
-  @OneToMany(() => Election, (election) => election.created_by_user)
+  @OneToMany(() => Election, election => election.created_by_user)
   created_elections: Election[];
 
-  @OneToMany(() => Subscription, (subscription) => subscription.user)
+  @OneToMany(() => Subscription, subscription => subscription.user)
   subscriptions: Subscription[];
 }
