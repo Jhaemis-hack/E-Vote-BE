@@ -17,7 +17,12 @@ import { memoryStorage } from 'multer';
 import { AuthGuard } from '../../guards/auth.guard';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { ApiFile } from './dto/upload-file.schema';
-import { DuplicateEmailsErrorDto, VoterUploadErrorDto, VoterUploadResponseDto } from './dto/upload-response.dto';
+import {
+  DuplicateEmailsErrorDto,
+  VoterUploadErrorDto,
+  VoterUploadLimitErrorDto,
+  VoterUploadResponseDto,
+} from './dto/upload-response.dto';
 
 @Controller('voters')
 export class VoterController {
@@ -55,6 +60,12 @@ export class VoterController {
     type: VoterUploadErrorDto,
   })
   @ApiResponse({
+    status: 400,
+    description:
+      'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.',
+    type: VoterUploadLimitErrorDto,
+  })
+  @ApiResponse({
     status: 409,
     description: 'duplicate emails found',
     type: DuplicateEmailsErrorDto,
@@ -62,11 +73,15 @@ export class VoterController {
   @Post('/:electionId/uploads')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  async uploadVoters(@UploadedFile() file: Express.Multer.File, @Param('electionId') electionId: string) {
+  async uploadVoters(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('electionId') electionId: string,
+    @Req() req: any,
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded.');
     }
-
-    return this.voterService.processFile(file, electionId);
+    const adminId = req.user.sub;
+    return this.voterService.processFile(file, electionId, adminId);
   }
 }
