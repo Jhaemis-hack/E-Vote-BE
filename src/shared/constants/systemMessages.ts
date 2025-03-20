@@ -97,6 +97,11 @@ export const INVALID_CREDENTIALS = 'Invalid credentials';
 export const SERVER_ERROR = 'Sorry a server error occured';
 export const GOOGLE_AUTH_RESPONSE = 'Authentication successful';
 
+export const INVALID_FIRST_NAME = 'First name must be a valid non-empty string.';
+export const FIRST_NAME_TOO_SHORT = 'First name must be at least 2 characters long.';
+export const FIRST_NAME_TOO_LONG = 'First name cannot exceed 50 characters.';
+export const FIRST_NAME_INVALID_CHARACTERS = 'First name can only contain letters and spaces.';
+
 export const MAX_ELECTIONS_LIMIT_REACHED =
   'You have reached the maximum number of elections for your plan. Upgrade to create more.';
 
