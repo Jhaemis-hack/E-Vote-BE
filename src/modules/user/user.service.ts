@@ -190,6 +190,7 @@ export class UserService {
         plan: userData.plan,
         created_elections: [],
         subscriptions: [],
+        billing_Interval: userData.billing_Interval,
       },
     };
   }
