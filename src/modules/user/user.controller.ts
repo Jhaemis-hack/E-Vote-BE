@@ -28,7 +28,7 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { STATUS_CODES } from 'http';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 @ApiTags('Auth')
 @Controller('auth')
 export class UserController {
@@ -138,5 +138,10 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Invalid token' })
   async verifyEmail(@Query('token') token: string) {
     return this.userService.verifyEmail(token);
+  }
+
+  @Patch(':id/subscription-payment')
+  async updateUserPayment(@Param('id') userId: string, @Body() updatePaymentDto: UpdatePaymentDto) {
+    return this.userService.updatePayment(userId, updatePaymentDto);
   }
 }
