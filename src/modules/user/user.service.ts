@@ -253,7 +253,7 @@ export class UserService {
         data: null,
       });
     }
-  
+
     if (first_name.trim().length < 2) {
       throw new BadRequestException({
         status_code: HttpStatus.BAD_REQUEST,
@@ -261,7 +261,7 @@ export class UserService {
         data: null,
       });
     }
-  
+
     if (first_name.trim().length > 50) {
       throw new BadRequestException({
         status_code: HttpStatus.BAD_REQUEST,
@@ -269,7 +269,7 @@ export class UserService {
         data: null,
       });
     }
-  
+
     const allowedCharacters = /^[A-Za-z\s]+$/;
     if (!allowedCharacters.test(first_name)) {
       throw new BadRequestException({
@@ -288,7 +288,7 @@ export class UserService {
         data: null,
       });
     }
-  
+
     if (last_name.trim().length < 2) {
       throw new BadRequestException({
         status_code: HttpStatus.BAD_REQUEST,
@@ -296,7 +296,7 @@ export class UserService {
         data: null,
       });
     }
-  
+
     if (last_name.trim().length > 50) {
       throw new BadRequestException({
         status_code: HttpStatus.BAD_REQUEST,
@@ -304,7 +304,7 @@ export class UserService {
         data: null,
       });
     }
-  
+
     const allowedCharacters = /^[A-Za-z\s]+$/;
     if (!allowedCharacters.test(last_name)) {
       throw new BadRequestException({
@@ -347,7 +347,7 @@ export class UserService {
 
     await this.mailService.sendForgotPasswordMail(
       user.email,
-      'Admin',
+      user.email,
       `${process.env.FRONTEND_URL}/reset-password`,
       resetToken,
     );

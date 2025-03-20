@@ -26,6 +26,7 @@ import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
+import { VoterService } from '../voter/voter.service';
 
 config();
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
@@ -49,6 +50,7 @@ export class ElectionService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
     private emailService: EmailService,
+    private voterService: VoterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
       throw new Error('Supabase environment variables are not set.');
@@ -59,13 +61,51 @@ export class ElectionService {
   }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
-      createElectionDto;
+    const {
+      title,
+      description,
+      start_date,
+      end_date,
+      election_type,
+      candidates,
+      start_time,
+      end_time,
+      max_choices,
+      email_notification,
+    } = createElectionDto;
+
+    const admin = await this.userRepository.findOne({ where: { id: adminId } });
+
+    if (!admin) {
+      throw new HttpException({ status_code: 404, message: 'Admin not found', data: null }, HttpStatus.NOT_FOUND);
+    }
+
+    const createdElectionCount = await this.electionRepository.count({
+      where: { created_by: adminId },
+    });
+
+    const planLimits = {
+      FREE: 1,
+      BASIC: 5,
+      BUSINESS: Infinity,
+    };
+
+    const userPlan = admin.plan || 'FREE';
+    const maxAllowed = planLimits[userPlan];
+
+    if (createdElectionCount >= maxAllowed) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const currentDate = moment().utc();
-
     const currentDateStartOfDay = moment.utc().startOf('day');
-
     const startDate = moment.utc(start_date);
     const endDate = moment.utc(end_date);
 
@@ -142,6 +182,7 @@ export class ElectionService {
       end_time: end_time,
       created_by: adminId,
       max_choices: election_type === ElectionType.MULTIPLECHOICE ? max_choices : undefined,
+      email_notification,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -157,15 +198,7 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
-    const admin = await this.userRepository.findOne({
-      where: { id: savedElection.created_by },
-    });
-    if (!admin) {
-      this.logger.error(`Admin with ID ${savedElection.created_by} not found`);
-      return;
-    } else {
-      await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
-    }
+    await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
@@ -188,6 +221,7 @@ export class ElectionService {
           photo_url: candidate.photo_url,
           bio: candidate.bio,
         })),
+        email_notification: savedElection.email_notification,
       },
     };
   }
@@ -866,5 +900,75 @@ export class ElectionService {
     } else {
       throw new BadRequestException('Email notifications are not enabled for this election');
     }
+  }
+
+  async sendVotingLinkToVoters(id: string) {
+    if (!isUUID(id)) {
+      throw new HttpException(
+        {
+          status_code: 400,
+          message: SYS_MSG.INCORRECT_UUID,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const election = await this.electionRepository.findOne({ where: { id } });
+    if (!election) {
+      throw new NotFoundException({
+        status_code: HttpStatus.NOT_FOUND,
+        message: SYS_MSG.ELECTION_NOT_FOUND,
+        data: null,
+      });
+    }
+
+    if (election.email_notification === false) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
+        data: null,
+      };
+    }
+
+    const voters = await this.voterService.getVotersByElection(id);
+    if (voters.length === 0) {
+      return {
+        status_code: HttpStatus.NO_CONTENT,
+        message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND,
+        data: null,
+      };
+    }
+
+    const jobPromises = voters.map(async voter => {
+      try {
+        const votingLinkId = voter.verification_token;
+        const formattedStartDate = moment(election.start_date).format('MMMM Do YYYY');
+        const formattedStartTime = moment(election.start_time, 'HH:mm:ss').format('h:mm A');
+        const formattedEndDate = moment(election.end_date).format('MMMM Do YYYY');
+        const formattedEndTime = moment(election.end_time, 'HH:mm:ss').format('h:mm A');
+
+        await this.emailService.sendVotingLinkMail(
+          voter.email,
+          voter.name,
+          election.title,
+          formattedStartDate,
+          formattedStartTime,
+          formattedEndDate,
+          formattedEndTime,
+          votingLinkId,
+        );
+      } catch (error) {
+        this.logger.error(`Email job failed for ${voter.email}: ${error.message}`);
+      }
+    });
+
+    await Promise.all(jobPromises);
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
+      data: null,
+    };
   }
 }

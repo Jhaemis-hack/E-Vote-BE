@@ -690,7 +690,6 @@ describe('UserService', () => {
 
       expect(userRepository.save).toHaveBeenCalledWith({ ...mockUser, last_name: 'Smith' });
     });
-  
 
     it('should throw BadRequestException for an invalid email', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
@@ -758,7 +757,7 @@ describe('UserService', () => {
 
       expect(sendMailSpy).toHaveBeenCalledWith(
         mockUser.email,
-        'Admin',
+        mockUser.email,
         `${process.env.FRONTEND_URL}/reset-password`,
         expect.any(String),
       );
