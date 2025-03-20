@@ -1,51 +1,409 @@
-<html>
+<html lang='en'>
   <head>
     <meta charset='UTF-8' />
-    <title>Election Results</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Election Results For Admin</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        background-color: #f5f5f5;
-        padding: 20px;
+        font-family: 'Outfit', sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #000000;
       }
+
       .container {
-        max-width: 600px;
-        margin: auto;
-        background-color: #ffffff;
-        padding: 20px;
-        border: 1px solid #dddddd;
+        max-width: 420px;
+        margin: 10px auto;
+        border: 1px solid #e0e0e0;
       }
-      h1 {
-        color: #333333;
+
+      header {
+        height: 87px;
+        background-color: #002347;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-      p {
-        color: #666666;
+
+      .header-content {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 24px;
       }
-      .btn {
-        display: inline-block;
-        padding: 10px 20px;
-        margin: 20px 0;
-        background-color: #007bff;
-        color: #ffffff;
+
+      .logo {
+        height: 26.59px;
+        width: 109px;
+      }
+
+      .url {
+        font-size: 10px;
+        color: #aaaaaa;
+      }
+
+      .banner {
+        height: 86px;
+        background-color: #eeedf8;
+        padding: 0 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .banner-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .banner-text h2 {
+        max-width: 236px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0;
+      }
+
+      .banner-text p {
+        width: 225px;
+        font-size: 8px;
+        color: #1f2124;
+        margin: 5px 0 0 0;
+      }
+
+      .banner-image {
+        margin-bottom: -25px;
+        height: 60px;
+      }
+
+      .content {
+        padding: 0 24px;
+      }
+
+      .heading {
+        padding: 24px 0;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .greeting {
+        font-size: 14px;
+        margin: 0;
+      }
+
+      .message {
+        padding: 8px 0;
+        font-size: 10px;
+        color: #1f2124;
+        margin: 0;
+      }
+
+      .link {
+        font-size: 10px;
+        color: #7fb4f1;
         text-decoration: none;
+      }
+
+      .features-section {
+        padding: 0 24px;
+        margin-top: 12px;
+      }
+
+      .features-heading {
+        margin-bottom: 4px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .feature-item {
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .check-icon {
+        height: 13px;
+        width: 13px;
+        background-color: #90b5ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+
+      .feature-text {
+        font-size: 10px;
+        color: #1f2124;
+      }
+
+      .button-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 0;
+      }
+
+      .dashboard-button {
+        display: flex;
+        height: 43px;
+        max-width: 329px;
+        width: 100%;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
         border-radius: 4px;
+        background-color: #002347;
+        padding: 12px 24px;
+        font-size: 14px;
+        color: white;
+        border: none;
+        transition: background-color 0.3s;
+      }
+
+      .dashboard-button:hover {
+        background-color: #235a8a;
+      }
+
+      .signature {
+        display: block;
+      }
+
+      footer {
+        height: 100px;
+        background-color: #002347;
+        padding: 24px;
+        color: #ffffff;
+      }
+
+      .footer-top {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .footer-logo-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .footer-logo {
+        height: 13.31px;
+        width: 56.61px;
+      }
+
+      .footer-tagline {
+        font-size: 8px;
+        color: #aaaaaa;
+        text-align: center;
+        margin-top: 5px;
+      }
+
+      .social-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .social-icon {
+        height: 16.6px;
+        width: 16.6px;
+        border-radius: 50%;
+        background-color: #888888;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .divider {
+        height: 1px;
+        width: 100%;
+        background-color: rgba(203, 213, 225, 0.1);
+        margin-top: 12px;
+      }
+
+      .footer-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+      }
+
+      .footer-message {
+        margin-top: 8px;
+        width: 164px;
+        font-size: 10px;
+        color: #aaaaaa;
+      }
+
+      .copyright {
+        font-size: 8px;
+        color: #aaaaaa;
       }
     </style>
   </head>
   <body>
     <div class='container'>
-      <h1>Election Results Are Out!</h1>
-      <p>Dear Admin,</p>
-      <p>The election <strong>{{electionTitle}}</strong> has concluded. Below are the details:</p>
-      <ul>
-        <li><strong>Start Date:</strong> {{electionStartDate}}</li>
-        <li><strong>End Date:</strong> {{electionEndDate}}</li>
-      </ul>
-      <p>You can view the results by clicking the button below:</p>
-      <a href='{{resultsLink}}' class='btn'>View Results</a>
-      <p>Thank you for overseeing the election process.</p>
-      <p>Best regards,<br />Election Committee</p>
+      <header>
+        <div class='header-content'>
+          <div>
+            <img src='./logoResolve.png' alt='resolve-logo' class='logo' />
+          </div>
+          <span class='url'>https://resolve.vote/</span>
+        </div>
+      </header>
+
+      <main>
+        <div class='banner'>
+          <div class='banner-content'>
+            <div class='banner-text'>
+              <h2>Resolve it all—easy elections, trusted results</h2>
+              <p>If you have any questions or need assistance, contact our support team at info.resolvevote@gmail.com.</p>
+            </div>
+            <img src='./voteLogo.png' alt='' class='banner-image' />
+          </div>
+        </div>
+
+        <div class='content'>
+          <h2 class='heading'>Election Results Are Now Available</h2>
+          <p class='greeting'>Hi {Silver},</p>
+          <p class='message'>We're pleased to inform you that the results of the recent election are now available.</p>
+          <p class='message'>You can view the results directly on your dashboard or download a detailed report using the
+            link below:</p>
+          <a href='https://resolve.vote/resolveteamlead' class='link'>https://resolve.vote/resolveteamlead</a>
+        </div>
+
+        <div class='features-section'>
+          <h3 class='features-heading'>Here's what you can do:</h3>
+          <div class='feature-item'>
+            <div class='check-icon'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='10'
+                height='10'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                stroke-width='2'
+                stroke-linecap='round'
+                stroke-linejoin='round'
+              >
+                <polyline points='20 6 9 17 4 12'></polyline>
+              </svg>
+            </div>
+            <div>
+              <p class='feature-text'>View the results on your dashboard at any time.</p>
+            </div>
+          </div>
+          <div class='feature-item'>
+            <div class='check-icon'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='10'
+                height='10'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                stroke-width='2'
+                stroke-linecap='round'
+                stroke-linejoin='round'
+              >
+                <polyline points='20 6 9 17 4 12'></polyline>
+              </svg>
+            </div>
+            <div>
+              <p class='feature-text'>Download the full report for record-keeping or offline review.</p>
+            </div>
+          </div>
+          <div class='feature-item'>
+            <div class='check-icon'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='10'
+                height='10'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                stroke-width='2'
+                stroke-linecap='round'
+                stroke-linejoin='round'
+              >
+                <polyline points='20 6 9 17 4 12'></polyline>
+              </svg>
+            </div>
+            <div>
+              <p class='feature-text'>Share the results with the voters or relevant stakeholders.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class='content' style='padding-top: 20px;'>
+          <p class='message'>Thank you for your continued support and for helping ensure a smooth election process. If
+            you have any questions or need further assistance, feel free to reach out.</p>
+          <p class='message'>
+            <span class='signature'>Best regards,</span>
+            The Resolve Team
+          </p>
+        </div>
+
+        <div class='button-container'>
+          <button class='dashboard-button'>Go to Resolve Dashboard</button>
+        </div>
+      </main>
+
+      <footer>
+        <div class='footer-top'>
+          <div class='footer-logo-section'>
+            <img src='./logoResolve.png' alt='resolve-logo' class='footer-logo' />
+            <span class='footer-tagline'>Secure Elections, <br /> Trusted Results</span>
+          </div>
+          <div class='social-icons'>
+            <div class='social-icon'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='10'
+                height='10'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                stroke-width='2'
+                stroke-linecap='round'
+                stroke-linejoin='round'
+              >
+                <rect x='2' y='2' width='20' height='20' rx='5' ry='5'></rect>
+                <path d='M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z'></path>
+                <line x1='17.5' y1='6.5' x2='17.51' y2='6.5'></line>
+              </svg>
+            </div>
+            <div class='social-icon'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                width='10'
+                height='10'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                stroke-width='2'
+                stroke-linecap='round'
+                stroke-linejoin='round'
+              >
+                <path d='M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class='divider'></div>
+
+        <div class='footer-bottom'>
+          <p class='footer-message'>Start with Resolve: Create, manage, and monitor your elections effortlessly.</p>
+          <div class='copyright'>© Resolve Rights Reserved 2024</div>
+        </div>
+      </footer>
     </div>
   </body>
 </html>
