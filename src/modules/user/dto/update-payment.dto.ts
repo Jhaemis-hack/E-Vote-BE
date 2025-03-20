@@ -1,11 +1,14 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty } from 'class-validator';
-import { PaymentType, BillingInterval } from '../entities/user.entity';
+import { UserPlan, BillingInterval } from '../entities/user.entity';
 
 export class UpdatePaymentDto {
-  @IsEnum(PaymentType, { message: 'Invalid payment type' })
+  @ApiProperty({ enum: UserPlan, description: 'Type of payment plan' })
+  @IsEnum(UserPlan, { message: 'Invalid payment type' })
   @IsNotEmpty()
-  payment_type: PaymentType;
+  plan: UserPlan;
 
+  @ApiProperty({ enum: BillingInterval, description: 'Billing interval for the subscription' })
   @IsEnum(BillingInterval, { message: 'Invalid billing interval' })
   @IsNotEmpty()
   billing_interval: BillingInterval;

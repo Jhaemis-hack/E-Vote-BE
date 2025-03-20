@@ -23,7 +23,7 @@ import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-
+import { omit } from 'lodash';
 @Injectable()
 export class UserService {
   constructor(
@@ -362,14 +362,18 @@ export class UserService {
     }
   }
 
-  async updatePayment(userId: string, updatePaymentDto: UpdatePaymentDto): Promise<User> {
+  async updatePayment(userId: string, updatePaymentDto: UpdatePaymentDto): Promise<{ message: string; data: User }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    Object.assign(user, updatePaymentDto); // Update user fields
-    return this.userRepository.save(user);
+    Object.assign(user, updatePaymentDto);
+    const updatedPaymentData = await this.userRepository.save(user);
+    return {
+      message: SYS_MSG.SUBSCRIPTION_SUCCESSFUL,
+      data: omit(updatedPaymentData, ['password']),
+    };
   }
 }
