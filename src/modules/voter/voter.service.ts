@@ -233,8 +233,7 @@ export class VoterService {
                   new HttpException(
                     {
                       status_code: HttpStatus.BAD_REQUEST,
-                      message:
-                        'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.',
+                      message: SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED,
                       data: null,
                     },
                     HttpStatus.BAD_REQUEST,
@@ -349,8 +348,7 @@ export class VoterService {
         throw new HttpException(
           {
             status_code: HttpStatus.BAD_REQUEST,
-            message:
-              'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.',
+            message: SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED,
             data: null,
           },
           HttpStatus.BAD_REQUEST,
