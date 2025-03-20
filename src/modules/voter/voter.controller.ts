@@ -62,11 +62,15 @@ export class VoterController {
   @Post('/:electionId/uploads')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  async uploadVoters(@UploadedFile() file: Express.Multer.File, @Param('electionId') electionId: string) {
+  async uploadVoters(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('electionId') electionId: string,
+    @Req() req: any,
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded.');
     }
-
-    return this.voterService.processFile(file, electionId);
+    const adminId = req.user.sub;
+    return this.voterService.processFile(file, electionId, adminId);
   }
 }
