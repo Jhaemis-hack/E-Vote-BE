@@ -111,4 +111,19 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - sendVotingLinkEmailJobError: ${sendVotingLinkJobError.message}`);
     }
   }
+
+  @Process('results-to-admin')
+  async sendResultsToAdminEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+        subject: 'Election Results Are Out!',
+        template: 'results-to-admin',
+      });
+      this.logger.log(`Results email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ResultsToAdminEmailJob error: ${error.message}`);
+    }
+  }
 }

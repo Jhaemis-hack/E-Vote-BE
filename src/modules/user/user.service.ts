@@ -32,6 +32,7 @@ import { createClient } from '@supabase/supabase-js';
 
 import { ElectionStatus } from '../election/entities/election.entity';
 
+import { In } from 'typeorm';
 @Injectable()
 export class UserService {
   private readonly supabase;
