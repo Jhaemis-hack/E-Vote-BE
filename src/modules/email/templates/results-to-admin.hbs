@@ -1,424 +1,606 @@
-<html lang='en'>
+<html xmlns='http://www.w3.org/1999/xhtml' lang='en'>
   <head>
-    <meta charset='UTF-8' />
+    <meta http-equiv='Content-Type' content='text/html; charset=UTF-8' />
     <meta name='viewport' content='width=device-width, initial-scale=1.0' />
     <title>Election Results For Admin</title>
-    <style>
+    <style type='text/css'>
+      /* Reset styles */
       body {
-        font-family: 'Outfit', sans-serif;
-        margin: 0;
-        padding: 0;
-        color: #000000;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        font-family: 'Outfit', Arial, sans-serif !important;
+        -webkit-text-size-adjust: 100% !important;
+        -ms-text-size-adjust: 100% !important;
       }
 
-      .container {
-        max-width: 420px;
-        margin: 10px auto;
-        border: 1px solid #e0e0e0;
+      table,
+      td {
+        border-collapse: collapse !important;
+        mso-table-lspace: 0pt !important;
+        mso-table-rspace: 0pt !important;
       }
 
-      header {
-        height: 87px;
-        background-color: #002347;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      img {
+        border: 0 !important;
+        outline: none !important;
+        text-decoration: none !important;
+        -ms-interpolation-mode: bicubic !important;
       }
 
-      .header-content {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 24px;
+      p {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* Client-specific resets */
+      .ReadMsgBody {
+        width: 100% !important;
+      }
+
+      .ExternalClass {
+        width: 100% !important;
+      }
+
+      .ExternalClass,
+      .ExternalClass p,
+      .ExternalClass span,
+      .ExternalClass font,
+      .ExternalClass td,
+      .ExternalClass div {
+        line-height: 100% !important;
+      }
+
+      /* Main styles */
+      .email-container {
+        max-width: 420px !important;
+        margin: 10px auto !important;
+      }
+
+      .header {
+        background-color: #002347 !important;
       }
 
       .logo {
-        height: 26.59px;
-        width: 109px;
+        height: 26px !important;
+        width: 109px !important;
       }
 
       .url {
-        font-size: 10px;
-        color: #aaaaaa;
+        font-size: 10px !important;
+        color: #aaaaaa !important;
       }
 
       .banner {
-        height: 86px;
-        background-color: #eeedf8;
-        padding: 0 24px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-
-      .banner-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        background-color: #eeedf8 !important;
       }
 
       .banner-text h2 {
-        max-width: 236px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #000000;
-        margin: 0;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #000000 !important;
+        margin: 0 !important;
       }
 
       .banner-text p {
-        width: 225px;
-        font-size: 8px;
-        color: #1f2124;
-        margin: 5px 0 0 0;
+        font-size: 8px !important;
+        color: #1f2124 !important;
+        margin: 5px 0 0 0 !important;
       }
 
-      .banner-image {
-        margin-bottom: -25px;
-        height: 60px;
-      }
-
-      .content {
-        padding: 0 24px;
-      }
-
-      .heading {
-        padding: 24px 0;
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0;
+      .content-heading {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
       }
 
       .greeting {
-        font-size: 14px;
-        margin: 0;
+        font-size: 14px !important;
+        margin: 0 !important;
       }
 
       .message {
-        padding: 8px 0;
-        font-size: 10px;
-        color: #1f2124;
-        margin: 0;
+        font-size: 10px !important;
+        color: #1f2124 !important;
+        margin: 0 !important;
       }
 
       .link {
-        font-size: 10px;
-        color: #7fb4f1;
-        text-decoration: none;
-      }
-
-      .features-section {
-        padding: 0 24px;
-        margin-top: 12px;
+        font-size: 10px !important;
+        color: #7fb4f1 !important;
+        text-decoration: none !important;
       }
 
       .features-heading {
-        margin-bottom: 4px;
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .feature-item {
-        margin-bottom: 4px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        margin-bottom: 4px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
       }
 
       .check-icon {
-        height: 13px;
-        width: 13px;
-        background-color: #90b5ff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
+        height: 13px !important;
+        width: 13px !important;
+        background-color: #90b5ff !important;
+        border-radius: 50% !important;
+        color: white !important;
       }
 
       .feature-text {
-        font-size: 10px;
-        color: #1f2124;
-      }
-
-      .button-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px 0;
+        font-size: 10px !important;
+        color: #1f2124 !important;
       }
 
       .dashboard-button {
-        display: flex;
-        height: 43px;
-        max-width: 329px;
-        width: 100%;
-        cursor: pointer;
-        align-items: center;
-        justify-content: center;
-        border-radius: 4px;
-        background-color: #002347;
-        padding: 12px 24px;
-        font-size: 14px;
-        color: white;
-        border: none;
-        transition: background-color 0.3s;
+        background-color: #002347 !important;
+        color: white !important;
+        font-size: 14px !important;
+        border-radius: 4px !important;
+        text-align: center !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+        padding: 12px 24px !important;
+        border: none !important;
       }
 
-      .dashboard-button:hover {
-        background-color: #235a8a;
-      }
-
-      .signature {
-        display: block;
-      }
-
-      footer {
-        height: 100px;
-        background-color: #002347;
-        padding: 24px;
-        color: #ffffff;
-      }
-
-      .footer-top {
-        display: flex;
-        justify-content: space-between;
-      }
-
-      .footer-logo-section {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+      .footer {
+        background-color: #002347 !important;
+        color: #ffffff !important;
       }
 
       .footer-logo {
-        height: 13.31px;
-        width: 56.61px;
+        height: 13px !important;
+        width: 56px !important;
       }
 
       .footer-tagline {
-        font-size: 8px;
-        color: #aaaaaa;
-        text-align: center;
-        margin-top: 5px;
-      }
-
-      .social-icons {
-        display: flex;
-        align-items: center;
-        gap: 4px;
+        font-size: 8px !important;
+        color: #aaaaaa !important;
+        text-align: center !important;
       }
 
       .social-icon {
-        height: 16.6px;
-        width: 16.6px;
-        border-radius: 50%;
-        background-color: #888888;
-        padding: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        height: 16px !important;
+        width: 16px !important;
+        background-color: #888888 !important;
+        border-radius: 50% !important;
       }
 
       .divider {
-        height: 1px;
-        width: 100%;
-        background-color: rgba(203, 213, 225, 0.1);
-        margin-top: 12px;
-      }
-
-      .footer-bottom {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 0;
+        height: 1px !important;
+        width: 100% !important;
+        background-color: rgba(203, 213, 225, 0.1) !important;
       }
 
       .footer-message {
-        margin-top: 8px;
-        width: 164px;
-        font-size: 10px;
-        color: #aaaaaa;
+        font-size: 10px !important;
+        color: #aaaaaa !important;
       }
 
       .copyright {
-        font-size: 8px;
-        color: #aaaaaa;
+        font-size: 8px !important;
+        color: #aaaaaa !important;
+      }
+
+      /* Mobile styles */
+      @media screen and (max-width: 480px) {
+        .email-container {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+
+        .container-padding {
+          padding-left: 10px !important;
+          padding-right: 10px !important;
+        }
+
+        .mobile-padding {
+          padding: 15px !important;
+        }
+
+        .mobile-padding-top {
+          padding-top: 15px !important;
+        }
+
+        .mobile-padding-bottom {
+          padding-bottom: 15px !important;
+        }
+
+        .mobile-center {
+          text-align: center !important;
+        }
+
+        .mobile-hidden {
+          display: none !important;
+        }
+
+        .mobile-full-width {
+          width: 100% !important;
+        }
+
+        .banner-td {
+          padding: 20px 15px !important;
+        }
+
+        .banner-image-container {
+          text-align: center !important;
+        }
+
+        .banner-image {
+          margin-top: 10px !important;
+          margin-bottom: 0 !important;
+          height: auto !important;
+          max-width: 60px !important;
+        }
       }
     </style>
   </head>
-  <body>
-    <div class='container'>
-      <header>
-        <div class='header-content'>
-          <div>
-            <img
-              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png'
-              alt='resolve-logo'
-              class='logo'
-            />
-          </div>
-          <span class='url'>https://resolve.vote/</span>
-        </div>
-      </header>
-
-      <main>
-        <div class='banner'>
-          <div class='banner-content'>
-            <div class='banner-text'>
-              <h2>Resolve it all—easy elections, trusted results</h2>
-              <p>If you have any questions or need assistance, contact our support team at info.resolvevote@gmail.com.</p>
-            </div>
-            <img
-              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814246/FY25-Voter_Registration-frames-3-1000x1000_rgkk6c.png'
-              alt=''
-              class='banner-image'
-              alt='vote-icon'
-            />
-          </div>
-        </div>
-
-        <div class='content'>
-          <h2 class='heading'>Election Results Are Now Available</h2>
-          <p class='greeting'>Hi {{email}},</p>
-          <p class='message'>We're pleased to inform you that the results of the election
-            <strong>{{electionTitle}}</strong>
-            are now available.</p>
-          <p class='message'>You can view the results directly on your dashboard or download a detailed report using the
-            link below:</p>
-          <p class='message'>The election ran from
-            <strong>{{electionStartDate}}</strong>
-            to
-            <strong>{{electionEndDate}}</strong>.</p>
-          <a href='{{resultsLink}}' class='link'>Link to Result</a>
-        </div>
-
-        <div class='features-section'>
-          <h3 class='features-heading'>Here's what you can do:</h3>
-          <div class='feature-item'>
-            <div class='check-icon'>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                width='10'
-                height='10'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='2'
-                stroke-linecap='round'
-                stroke-linejoin='round'
-              >
-                <polyline points='20 6 9 17 4 12'></polyline>
-              </svg>
-            </div>
-            <div>
-              <p class='feature-text'>View the results on your dashboard at any time.</p>
-            </div>
-          </div>
-          <div class='feature-item'>
-            <div class='check-icon'>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                width='10'
-                height='10'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='2'
-                stroke-linecap='round'
-                stroke-linejoin='round'
-              >
-                <polyline points='20 6 9 17 4 12'></polyline>
-              </svg>
-            </div>
-            <div>
-              <p class='feature-text'>Download the full report for record-keeping or offline review.</p>
-            </div>
-          </div>
-          <div class='feature-item'>
-            <div class='check-icon'>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                width='10'
-                height='10'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='2'
-                stroke-linecap='round'
-                stroke-linejoin='round'
-              >
-                <polyline points='20 6 9 17 4 12'></polyline>
-              </svg>
-            </div>
-            <div>
-              <p class='feature-text'>Share the results with the voters or relevant stakeholders.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class='content' style='padding-top: 20px;'>
-          <p class='message'>Thank you for your continued support and for helping ensure a smooth election process. If
-            you have any questions or need further assistance, feel free to reach out.</p>
-          <p class='message'>
-            <span class='signature'>Best regards,</span>
-            The Resolve Team
-          </p>
-        </div>
-
-        <div class='button-container'>
-          <a href='{{}}'><button class='dashboard-button'>Go to Resolve Dashboard</button></a>
-        </div>
-      </main>
-
-      <footer>
-        <div class='footer-top'>
-          <div class='footer-logo-section'>
-            <img src='./logoResolve.png' alt='resolve-logo' class='footer-logo' />
-            <span class='footer-tagline'>Secure Elections, <br /> Trusted Results</span>
-          </div>
-          <div class='social-icons'>
-            <div class='social-icon'>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                width='10'
-                height='10'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='2'
-                stroke-linecap='round'
-                stroke-linejoin='round'
-              >
-                <rect x='2' y='2' width='20' height='20' rx='5' ry='5'></rect>
-                <path d='M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z'></path>
-                <line x1='17.5' y1='6.5' x2='17.51' y2='6.5'></line>
-              </svg>
-            </div>
-            <div class='social-icon'>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                width='10'
-                height='10'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='currentColor'
-                stroke-width='2'
-                stroke-linecap='round'
-                stroke-linejoin='round'
-              >
-                <path d='M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z'></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-        <div class='divider'></div>
-
-        <div class='footer-bottom'>
-          <p class='footer-message'>Start with Resolve: Create, manage, and monitor your elections effortlessly.</p>
-          <div class='copyright'>© Resolve Rights Reserved 2024</div>
-        </div>
-      </footer>
+  <body style='margin: 0; padding: 0;'>
+    <!-- Preheader text (hidden) -->
+    <div style='display: none; max-height: 0px; overflow: hidden;'>
+      Election Results For Admin - Resolve it all—easy elections, trusted results
     </div>
+
+    <!-- Email Body -->
+    <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+      <tr>
+        <td align='center' valign='top'>
+          <table
+            border='0'
+            cellpadding='0'
+            cellspacing='0'
+            width='100%'
+            style='max-width: 420px;'
+            class='email-container'
+          >
+            <!-- Email Border -->
+            <tr>
+              <td style='border: 1px solid #e0e0e0;'>
+                <!-- Header -->
+                <table border='0' cellpadding='0' cellspacing='0' width='100%' class='header'>
+                  <tr>
+                    <td align='center' height='87' valign='middle' style='padding: 0 24px;'>
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                        <tr>
+                          <td align='left' valign='middle'>
+                            <img
+                              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png'
+                              alt='resolve-logo'
+                              class='logo'
+                            />
+                          </td>
+                          <td align='right' valign='middle'>
+                            <span class='url'>https://resolve.vote/</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Banner -->
+                <table border='0' cellpadding='0' cellspacing='0' width='100%' class='banner'>
+                  <tr>
+                    <td class='banner-td' style='padding: 20px 24px;'>
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                        <tr>
+                          <td valign='middle' style='width: 236px;'>
+                            <div class='banner-text'>
+                              <h2
+                                style='max-width: 236px; font-size: 13px; font-weight: 600; margin: 0; color: #000000;'
+                              >Resolve it all—easy elections, trusted results</h2>
+                              <p style='max-width: 225px; font-size: 8px; color: #1f2124; margin: 5px 0 0 0;'>If you
+                                have any questions or need assistance, contact our support team at
+                                info.resolvevote@gmail.com.</p>
+                            </div>
+                          </td>
+                          <td align='right' valign='middle' class='banner-image-container'>
+                            <img
+                              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814246/FY25-Voter_Registration-frames-3-1000x1000_rgkk6c.png'
+                              alt='vote-icon'
+                              class='banner-image'
+                              style='height: 60px; margin-bottom: -25px;'
+                            />
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Main Content -->
+                <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                  <tr>
+                    <td style='padding: 24px;'>
+                      <h2
+                        class='content-heading'
+                        style='padding-bottom: 24px; font-size: 16px; font-weight: 600; margin: 0;'
+                      >Election Results Are Now Available</h2>
+                      <p class='greeting' style='font-size: 14px; margin: 0;'>Hi {{email}},</p>
+                      <p class='message' style='padding: 8px 0; font-size: 10px; color: #1f2124; margin: 0;'>We're
+                        pleased to inform you that the results of the election
+                        <strong>{{electionTitle}}</strong>
+                        are now available.</p>
+                      <p class='message' style='padding: 8px 0; font-size: 10px; color: #1f2124; margin: 0;'>You can
+                        view the results directly on your dashboard or download a detailed report using the link below:</p>
+                      <p class='message' style='padding: 8px 0; font-size: 10px; color: #1f2124; margin: 0;'>The
+                        election ran from
+                        <strong>{{electionStartDate}}</strong>
+                        to
+                        <strong>{{electionEndDate}}</strong>.</p>
+                      <a
+                        href='{{resultsLink}}'
+                        class='link'
+                        style='font-size: 10px; color: #7fb4f1; text-decoration: none;'
+                      >Link to Result</a>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Features Section -->
+                <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                  <tr>
+                    <td style='padding: 0 24px;'>
+                      <h3 class='features-heading' style='margin-bottom: 4px; font-size: 12px; font-weight: 600;'>Here's
+                        what you can do:</h3>
+
+                      <!-- Feature Item 1 -->
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%' style='margin-bottom: 4px;'>
+                        <tr>
+                          <td width='13' valign='top'>
+                            <table
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              width='13'
+                              height='13'
+                              class='check-icon'
+                              style='background-color: #90b5ff; border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <img
+                                    src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/check-icon_w2zb1z.png'
+                                    width='10'
+                                    height='10'
+                                    alt='check'
+                                    style='display: block;'
+                                  />
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='8'></td>
+                          <td>
+                            <p class='feature-text' style='font-size: 10px; color: #1f2124;'>View the results on your
+                              dashboard at any time.</p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Feature Item 2 -->
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%' style='margin-bottom: 4px;'>
+                        <tr>
+                          <td width='13' valign='top'>
+                            <table
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              width='13'
+                              height='13'
+                              class='check-icon'
+                              style='background-color: #90b5ff; border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <img
+                                    src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/check-icon_w2zb1z.png'
+                                    width='10'
+                                    height='10'
+                                    alt='check'
+                                    style='display: block;'
+                                  />
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='8'></td>
+                          <td>
+                            <p class='feature-text' style='font-size: 10px; color: #1f2124;'>Download the full report
+                              for record-keeping or offline review.</p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Feature Item 3 -->
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%' style='margin-bottom: 4px;'>
+                        <tr>
+                          <td width='13' valign='top'>
+                            <table
+                              border='0'
+                              cellpadding='0'
+                              cellspacing='0'
+                              width='13'
+                              height='13'
+                              class='check-icon'
+                              style='background-color: #90b5ff; border-radius: 50%;'
+                            >
+                              <tr>
+                                <td align='center' valign='middle'>
+                                  <img
+                                    src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/check-icon_w2zb1z.png'
+                                    width='10'
+                                    height='10'
+                                    alt='check'
+                                    style='display: block;'
+                                  />
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td width='8'></td>
+                          <td>
+                            <p class='feature-text' style='font-size: 10px; color: #1f2124;'>Share the results with the
+                              voters or relevant stakeholders.</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Additional Content -->
+                <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                  <tr>
+                    <td style='padding: 20px 24px 0 24px;'>
+                      <p class='message' style='padding: 8px 0; font-size: 10px; color: #1f2124; margin: 0;'>Thank you
+                        for your continued support and for helping ensure a smooth election process. If you have any
+                        questions or need further assistance, feel free to reach out.</p>
+                      <p class='message' style='padding: 8px 0; font-size: 10px; color: #1f2124; margin: 0;'>
+                        <span class='signature' style='display: block;'>Best regards,</span>
+                        The Resolve Team
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Button -->
+                <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                  <tr>
+                    <td align='center' style='padding: 24px 24px;'>
+                      <table border='0' cellpadding='0' cellspacing='0'>
+                        <tr>
+                          <td align='center' bgcolor='#002347' style='border-radius: 4px;'>
+                            <a
+                              href='{{dashboard}}'
+                              class='dashboard-button'
+                              style='display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: normal; color: #ffffff; text-decoration: none;'
+                            >Go to Resolve Dashboard</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Footer -->
+                <table
+                  border='0'
+                  cellpadding='0'
+                  cellspacing='0'
+                  width='100%'
+                  class='footer'
+                  style='background-color: #002347;'
+                >
+                  <tr>
+                    <td style='padding: 24px;'>
+                      <!-- Footer Top -->
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                        <tr>
+                          <td align='left' valign='top'>
+                            <table border='0' cellpadding='0' cellspacing='0'>
+                              <tr>
+                                <td align='center'>
+                                  <img
+                                    src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png'
+                                    alt='resolve-logo'
+                                    class='footer-logo'
+                                    style='height: 13px; width: 56px;'
+                                  />
+                                </td>
+                              </tr>
+                              <tr>
+                                <td align='center' style='padding-top: 5px;'>
+                                  <span
+                                    class='footer-tagline'
+                                    style='font-size: 8px; color: #aaaaaa; text-align: center;'
+                                  >Secure Elections, <br /> Trusted Results</span>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td align='right' valign='top'>
+                            <table border='0' cellpadding='0' cellspacing='0'>
+                              <tr>
+                                <td>
+                                  <table
+                                    border='0'
+                                    cellpadding='0'
+                                    cellspacing='0'
+                                    width='16'
+                                    height='16'
+                                    class='social-icon'
+                                    style='background-color: #888888; border-radius: 50%;'
+                                  >
+                                    <tr>
+                                      <td align='center' valign='middle'>
+                                        <img
+                                          src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/instagram-icon_vcntl3.png'
+                                          width='10'
+                                          height='10'
+                                          alt='instagram'
+                                          style='display: block;'
+                                        />
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                                <td width='4'></td>
+                                <td>
+                                  <table
+                                    border='0'
+                                    cellpadding='0'
+                                    cellspacing='0'
+                                    width='16'
+                                    height='16'
+                                    class='social-icon'
+                                    style='background-color: #888888; border-radius: 50%;'
+                                  >
+                                    <tr>
+                                      <td align='center' valign='middle'>
+                                        <img
+                                          src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814246/facebook-icon_mqwmbd.png'
+                                          width='10'
+                                          height='10'
+                                          alt='facebook'
+                                          style='display: block;'
+                                        />
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Divider -->
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%' style='margin-top: 12px;'>
+                        <tr>
+                          <td style='background-color: rgba(203, 213, 225, 0.1); height: 1px;'></td>
+                        </tr>
+                      </table>
+
+                      <!-- Footer Bottom -->
+                      <table border='0' cellpadding='0' cellspacing='0' width='100%' style='margin-top: 8px;'>
+                        <tr>
+                          <td align='left' valign='top' style='width: 164px;'>
+                            <p class='footer-message' style='font-size: 10px; color: #aaaaaa;'>Start with Resolve:
+                              Create, manage, and monitor your elections effortlessly.</p>
+                          </td>
+                          <td align='right' valign='bottom'>
+                            <p class='copyright' style='font-size: 8px; color: #aaaaaa;'>© Resolve Rights Reserved 2024</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>
