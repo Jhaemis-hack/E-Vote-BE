@@ -26,16 +26,29 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { omit } from 'lodash';
+
+import * as path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
 import { ElectionStatus } from '../election/entities/election.entity';
+
 @Injectable()
 export class UserService {
+  private readonly supabase;
+  private readonly bucketName = process.env.SUPABASE_BUCKET;
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly mailService: EmailService,
-  ) {}
+  ) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
+      throw new Error('Supabase environment variables are not set.');
+    }
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    this.bucketName = process.env.SUPABASE_BUCKET;
+  }
 
   async registerAdmin(createAdminDto: CreateUserDto) {
     const { email: rawEmail, password } = createAdminDto;
@@ -131,8 +144,8 @@ export class UserService {
     //   }
     // }
 
-    const { ...admin } = userExist;
-    const credentials = { email: userExist.email, sub: userExist.id };
+    const { password, ...admin } = userExist; // Destructure to exclude password
+    const credentials = { email: admin.email, sub: admin.id };
     const token = this.jwtService.sign(credentials);
 
     return {
@@ -141,6 +154,15 @@ export class UserService {
       data: {
         id: admin.id,
         email: admin.email,
+        first_name: admin.first_name,
+        last_name: admin.last_name,
+        is_verified: admin.is_verified,
+        google_id: admin.google_id,
+        profile_picture: admin.profile_picture,
+        billing_interval: admin.billing_Interval,
+        plan: admin.plan,
+        created_elections: admin.created_elections,
+        subscriptions: admin.subscriptions,
         token,
       },
     };
@@ -167,18 +189,25 @@ export class UserService {
     };
   }
 
-  async getUserById(
-    id: string,
-  ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
+  async getUserById(id: string): Promise<{
+    status_code: number;
+    message: string;
+    data: Omit<User, 'password' | 'hashPassword' | 'created_elections'>;
+  }> {
     const user = await this.userRepository.findOne({
-      where: { id, created_elections: { status: In([ElectionStatus.ONGOING, ElectionStatus.UPCOMING]) } },
+      where: { id },
       relations: ['created_elections'],
     });
     if (!user) {
       throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { password: _, ...rest } = user;
+    const elections = user.created_elections.filter(
+      election => election.status === ElectionStatus.ONGOING || election.status === ElectionStatus.UPCOMING,
+    );
+    const { password, created_elections, ...rest } = user;
+    Object.assign(rest, { active_elections: elections.length });
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
@@ -518,6 +547,58 @@ export class UserService {
     return {
       message: SYS_MSG.SUBSCRIPTION_SUCCESSFUL,
       data: omit(updatedPaymentData, ['password']),
+    };
+  }
+
+  async uploadProfilePicture(file: Express.Multer.File, admin_id: string) {
+    const admin = await this.userRepository.findOne({ where: { id: admin_id } });
+    if (!admin) {
+      throw new NotFoundException(`Admin with ID ${admin_id} not found`);
+    }
+    if (!file) {
+      return {
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.NO_FILE_UPLOADED,
+        data: null,
+      };
+    }
+    // Validate file type
+    const allowed_mime_types = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowed_mime_types.includes(file.mimetype)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INVALID_FILE_TYPE, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const maxSize = 1 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.PHOTO_SIZE_LIMIT, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const { buffer, originalname, mimetype } = file;
+    const fileExt = path.extname(originalname);
+    const fileName = `${Date.now()}${fileExt}`;
+    const { error } = await this.supabase.storage
+      .from(this.bucketName)
+      .upload(`resolve-vote/${fileName}`, buffer, { contentType: mimetype });
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new HttpException(
+        { status_code: HttpStatus.INTERNAL_SERVER_ERROR, message: SYS_MSG.FAILED_PHOTO_UPLOAD, data: null },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    const { data: public_url_data } = this.supabase.storage
+      .from(this.bucketName)
+      .getPublicUrl(`resolve-vote/${fileName}`);
+    admin.profile_picture = public_url_data.publicUrl;
+    await this.userRepository.save(admin);
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.PICTURE_UPDATED,
+      data: { profile_picture: admin.profile_picture },
     };
   }
 }

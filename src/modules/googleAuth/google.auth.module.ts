@@ -6,7 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
+import { EmailModule } from '../email/email.module';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'google' }),
@@ -19,6 +19,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         signOptions: { expiresIn: configService.get<string>('auth.jwtExpiry') },
       }),
     }),
+    EmailModule,
   ],
   controllers: [GoogleController],
   providers: [GoogleService],

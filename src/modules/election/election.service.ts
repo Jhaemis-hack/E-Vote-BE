@@ -18,7 +18,7 @@ import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
 import * as moment from 'moment';
 import * as path from 'path';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
@@ -84,8 +84,8 @@ export class ElectionService {
       throw new HttpException({ status_code: 404, message: 'Admin not found', data: null }, HttpStatus.NOT_FOUND);
     }
 
-    const createdElectionCount = await this.electionRepository.count({
-      where: { created_by: adminId },
+    const activeElectionCount = await this.electionRepository.count({
+      where: { created_by: adminId, status: In([ElectionStatus.UPCOMING, ElectionStatus.ONGOING]) },
     });
 
     const planLimits = {
@@ -97,7 +97,7 @@ export class ElectionService {
     const userPlan = admin.plan || 'FREE';
     const maxAllowed = planLimits[userPlan];
 
-    if (createdElectionCount >= maxAllowed) {
+    if (activeElectionCount >= maxAllowed) {
       throw new HttpException(
         {
           status_code: HttpStatus.BAD_REQUEST,
