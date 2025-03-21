@@ -170,6 +170,7 @@ export class EmailService {
       to: email,
       subject: `Election "${election.title}" Results Are Out!`,
       context: {
+        email: email, // Add this line
         electionTitle: election.title,
         electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
         electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
