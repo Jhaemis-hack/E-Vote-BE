@@ -155,7 +155,7 @@ export class EmailService {
     end_time: string,
     votingLinkId: string,
   ) {
-    const votingLink = `${process.env.FRONTEND_URL}/vote/${votingLinkId}`;
+    const votingLink = `${process.env.FRONTEND_URL}/votes/${votingLinkId}`;
     return this.emailQueue.sendEmail({
       mail: {
         to: email,
