@@ -3,6 +3,7 @@ import { EmailService } from '../email.service';
 import { EmailQueue } from '../email.queue';
 import { User } from '../../user/entities/user.entity';
 import { Repository } from 'typeorm';
+import { ElectionService } from '../../election/election.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 describe('EmailService', () => {
@@ -25,6 +26,12 @@ describe('EmailService', () => {
           useValue: {
             findOne: jest.fn(),
             save: jest.fn(),
+          },
+        },
+        {
+          provide: ElectionService,
+          useValue: {
+            getElectionById: jest.fn().mockResolvedValue({}),
           },
         },
       ],

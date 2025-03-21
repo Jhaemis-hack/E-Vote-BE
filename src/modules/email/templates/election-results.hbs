@@ -1,0 +1,388 @@
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Resolve Election Results</title>
+    <style type='text/css'>
+      body,
+      p,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      ul,
+      ol,
+      li {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #000000;
+        background-color: #f5f5f5;
+      }
+
+      .email-container {
+        max-width: 420px;
+        margin: 10px auto;
+        border: 1px solid #cccccc;
+        background-color: #ffffff;
+      }
+
+      .header {
+        height: 87px;
+        background-color: #002347;
+        padding: 0 20px;
+      }
+
+      .header-content {
+        display: table;
+        width: 100%;
+        height: 100%;
+      }
+
+      .logo {
+        display: table-cell;
+        vertical-align: middle;
+      }
+
+      .logo img {
+        height: 26px;
+        width: auto;
+      }
+
+      .website-link {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: right;
+        font-size: 10px;
+        color: #999999;
+      }
+
+      .banner {
+        background-color: #eeedf8;
+        padding: 15px 20px;
+        height: 86px;
+      }
+
+      .banner-content {
+        display: table;
+        width: 100%;
+      }
+
+      .banner-text {
+        display: table-cell;
+        vertical-align: middle;
+      }
+
+      .banner-image {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: right;
+      }
+
+      .banner-image img {
+        height: 60px;
+        width: auto;
+        margin-bottom: -6px;
+      }
+
+      .banner-title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        max-width: 236px;
+      }
+
+      .banner-subtitle {
+        margin: 5px 0 0;
+        font-size: 8px;
+        color: #1f2124;
+        width: 225px;
+      }
+
+      .main-content {
+        padding: 0 20px;
+      }
+
+      .results-title {
+        font-size: 16px;
+        font-weight: 600;
+        padding: 20px 0;
+        margin: 0;
+      }
+
+      .greeting {
+        font-size: 14px;
+        margin: 0;
+      }
+
+      .body-text {
+        font-size: 10px;
+        color: #1f2124;
+        padding: 8px 0;
+        margin: 0;
+      }
+
+      .results-section {
+        margin-top: 10px;
+      }
+
+      .results-heading {
+        font-size: 10px;
+        color: #1f2124;
+        margin: 0 0 5px;
+      }
+
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-size: 10px;
+        text-align: center;
+        border: 1px solid #e8e7e7;
+        border-radius: 8px;
+      }
+
+      .results-table th {
+        background-color: #34679f;
+        color: #ffffff;
+        padding: 8px;
+        font-weight: normal;
+      }
+
+      .results-table td {
+        border: 1px solid #e8e7e7;
+        padding: 8px;
+        color: #606060;
+      }
+
+      .candidate-name {
+        font-weight: 600;
+        color: #1e1f24;
+      }
+
+      .winner {
+        color: #22c55e;
+        font-weight: 500;
+      }
+
+      .not-winner {
+        color: #9ca3af;
+      }
+
+      .download-section {
+        padding: 20px 0;
+      }
+
+      .results-link {
+        color: #7fb4f1;
+        text-decoration: underline;
+        font-size: 10px;
+      }
+
+      .signature {
+        font-size: 10px;
+        color: #1f2124;
+      }
+
+      .signature span {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .footer {
+        background-color: #002347;
+        padding: 20px;
+        color: #ffffff;
+        height: 161px;
+      }
+
+      .footer-top {
+        overflow: hidden;
+      }
+
+      .footer-logo {
+        float: left;
+        text-align: center;
+      }
+
+      .footer-logo img {
+        height: 13px;
+        width: 56px;
+      }
+
+      .footer-tagline {
+        font-size: 8px;
+        color: #999999;
+        margin-top: 5px;
+      }
+
+      .social-icons {
+        float: right;
+      }
+
+      .social-icon {
+        display: inline-block;
+        background-color: #808080;
+        border-radius: 50%;
+        padding: 4px;
+        width: 16px;
+        height: 16px;
+        margin-left: 5px;
+        text-align: center;
+      }
+
+      .social-icon img {
+        width: 8px;
+        height: 8px;
+      }
+
+      .footer-divider {
+        height: 1px;
+        background-color: rgba(203, 213, 225, 0.1);
+        margin: 10px 0;
+        clear: both;
+      }
+
+      .footer-bottom {
+        overflow: hidden;
+        padding-top: 10px;
+      }
+
+      .footer-message {
+        float: left;
+        width: 164px;
+        font-size: 10px;
+        color: #999999;
+      }
+
+      .footer-copyright {
+        float: right;
+        font-size: 8px;
+        color: #999999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='email-container'>
+      <div class='header'>
+        <div class='header-content'>
+          <div class='logo'>
+            <img
+              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png'
+              alt='Resolve Logo'
+            />
+          </div>
+          <div class='website-link'>
+            https://resolve.vote/
+          </div>
+        </div>
+      </div>
+
+      <div class='banner'>
+        <div class='banner-content'>
+          <div class='banner-text'>
+            <h2 class='banner-title'>Resolve it all—easy elections, trusted results</h2>
+            <p class='banner-subtitle'>If you have any questions or need assistance, contact our support team at
+              info.resolvevote@gmail.com.</p>
+          </div>
+          <div class='banner-image'>
+            <img
+              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814246/FY25-Voter_Registration-frames-3-1000x1000_rgkk6c.png'
+              alt='Vote Icon'
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class='main-content'>
+        <h2 class='results-title'>Thank You for Voting! See the Election Results</h2>
+        <p class='greeting'>Hi {{voterName}},</p>
+        <p class='body-text'>Thank you for participating in the {{electionTitle}}!</p>
+        <p class='body-text'>The election has officially ended, and we appreciate your valuable contribution to the
+          democratic process.</p>
+
+        <div class='results-section'>
+          <p class='results-heading'>Here are the results:</p>
+
+          <table class='results-table'>
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Votes Received</th>
+                <th>Percentage</th>
+                <th>Results</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each electionResults}}
+                <tr>
+                  <td class='candidate-name'>{{this.name}}</td>
+                  <td>{{this.votes}}</td>
+                  <td>{{this.percentage}}%</td>
+                  <td>
+                    {{#if this.isWinner}}
+                      <span class='winner'>WINNER</span>
+                    {{else}}
+                      <span class='not-winner'>—————</span>
+                    {{/if}}
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        <div class='download-section'>
+          <p class='body-text'>You can view and download the full results by clicking the link below:</p>
+          <a href='https://resolve.vote/resolveteamlead' class='results-link'>https://resolve.vote/resolveteamlead</a>
+          <p class='body-text'>Thank you for being an active participant!</p>
+          <p class='signature'>
+            <span>Best regards,</span>
+            The Resolve Team
+          </p>
+        </div>
+      </div>
+
+      <div class='footer'>
+        <div class='footer-top'>
+          <div class='footer-logo'>
+            <img
+              src='https://res.cloudinary.com/dueipgl4k/image/upload/v1741814245/Frame_2147227052_cyssv9.png'
+              alt='Resolve Logo'
+            />
+            <div class='footer-tagline'>
+              Secure Elections,
+              <br />
+              Trusted Results
+            </div>
+          </div>
+          <div class='social-icons'>
+            <div class='social-icon'>
+              <img src='https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png' alt='Instagram' />
+            </div>
+            <div class='social-icon'>
+              <img src='https://example.com/facebook-icon.png' alt='Facebook' />
+            </div>
+          </div>
+        </div>
+
+        <div class='footer-divider'></div>
+
+        <div class='footer-bottom'>
+          <div class='footer-message'>
+            Start with Resolve: Create, manage, and monitor your elections effortlessly.
+          </div>
+          <div class='footer-copyright'>
+            © Resolve Rights Reserved 2024
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
