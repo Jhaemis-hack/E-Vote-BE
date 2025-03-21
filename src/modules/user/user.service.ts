@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Repository, In } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
@@ -171,7 +171,7 @@ export class UserService {
     id: string,
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
     const user = await this.userRepository.findOne({
-      where: { id, created_elections: { status: ElectionStatus.ONGOING || ElectionStatus.UPCOMING } },
+      where: { id, created_elections: { status: In([ElectionStatus.ONGOING, ElectionStatus.UPCOMING]) } },
       relations: ['created_elections'],
     });
     if (!user) {
