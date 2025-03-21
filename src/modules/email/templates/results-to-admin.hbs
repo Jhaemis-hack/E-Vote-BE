@@ -281,10 +281,16 @@
         <div class='content'>
           <h2 class='heading'>Election Results Are Now Available</h2>
           <p class='greeting'>Hi {{email}},</p>
-          <p class='message'>We're pleased to inform you that the results of the recent election are now available.</p>
+          <p class='message'>We're pleased to inform you that the results of the election
+            <strong>{{electionTitle}}</strong>
+            are now available.</p>
           <p class='message'>You can view the results directly on your dashboard or download a detailed report using the
             link below:</p>
-          <a href='https://resolve.vote/resolveteamlead' class='link'>https://resolve.vote/resolveteamlead</a>
+          <p class='message'>The election ran from
+            <strong>{{electionStartDate}}</strong>
+            to
+            <strong>{{electionEndDate}}</strong>.</p>
+          <a href='{{resultsLink}}' class='link'>{{resultsLink}}</a>
         </div>
 
         <div class='features-section'>
@@ -361,7 +367,7 @@
         </div>
 
         <div class='button-container'>
-          <button class='dashboard-button'>Go to Resolve Dashboard</button>
+          <a href='{{resultsLink}}'><button class='dashboard-button'>Go to Resolve Dashboard</button></a>
         </div>
       </main>
 
