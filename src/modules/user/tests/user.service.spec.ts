@@ -923,6 +923,22 @@ describe('UserService', () => {
       );
     });
 
+    it('should throw NotAcceptableException if old password is same as new password', async () => {
+      const changePasswordDto = {
+        old_password: 'Password123!',
+        new_password: 'Password123!',
+      };
+
+      const hashedPassword = await bcrypt.hash(changePasswordDto.old_password, 10);
+
+      const mockUser = { email: 'admin@example.com', password: hashedPassword } as User;
+      userRepository.findOne = jest.fn().mockResolvedValue(changePasswordDto.new_password);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => true);
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).rejects.toThrow(
+        new UnauthorizedException(SYS_MSG.NEW_PASSWORD_MUST_BE_UNIQUE),
+      );
+    });
+
     it('should update password successfully', async () => {
       const changePasswordDto: ChangePasswordDto = {
         old_password: 'oldPassword123',
@@ -930,12 +946,17 @@ describe('UserService', () => {
       };
 
       const hashedOldPassword = await bcrypt.hash(changePasswordDto.old_password, 10);
-
       const mockUser = { email: 'admin@example.com', password: hashedOldPassword } as User;
-      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => true);
 
       const hashedNewPassword = await bcrypt.hash(changePasswordDto.new_password, 10);
+
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementationOnce(async () => true) // First call: old password matches
+        .mockImplementationOnce(async () => false); // Second call: new password is different
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+      jest.spyOn(userRepository, 'save').mockResolvedValue(mockUser);
 
       await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).resolves.toEqual({
         status_code: 201,
@@ -945,7 +966,7 @@ describe('UserService', () => {
 
       expect(userRepository.save).toHaveBeenCalledWith({
         ...mockUser,
-        password: 'hashedPassword',
+        password: hashedNewPassword,
       });
     });
   });
