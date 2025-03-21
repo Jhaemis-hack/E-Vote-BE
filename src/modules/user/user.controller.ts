@@ -16,18 +16,21 @@ import {
   BadRequestException,
   Req,
   UnauthorizedException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from '../../guards/auth.guard';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { STATUS_CODES } from 'http';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -138,5 +141,32 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Invalid token' })
   async verifyEmail(@Query('token') token: string) {
     return this.userService.verifyEmail(token);
+  }
+
+  @Post('users/photo-upload')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('photo'))
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upload a photo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          photo: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    })
+  @ApiResponse({ status: 200, description: SYS_MSG.FETCH_PROFILE_URL })
+  @ApiResponse({ status: 401, description: SYS_MSG.UNAUTHORIZED_USER })
+  @ApiResponse({ status: 400, description: SYS_MSG.BAD_REQUEST })
+  @ApiResponse({ status: 500, description: SYS_MSG.FAILED_PHOTO_UPLOAD })
+  async profilePictureUpload(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const adminId = req.user.sub;
+    return this.userService.uploadProfilePicture(file, adminId)
   }
 }

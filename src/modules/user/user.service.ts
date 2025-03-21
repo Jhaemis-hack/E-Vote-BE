@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   // ForbiddenException,
   HttpStatus,
   Injectable,
@@ -22,16 +23,26 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import * as path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class UserService {
+  private readonly supabase;
+  private readonly bucketName = process.env.SUPABASE_BUCKET;
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly mailService: EmailService,
-  ) {}
+  ) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
+      throw new Error('Supabase environment variables are not set.');
+    }
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    this.bucketName = process.env.SUPABASE_BUCKET;
+  }
 
   async registerAdmin(createAdminDto: CreateUserDto) {
     const { email: rawEmail, password } = createAdminDto;
@@ -359,5 +370,61 @@ export class UserService {
       }
       throw error;
     }
+  }
+
+  async uploadProfilePicture(file: Express.Multer.File, adminId: string) {
+    if (!adminId) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.UNAUTHORIZED_USER,
+          data: null,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    if (!file) {
+      return {
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.NO_FILE_UPLOADED,
+        data: null,
+      };
+    }
+    // Validate file type
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INVALID_FILE_TYPE, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const maxSize = 1 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new HttpException(
+        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.PHOTO_SIZE_LIMIT, data: null },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const { buffer, originalname, mimetype } = file;
+    const fileExt = path.extname(originalname);
+    const fileName = `${Date.now()}${fileExt}`;
+    const { error } = await this.supabase.storage
+      .from(this.bucketName)
+      .upload(`resolve-vote/${fileName}`, buffer, { contentType: mimetype });
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new HttpException(
+        { status_code: HttpStatus.INTERNAL_SERVER_ERROR, message: SYS_MSG.FAILED_PHOTO_UPLOAD, data: null },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    const { data: publicUrlData } = this.supabase.storage
+      .from(this.bucketName)
+      .getPublicUrl(`resolve-vote/${fileName}`);
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.FETCH_PROFILE_URL,
+      data: { profile_url: publicUrlData.publicUrl },
+    };
   }
 }

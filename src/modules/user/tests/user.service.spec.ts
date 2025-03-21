@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 // import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -32,6 +32,12 @@ describe('UserService', () => {
   // let configService: ConfigService;
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
   let emailService: EmailService;
+
+  beforeAll(() => {
+    process.env.SUPABASE_URL = 'https://mocked.supabase.url';
+    process.env.SUPABASE_ANON_KEY = 'mocked-anon-key';
+    process.env.SUPABASE_BUCKET = 'mocked-bucket-name';
+  });
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -871,5 +877,32 @@ describe('UserService', () => {
 
       expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
     });
+  });
+
+  describe('Upload profile photo', () => {
+    const adminId = '550e8400-e29b-41d4-a716-446655440000';
+
+    it('should reject invalid file types', async () => {
+      const file = { mimetype: 'application/pdf', size: 1000 } as Express.Multer.File;
+      await expect(userService.uploadProfilePicture(file, adminId)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_FILE_TYPE,
+          data: null,
+        }),
+      );
+    });
+
+    it('should reject files larger than 2mb', async () => {
+      const file = { mimetype: 'image/png', size: 3000000 } as Express.Multer.File;
+      await expect(userService.uploadProfilePicture(file, adminId)).rejects.toThrow(
+        new BadRequestException({
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.PHOTO_SIZE_LIMIT,
+          data: null,
+        }),
+      );
+    });
+    
   });
 });

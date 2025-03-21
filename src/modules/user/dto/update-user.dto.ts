@@ -21,4 +21,12 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password?: string;
+
+  @ApiProperty({
+    description: 'profile picture url',
+    example: 'https://from-s3-bucket.com',
+  })
+  @IsOptional()
+  @IsString()
+  profile_picture?: string
 }
