@@ -1,4 +1,10 @@
-import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  UnauthorizedException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 // import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -36,6 +42,12 @@ describe('UserService', () => {
   let emailService: EmailService;
 
   beforeEach(async () => {
+    // Mock environment variables
+    process.env.SUPABASE_URL = 'https://mock-supabase-url.com';
+    process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
+    process.env.SUPABASE_BUCKET = 'mock-bucket';
+    process.env.DEFAULT_PHOTO_URL = 'https://default-photo-url.com';
+
     const mockUserRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
