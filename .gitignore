@@ -10,3 +10,4 @@ src/db/migrations/*.js
 package-lock.json
 
 tsconfig.build.tsbuildinfo
+.qodo
