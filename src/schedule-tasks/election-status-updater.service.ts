@@ -109,6 +109,19 @@ export class ElectionStatusUpdaterService {
 
         this.logger.log(`Updating election ${id} from ONGOING to COMPLETED`);
         await this.electionRepository.update(id, { status: ElectionStatus.COMPLETED });
+
+        const updatedElection = await this.electionRepository.findOne({
+          where: { id },
+          relations: ['voters', 'created_by_user'],
+        });
+        if (!updatedElection) {
+          this.logger.error(`Election with id ${id} not found!`);
+          return;
+        }
+        if (updatedElection.email_notification) {
+          await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
+        }
+        await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
         this.schedulerRegistry.deleteCronJob(`end-${id}`);
       });
 
@@ -120,10 +133,6 @@ export class ElectionStatusUpdaterService {
       if (!updatedElection) {
         this.logger.error(`Election with id ${id} not found!`);
         return;
-      }
-
-      if (updatedElection.email_notification) {
-        await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
       }
 
       this.schedulerRegistry.addCronJob(`end-${id}`, endJob);

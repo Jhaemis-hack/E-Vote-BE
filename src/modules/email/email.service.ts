@@ -175,6 +175,7 @@ export class EmailService {
         electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
         electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
         resultsLink: `${process.env.FRONTEND_URL}/elections/${election.id}`,
+        dashboard: `${process.env.FRONTEND_URL}/elections`,
       },
       template: 'results-to-admin',
     };
