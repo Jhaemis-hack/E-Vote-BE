@@ -24,7 +24,16 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from '../../guards/auth.guard';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -154,7 +163,7 @@ export class UserController {
     return this.userService.updatePayment(userId, updatePaymentDto);
   }
 
-  @Post('users/photo-upload')
+  @Post('users/photo_upload')
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('photo'))
   @HttpCode(HttpStatus.OK)
@@ -162,22 +171,22 @@ export class UserController {
   @ApiOperation({ summary: 'Upload a photo' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-      schema: {
-        type: 'object',
-        properties: {
-          photo: {
-            type: 'string',
-            format: 'binary',
-          },
+    schema: {
+      type: 'object',
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
         },
       },
-    })
+    },
+  })
   @ApiResponse({ status: 200, description: SYS_MSG.FETCH_PROFILE_URL })
   @ApiResponse({ status: 401, description: SYS_MSG.UNAUTHORIZED_USER })
   @ApiResponse({ status: 400, description: SYS_MSG.BAD_REQUEST })
   @ApiResponse({ status: 500, description: SYS_MSG.FAILED_PHOTO_UPLOAD })
   async profilePictureUpload(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
-    const adminId = req.user.sub;
-    return this.userService.uploadProfilePicture(file, adminId)
+    const admin_id = req.user.sub;
+    return this.userService.uploadProfilePicture(file, admin_id);
   }
 }

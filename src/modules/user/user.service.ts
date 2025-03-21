@@ -473,16 +473,10 @@ export class UserService {
     };
   }
 
-  async uploadProfilePicture(file: Express.Multer.File, adminId: string) {
-    if (!adminId) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.UNAUTHORIZED,
-          message: SYS_MSG.UNAUTHORIZED_USER,
-          data: null,
-        },
-        HttpStatus.UNAUTHORIZED,
-      );
+  async uploadProfilePicture(file: Express.Multer.File, admin_id: string) {
+    const admin = await this.userRepository.findOne({ where: { id: admin_id } });
+    if (!admin) {
+      throw new NotFoundException(`Admin with ID ${admin_id} not found`);
     }
     if (!file) {
       return {
@@ -492,8 +486,8 @@ export class UserService {
       };
     }
     // Validate file type
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
+    const allowed_mime_types = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowed_mime_types.includes(file.mimetype)) {
       throw new HttpException(
         { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INVALID_FILE_TYPE, data: null },
         HttpStatus.BAD_REQUEST,
@@ -519,13 +513,15 @@ export class UserService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const { data: publicUrlData } = this.supabase.storage
+    const { data: public_url_data } = this.supabase.storage
       .from(this.bucketName)
       .getPublicUrl(`resolve-vote/${fileName}`);
+    admin.profile_picture = public_url_data.publicUrl;
+    await this.userRepository.save(admin);
     return {
       status_code: HttpStatus.OK,
-      message: SYS_MSG.FETCH_PROFILE_URL,
-      data: { profile_url: publicUrlData.publicUrl },
+      message: SYS_MSG.PICTURE_UPDATED,
+      data: { profile_picture: admin.profile_picture },
     };
   }
 }

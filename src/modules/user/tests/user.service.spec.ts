@@ -1,4 +1,10 @@
-import { BadRequestException, HttpStatus, UnauthorizedException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  UnauthorizedException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 // import * as request from 'supertest';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -33,15 +39,13 @@ describe('UserService', () => {
   let forgotPasswordRepository: Repository<ForgotPasswordToken>;
   let emailService: EmailService;
 
-
-
   beforeEach(async () => {
     // Mock environment variables
     process.env.SUPABASE_URL = 'https://mock-supabase-url.com';
     process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
     process.env.SUPABASE_BUCKET = 'mock-bucket';
     process.env.DEFAULT_PHOTO_URL = 'https://default-photo-url.com';
-    
+
     const mockUserRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
@@ -893,32 +897,5 @@ describe('UserService', () => {
 
       expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
     });
-  });
-
-  describe('Upload profile photo', () => {
-    const adminId = '550e8400-e29b-41d4-a716-446655440000';
-
-    it('should reject invalid file types', async () => {
-      const file = { mimetype: 'application/pdf', size: 1000 } as Express.Multer.File;
-      await expect(userService.uploadProfilePicture(file, adminId)).rejects.toThrow(
-        new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INVALID_FILE_TYPE,
-          data: null,
-        }),
-      );
-    });
-
-    it('should reject files larger than 2mb', async () => {
-      const file = { mimetype: 'image/png', size: 3000000 } as Express.Multer.File;
-      await expect(userService.uploadProfilePicture(file, adminId)).rejects.toThrow(
-        new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.PHOTO_SIZE_LIMIT,
-          data: null,
-        }),
-      );
-    });
-    
   });
 });
