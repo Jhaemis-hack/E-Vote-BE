@@ -8,6 +8,8 @@ import {
   Logger,
   NotFoundException,
   UnauthorizedException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClient } from '@supabase/supabase-js';
@@ -48,8 +50,10 @@ export class ElectionService {
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(User) private userRepository: Repository<User>,
+    @Inject(forwardRef(() => ElectionStatusUpdaterService))
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
-    private emailService: EmailService,
+    @Inject(forwardRef(() => EmailService))
+    private readonly emailService: EmailService,
     private voterService: VoterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
