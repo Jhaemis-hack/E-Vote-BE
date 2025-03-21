@@ -33,7 +33,8 @@ export class EmailService {
   // }
 
   async sendForgotPasswordMail(email: string, name: string, url: string, token: string) {
-    const link = `${url}?token=${token}`;
+    const encodedEmail = encodeURIComponent(email);
+    const link = `${url}?token=${token}&email=${encodedEmail}`;
     const mailPayload: MailInterface = {
       to: email,
       context: {
