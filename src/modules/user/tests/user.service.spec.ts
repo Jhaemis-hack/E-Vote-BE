@@ -539,7 +539,7 @@ describe('UserService', () => {
         expect.objectContaining({
           id: userId,
           email: 'test@example.com',
-          created_elections: [],
+          active_elections: 0,
         }),
       );
       // expect(result.data).not.toHaveProperty('password');

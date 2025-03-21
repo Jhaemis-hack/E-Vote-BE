@@ -190,18 +190,25 @@ export class UserService {
     };
   }
 
-  async getUserById(
-    id: string,
-  ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
+  async getUserById(id: string): Promise<{
+    status_code: number;
+    message: string;
+    data: Omit<User, 'password' | 'hashPassword' | 'created_elections'>;
+  }> {
     const user = await this.userRepository.findOne({
-      where: { id, created_elections: { status: In([ElectionStatus.ONGOING, ElectionStatus.UPCOMING]) } },
+      where: { id },
       relations: ['created_elections'],
     });
     if (!user) {
       throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { password: _, ...rest } = user;
+    const elections = user.created_elections.filter(
+      election => election.status === ElectionStatus.ONGOING || election.status === ElectionStatus.UPCOMING,
+    );
+    const { password, created_elections, ...rest } = user;
+    Object.assign(rest, { active_elections: elections.length });
+
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
