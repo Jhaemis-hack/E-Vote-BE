@@ -33,7 +33,8 @@ export class EmailService {
   // }
 
   async sendForgotPasswordMail(email: string, name: string, url: string, token: string) {
-    const link = `${url}?token=${token}`;
+    const encodedEmail = encodeURIComponent(email);
+    const link = `${url}?token=${token}&email=${encodedEmail}`;
     const mailPayload: MailInterface = {
       to: email,
       context: {
@@ -324,6 +325,24 @@ export class EmailService {
     });
   }
 
+  async sendResultsToAdminEmail(email: string, election: Election): Promise<void> {
+    const mailPayload: MailInterface = {
+      to: email,
+      subject: `Election "${election.title}" Results Are Out!`,
+      context: {
+        email: email, // Add this line
+        electionTitle: election.title,
+        electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
+        electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+        resultsLink: `${process.env.FRONTEND_URL}/elections/${election.id}`,
+        dashboard: `${process.env.FRONTEND_URL}/elections`,
+      },
+      template: 'results-to-admin',
+    };
+
+    // Enqueue the email job
+    await this.emailQueue.sendEmail({ mail: mailPayload, template: 'results-to-admin' });
+  }
   async sendElectionEndEmails(election: any): Promise<void> {
     if (!election.voters || election.voters.length === 0) {
       this.logger.log(`No voters found for election ${election.id}, skipping email notifications.`);

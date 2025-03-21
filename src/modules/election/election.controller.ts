@@ -142,6 +142,7 @@ export class ElectionController {
     }
   }
 
+  @ApiBearerAuth()
   @Delete(':id')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete Inactive Election' })
