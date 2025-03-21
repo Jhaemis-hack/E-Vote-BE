@@ -123,6 +123,164 @@ export class EmailService {
     }
   }
 
+  /**
+   * Send reminder emails at specific intervals before an election ends
+   * @param election The election information
+   * @param nonVotedVoters Array of voters who haven't voted yet
+   * @param reminderInterval The interval before election end (30min, 1hour, or 1hour30min)
+   * @returns Object with success status and message
+   */
+  async sendIntervalReminderEmails(
+    election: any,
+    nonVotedVoters: any[],
+    reminderInterval: '30min' | '1hour' | '1hour30min',
+  ): Promise<{ success: boolean; message: string; sent?: number }> {
+    this.logger.log(`Attempting to send ${reminderInterval} reminders for election ${election.id}`);
+
+    // Check if there are non-voted voters
+    if (!nonVotedVoters || nonVotedVoters.length === 0) {
+      this.logger.log(`No voters left to remind for election ${election.id}`);
+      return { success: false, message: 'No voters left to remind' };
+    }
+
+    // Calculate remaining time in milliseconds
+    const electionEndTime = new Date(`${election.end_date}T${election.end_time || '23:59:59'}`).getTime();
+    const currentTime = new Date().getTime();
+    const remainingTimeMs = electionEndTime - currentTime;
+
+    // Convert interval to milliseconds for comparison
+    let intervalMs: number;
+    let intervalText: string;
+
+    switch (reminderInterval) {
+      case '30min':
+        intervalMs = 30 * 60 * 1000; // 30 minutes in ms
+        intervalText = '30 minutes';
+        break;
+      case '1hour':
+        intervalMs = 60 * 60 * 1000; // 1 hour in ms
+        intervalText = '1 hour';
+        break;
+      case '1hour30min':
+        intervalMs = 90 * 60 * 1000; // 1 hour 30 minutes in ms
+        intervalText = '1 hour and 30 minutes';
+        break;
+      default:
+        return {
+          success: false,
+          message: 'Invalid reminder interval',
+        };
+    }
+
+    // Check if reminder makes sense based on remaining time
+    if (remainingTimeMs < intervalMs) {
+      this.logger.warn(
+        `Cannot send ${intervalText} reminder for election ${election.id} as it ends in less than ${intervalText}`,
+      );
+      return {
+        success: false,
+        message: `Cannot send ${intervalText} reminder as the election ends in less than ${intervalText}`,
+      };
+    }
+
+    try {
+      // Send reminders to all non-voted voters
+      await Promise.all(
+        nonVotedVoters.map(voter =>
+          this.emailQueue.sendEmail({
+            mail: {
+              to: voter.email,
+              subject: `Reminder: Election "${election.title}" ends in ${intervalText}!`,
+              context: {
+                voterName: voter.name || voter.email,
+                electionTitle: election.title,
+                electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionEndTime: election.end_time,
+                electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
+                hoursRemaining: Math.ceil(remainingTimeMs / (1000 * 60 * 60)),
+                minutesRemaining: Math.ceil(remainingTimeMs / (1000 * 60)),
+                reminderInterval: intervalText,
+              },
+              template: 'election-reminder',
+            },
+            template: 'election-reminder',
+          }),
+        ),
+      );
+
+      this.logger.log(
+        `Successfully sent ${intervalText} reminders to ${nonVotedVoters.length} voters for election ${election.id}`,
+      );
+
+      return {
+        success: true,
+        message: `Reminder emails sent successfully`,
+        sent: nonVotedVoters.length,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to send ${intervalText} reminders for election ${election.id}: ${error.message}`,
+        error.stack,
+      );
+      return {
+        success: false,
+        message: `Failed to send reminder emails: ${error.message}`,
+      };
+    }
+  }
+
+  /**
+   * Validates if an election can have a reminder sent at the specified interval
+   * @param election The election to check
+   * @param reminderInterval The reminder interval to validate
+   * @returns Object with validity status and message
+   */
+  validateReminderInterval(
+    election: any,
+    reminderInterval: '30min' | '1hour' | '1hour30min',
+  ): { valid: boolean; message?: string } {
+    // Calculate remaining time in milliseconds
+    const electionEndTime = new Date(`${election.end_date}T${election.end_time || '23:59:59'}`).getTime();
+    const currentTime = new Date().getTime();
+    const remainingTimeMs = electionEndTime - currentTime;
+
+    // Check if election has already ended
+    if (remainingTimeMs <= 0) {
+      return { valid: false, message: 'Election has already ended' };
+    }
+
+    // Convert interval to milliseconds for comparison
+    let intervalMs: number;
+    let intervalText: string;
+
+    switch (reminderInterval) {
+      case '30min':
+        intervalMs = 30 * 60 * 1000;
+        intervalText = '30 minutes';
+        break;
+      case '1hour':
+        intervalMs = 60 * 60 * 1000;
+        intervalText = '1 hour';
+        break;
+      case '1hour30min':
+        intervalMs = 90 * 60 * 1000;
+        intervalText = '1 hour and 30 minutes';
+        break;
+      default:
+        return { valid: false, message: 'Invalid reminder interval' };
+    }
+
+    // Check if reminder makes sense based on remaining time
+    if (remainingTimeMs < intervalMs) {
+      return {
+        valid: false,
+        message: `Cannot send ${intervalText} reminder as the election ends in less than ${intervalText}`,
+      };
+    }
+
+    return { valid: true };
+  }
+
   async sendElectionCreationEmail(email: string, election: Election): Promise<void> {
     const adminEmail = email;
     if (adminEmail) {

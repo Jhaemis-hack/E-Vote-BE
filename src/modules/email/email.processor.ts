@@ -111,4 +111,17 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - sendVotingLinkEmailJobError: ${sendVotingLinkJobError.message}`);
     }
   }
+
+  @Process('election-reminder')
+  async sendElectionReminderEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Election reminder email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ElectionReminderEmailJob error: ${error.message}`);
+    }
+  }
 }
