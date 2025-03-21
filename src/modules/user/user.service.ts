@@ -27,6 +27,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { omit } from 'lodash';
 import { ElectionStatus } from '../election/entities/election.entity';
+import { In } from 'typeorm';
 @Injectable()
 export class UserService {
   constructor(
@@ -180,7 +181,7 @@ export class UserService {
     id: string,
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
     const user = await this.userRepository.findOne({
-      where: { id, created_elections: { status: ElectionStatus.ONGOING || ElectionStatus.UPCOMING } },
+      where: { id, created_elections: { status: In([ElectionStatus.ONGOING, ElectionStatus.UPCOMING]) } },
       relations: ['created_elections'],
     });
     if (!user) {
