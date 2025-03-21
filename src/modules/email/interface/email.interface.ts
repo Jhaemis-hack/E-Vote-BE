@@ -20,6 +20,7 @@ export interface EmailSender {
     | 'election-reminder'
     | 'election-creation'
     | 'voter-invite'
+    | 'results-to-admin'
     | 'election-results'
     | 'contact-us';
 }

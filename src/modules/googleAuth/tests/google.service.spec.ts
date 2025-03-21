@@ -5,7 +5,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { HttpException, HttpStatus } from '@nestjs/common';
-
+import { EmailService } from '../../email/email.service';
 const mockUserRepository = {
   findOne: jest.fn(),
   create: jest.fn(),
@@ -15,13 +15,16 @@ const mockUserRepository = {
 const mockJwtService = {
   sign: jest.fn(() => 'mocked_jwt_token'),
 };
-
+const mockEmailService = {
+  sendWelcomeMail: jest.fn(),
+};
 globalThis.fetch = jest.fn();
 
 describe('GoogleAuthService', () => {
   let service: GoogleService;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
+  let emailService: EmailService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,12 +38,21 @@ describe('GoogleAuthService', () => {
           provide: JwtService,
           useValue: mockJwtService,
         },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
+        },
       ],
     }).compile();
 
     service = module.get<GoogleService>(GoogleService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
+    emailService = module.get<EmailService>(EmailService);
   });
 
   afterEach(() => {
@@ -102,6 +114,7 @@ describe('GoogleAuthService', () => {
     mockUserRepository.save.mockResolvedValue({ id: '123', ...mockGoogleResponse });
 
     const result = await service.googleAuth({ id_token: 'valid_token' });
+    expect(emailService.sendWelcomeMail).toHaveBeenCalledWith('newuser@example.com');
 
     expect(result).toEqual({
       message: 'Authentication successful',
@@ -149,6 +162,34 @@ describe('GoogleAuthService', () => {
         profile_picture: 'profile_pic_url',
         token: 'mocked_jwt_token',
       },
+    });
+  });
+
+  it('should return SERVER_ERROR if sending welcome email fails', async () => {
+    const mockGoogleResponse = {
+      email: 'newuser@example.com',
+      given_name: 'John',
+      family_name: 'Doe',
+      picture: 'profile_pic_url',
+    };
+
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      status: 200,
+      json: jest.fn().mockResolvedValue(mockGoogleResponse),
+    });
+
+    mockUserRepository.findOne.mockResolvedValue(null);
+    mockUserRepository.create.mockReturnValue({ id: '123', ...mockGoogleResponse });
+    mockUserRepository.save.mockResolvedValue({ id: '123', ...mockGoogleResponse });
+    mockEmailService.sendWelcomeMail.mockRejectedValue(new Error('Email service error'));
+
+    const result = await service.googleAuth({ id_token: 'valid_token' });
+
+    expect(emailService.sendWelcomeMail).toHaveBeenCalledWith('newuser@example.com');
+    expect(result).toEqual({
+      status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Welcome email failed to send',
+      data: null,
     });
   });
 });
