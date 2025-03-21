@@ -1,8 +1,10 @@
 import {
   BadRequestException,
+  HttpException,
   // ForbiddenException,
   HttpStatus,
   Injectable,
+  NotAcceptableException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -16,14 +18,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
-// import { exist, string } from 'joi';
 import { EmailService } from '../email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { omit } from 'lodash';
+import { ElectionStatus } from '../election/entities/election.entity';
 @Injectable()
 export class UserService {
   constructor(
@@ -128,8 +131,8 @@ export class UserService {
     //   }
     // }
 
-    const { ...admin } = userExist;
-    const credentials = { email: userExist.email, sub: userExist.id };
+    const { password, ...admin } = userExist; // Destructure to exclude password
+    const credentials = { email: admin.email, sub: admin.id };
     const token = this.jwtService.sign(credentials);
 
     return {
@@ -138,6 +141,15 @@ export class UserService {
       data: {
         id: admin.id,
         email: admin.email,
+        first_name: admin.first_name,
+        last_name: admin.last_name,
+        is_verified: admin.is_verified,
+        google_id: admin.google_id,
+        profile_picture: admin.profile_picture,
+        billing_interval: admin.billing_Interval,
+        plan: admin.plan,
+        created_elections: admin.created_elections,
+        subscriptions: admin.subscriptions,
         token,
       },
     };
@@ -167,16 +179,19 @@ export class UserService {
   async getUserById(
     id: string,
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({
+      where: { id, created_elections: { status: ElectionStatus.ONGOING || ElectionStatus.UPCOMING } },
+      relations: ['created_elections'],
+    });
     if (!user) {
       throw new NotFoundException(SYS_MSG.USER_NOT_FOUND);
     }
 
-    const { ...userData } = user;
+    const { password: _, ...rest } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
-      data: userData,
+      data: rest,
     };
   }
 
@@ -384,6 +399,75 @@ export class UserService {
     await this.userRepository.save(adminExist);
     await this.forgotPasswordRepository.delete({ reset_token });
     return {
+      message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
+      data: null,
+    };
+  }
+
+  async changePassword(
+    changePassword: ChangePasswordDto,
+    adminEmail: string,
+  ): Promise<{ status_code: Number; message: string; data: null }> {
+    const { old_password, new_password } = changePassword;
+
+    const password = new_password.toLowerCase();
+
+    const admin_exist = await this.userRepository.findOne({ where: { email: adminEmail } });
+
+    if (!admin_exist) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.USER_NOT_FOUND,
+          data: null,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const isVerifiedPassword = await bcrypt.compare(old_password, admin_exist.password);
+
+    if (!isVerifiedPassword) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.INCORRECT_PASSWORD,
+          data: null,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const same_password = await bcrypt.compare(password, admin_exist.password);
+
+    if (same_password) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.NOT_ACCEPTABLE,
+          message: SYS_MSG.NEW_PASSWORD_MUST_BE_UNIQUE,
+          data: null,
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    admin_exist.password = hashedPassword;
+    await this.userRepository.save(admin_exist);
+    return {
+      status_code: HttpStatus.CREATED,
       message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
       data: null,
     };

@@ -141,6 +141,59 @@ export class ElectionStatusUpdaterService {
     } else {
       this.logger.log(`End date/time ${endDateTime} for election ${id} is in the past, not scheduling job.`);
     }
+
+    const endDateTimeResult = this.getDateTime(end_date, end_time);
+    console.log('endDateTime:', endDateTime);
+    console.log('Current time:', new Date());
+
+    if (endDateTime > new Date()) {
+      const jobName = `end-${id}`;
+      if (this.schedulerRegistry.doesExist('cron', jobName)) {
+        this.schedulerRegistry.deleteCronJob(jobName);
+        this.logger.log(`Deleted existing cron job: ${jobName}`);
+      }
+      const endJob = new CronJob(
+        endDateTime,
+        async () => {
+          this.logger.log(`Cron job triggered for election end at ${new Date()}`);
+          this.logger.log(`Updating election ${id} from ONGOING to COMPLETED`);
+
+          await this.electionRepository.update(id, { status: ElectionStatus.COMPLETED });
+
+          const updatedElection = await this.electionRepository.findOne({
+            where: { id },
+            relations: ['voters'],
+          });
+
+          if (!updatedElection) {
+            this.logger.error(`Election with id ${id} not found!`);
+            return;
+          }
+
+          if (updatedElection.email_notification) {
+            this.logger.log('Sending election results to voters...');
+
+            try {
+              await this.emailService.sendElectionEndEmails(updatedElection);
+              this.logger.log('📩 Email service response: ${JSON.stringify(info)}');
+            } catch (error) {
+              this.logger.error(`Error sending election result emails: ${error.message}`);
+            }
+          }
+
+          this.schedulerRegistry.deleteCronJob(jobName);
+        },
+        null,
+        false,
+      );
+
+      this.schedulerRegistry.addCronJob(jobName, endJob);
+      endJob.start();
+
+      this.logger.log(`Scheduled end job for election ${id} at ${endDateTime}`);
+    } else {
+      this.logger.log(`End date/time ${endDateTime} for election ${id} is in the past, not scheduling job.`);
+    }
   }
 
   private getDateTime(date: Date, timeString: string): Date {

@@ -1,4 +1,11 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
@@ -27,7 +34,14 @@ export class AuthGuard implements CanActivate {
     }
 
     if (!token) {
-      throw new UnauthorizedException(SYS_MSG.UNAUTHENTICATED_MESSAGE);
+      throw new HttpException(
+        {
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.UNAUTHENTICATED_MESSAGE,
+          data: null,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const payload = await this.jwtService

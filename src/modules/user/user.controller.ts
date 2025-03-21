@@ -26,6 +26,7 @@ import { ApiBearerAuth, ApiBody, ApiParam, ApiOperation, ApiQuery, ApiResponse, 
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { STATUS_CODES } from 'http';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
@@ -139,6 +140,23 @@ export class UserController {
   async verifyEmail(@Query('token') token: string) {
     return this.userService.verifyEmail(token);
   }
+
+  @Patch('/change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update User password' })
+  @ApiResponse({ status: 200, description: 'Password successfully updated.' })
+  @ApiResponse({ status: 403, description: 'User not Authenticated.' })
+  async changePassword(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    changePasswordDto: ChangePasswordDto,
+    @Req() req: any,
+  ) {
+    const adminEmail = req.user.email;
+    return await this.userService.changePassword(changePasswordDto, adminEmail);
+  }
+
   @Patch(':id/subscription-payment')
   @ApiOperation({ summary: 'Update user payment details' })
   @ApiParam({ name: 'id', required: true, type: String, description: 'User ID' })
@@ -146,7 +164,10 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Payment details updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid data provided' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async updateUserPayment(@Param('id') userId: string, @Body() updatePaymentDto: UpdatePaymentDto) {
+  async updateUserPayment(
+    @Param('id') userId: string,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) updatePaymentDto: UpdatePaymentDto,
+  ) {
     return this.userService.updatePayment(userId, updatePaymentDto);
   }
 }

@@ -18,7 +18,6 @@ import { Vote } from '../../votes/entities/votes.entity';
 import { CreateElectionDto } from '../dto/create-election.dto';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
-import { NotificationSettingsDto } from '../../notification/dto/notification-settings.dto';
 import { EmailService } from '../../email/email.service';
 import { Voter } from '../../voter/entities/voter.entity';
 import { VoterService } from '../../voter/voter.service';
@@ -66,7 +65,7 @@ describe('ElectionService', () => {
 
   const mockVoteRepository = () => ({
     find: jest.fn(),
-    findAndCount: jest.fn(),
+    count: jest.fn(),
   });
 
   const mockVoterRepository = () => ({
@@ -239,7 +238,7 @@ describe('ElectionService', () => {
               max_choices: 1,
               election_type: ElectionType.SINGLECHOICE,
               candidates: [],
-              vote_count: 0
+              vote_count: 0,
             },
             {
               election_id: '550e8400-e29b-41d4-a716-446655440001',
@@ -254,7 +253,7 @@ describe('ElectionService', () => {
               max_choices: 1,
               election_type: ElectionType.SINGLECHOICE,
               candidates: [],
-              vote_count: 0
+              vote_count: 0,
             },
           ],
           meta: {

@@ -8,6 +8,7 @@ export const DELETE_USER = 'User deleted successfully';
 export const USER_NOT_FOUND = 'User not found';
 export const EMAIL_NOT_FOUND = 'User with this email not found';
 export const INCORRECT_PASSWORD = 'Incorrect credentials';
+export const NEW_PASSWORD_MUST_BE_UNIQUE = 'Password already used, try something different.';
 export const INVALID_EMAIL_FORMAT = 'Invalid email format';
 export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
