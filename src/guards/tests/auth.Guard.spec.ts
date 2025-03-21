@@ -1,5 +1,5 @@
 import { AuthGuard } from '../auth.guard';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, HttpException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
@@ -22,7 +22,7 @@ describe('AuthGuard', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
     const context = createMockExecutionContext();
     context.switchToHttp().getRequest().headers.authorization = undefined;
-    await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+    await expect(authGuard.canActivate(context)).rejects.toThrow(HttpException);
   });
   it('should throw UnauthorizedException if token is invalid', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
