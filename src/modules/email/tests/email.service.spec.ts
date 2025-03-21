@@ -106,6 +106,7 @@ describe('EmailService', () => {
       const name = 'Test User';
       const url = 'http://example.com/reset';
       const token = 'reset-token';
+      const encodedEmail = encodeURIComponent(email);
 
       await emailService.sendForgotPasswordMail(email, name, url, token);
 
@@ -114,7 +115,7 @@ describe('EmailService', () => {
           to: email,
           context: {
             name,
-            link: `${url}?token=${token}`,
+            link: `${url}?token=${token}&email=${encodedEmail}`,
             email,
           },
         },
@@ -126,6 +127,7 @@ describe('EmailService', () => {
       const email = 'test@example.com';
       const url = 'http://example.com/reset';
       const token = 'reset-token';
+      const encodedEmail = encodeURIComponent(email);
 
       await emailService.sendForgotPasswordMail(email, '', url, token);
 
@@ -134,7 +136,7 @@ describe('EmailService', () => {
           to: email,
           context: {
             name: '',
-            link: `${url}?token=${token}`,
+            link: `${url}?token=${token}&email=${encodedEmail}`,
             email,
           },
         },
