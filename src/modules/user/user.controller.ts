@@ -24,12 +24,13 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from '../../guards/auth.guard';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { STATUS_CODES } from 'http';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Auth')
@@ -141,6 +142,16 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Invalid token' })
   async verifyEmail(@Query('token') token: string) {
     return this.userService.verifyEmail(token);
+  }
+  @Patch(':id/subscription-payment')
+  @ApiOperation({ summary: 'Update user payment details' })
+  @ApiParam({ name: 'id', required: true, type: String, description: 'User ID' })
+  @ApiBody({ type: UpdatePaymentDto })
+  @ApiResponse({ status: 200, description: 'Payment details updated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid data provided' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async updateUserPayment(@Param('id') userId: string, @Body() updatePaymentDto: UpdatePaymentDto) {
+    return this.userService.updatePayment(userId, updatePaymentDto);
   }
 
   @Post('users/photo-upload')

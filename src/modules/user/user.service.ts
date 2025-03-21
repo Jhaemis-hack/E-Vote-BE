@@ -23,6 +23,8 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { omit } from 'lodash';
 import * as path from 'path';
 import { createClient } from '@supabase/supabase-js';
 
@@ -186,7 +188,22 @@ export class UserService {
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
-      data: userData,
+      data: {
+        id: userData.id,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at,
+        deleted_at: userData.deleted_at,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        email: userData.email,
+        is_verified: userData.is_verified,
+        google_id: userData.google_id,
+        profile_picture: userData.profile_picture,
+        plan: userData.plan,
+        created_elections: [],
+        subscriptions: [],
+        billing_Interval: userData.billing_Interval,
+      },
     };
   }
 
@@ -213,9 +230,19 @@ export class UserService {
       });
     }
 
-    if (updateUserDto.password) {
-      this.validatePassword(updateUserDto.password);
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    if (updateUserDto.first_name) {
+      this.validateFirstName(updateUserDto.first_name);
+      user.first_name = updateUserDto.first_name;
+    }
+
+    if (updateUserDto.last_name) {
+      this.validateLastName(updateUserDto.last_name);
+      user.last_name = updateUserDto.last_name;
+    }
+
+    if (updateUserDto.email) {
+      this.validateEmail(updateUserDto.email);
+      user.email = updateUserDto.email;
     }
 
     if (updateUserDto.email) {
@@ -235,17 +262,6 @@ export class UserService {
     };
   }
 
-  private validatePassword(password: string) {
-    if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
-      throw new BadRequestException({
-        message: SYS_MSG.INVALID_PASSWORD_FORMAT,
-        data: {
-          password: 'Password must be at least 8 characters long and contain at least one special character and number',
-        },
-        status_code: HttpStatus.BAD_REQUEST,
-      });
-    }
-  }
   private validateEmail(email: string) {
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
@@ -253,6 +269,76 @@ export class UserService {
         message: SYS_MSG.INVALID_EMAIL_FORMAT,
         data: { email: 'Invalid email format' },
         status_code: HttpStatus.BAD_REQUEST,
+      });
+    }
+  }
+
+  private validateFirstName(first_name: string): void {
+    if (typeof first_name !== 'string' || first_name.trim().length === 0) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.INVALID_FIRST_NAME,
+        data: null,
+      });
+    }
+
+    if (first_name.trim().length < 2) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.FIRST_NAME_TOO_SHORT,
+        data: null,
+      });
+    }
+
+    if (first_name.trim().length > 50) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.FIRST_NAME_TOO_LONG,
+        data: null,
+      });
+    }
+
+    const allowedCharacters = /^[A-Za-z\s]+$/;
+    if (!allowedCharacters.test(first_name)) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.FIRST_NAME_INVALID_CHARACTERS,
+        data: null,
+      });
+    }
+  }
+
+  private validateLastName(last_name: string): void {
+    if (typeof last_name !== 'string' || last_name.trim().length === 0) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.INVALID_LAST_NAME,
+        data: null,
+      });
+    }
+
+    if (last_name.trim().length < 2) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.LAST_NAME_TOO_SHORT,
+        data: null,
+      });
+    }
+
+    if (last_name.trim().length > 50) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.LAST_NAME_TOO_LONG,
+        data: null,
+      });
+    }
+
+    const allowedCharacters = /^[A-Za-z\s]+$/;
+    if (!allowedCharacters.test(last_name)) {
+      throw new BadRequestException({
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.LAST_NAME_INVALID_CHARACTERS,
+        data: null,
       });
     }
   }
@@ -370,6 +456,21 @@ export class UserService {
       }
       throw error;
     }
+  }
+
+  async updatePayment(userId: string, updatePaymentDto: UpdatePaymentDto): Promise<{ message: string; data: User }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    Object.assign(user, updatePaymentDto);
+    const updatedPaymentData = await this.userRepository.save(user);
+    return {
+      message: SYS_MSG.SUBSCRIPTION_SUCCESSFUL,
+      data: omit(updatedPaymentData, ['password']),
+    };
   }
 
   async uploadProfilePicture(file: Express.Multer.File, adminId: string) {

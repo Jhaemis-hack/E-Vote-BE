@@ -17,6 +17,7 @@ import { Voter } from '../voter/entities/voter.entity';
 import { In, Repository } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import * as crypto from 'crypto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class VoterService {
@@ -25,6 +26,7 @@ export class VoterService {
   constructor(
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
+    private userService: UserService,
   ) {}
 
   async findAll(
@@ -137,12 +139,15 @@ export class VoterService {
   async processFile(
     file: Express.Multer.File,
     electionId: string,
+    userid: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     const ext = file.originalname.split('.').pop()?.toLowerCase();
+    const user = await this.userService.getUserById(userid);
+    const plan = user.data.plan.toLowerCase();
     if (ext === 'csv') {
-      return this.processCSV(file.buffer, electionId);
+      return this.processCSV(file.buffer, electionId, plan);
     } else if (ext === 'xlsx') {
-      return this.processExcel(file.buffer, electionId);
+      return this.processExcel(file.buffer, electionId, plan);
     } else {
       throw new BadRequestException({
         status_code: HttpStatus.BAD_REQUEST,
@@ -154,8 +159,10 @@ export class VoterService {
   async processCSV(
     fileBuffer: Buffer,
     electionId: string,
+    plan: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
+      const planLimits = { free: 20, basic: 200, premium: 1000 };
       const voters: {
         id: string;
         name: string;
@@ -220,6 +227,18 @@ export class VoterService {
                   ),
                 );
               }
+              if (plan in planLimits && voters.length > planLimits[plan]) {
+                return reject(
+                  new HttpException(
+                    {
+                      status_code: HttpStatus.BAD_REQUEST,
+                      message: SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED,
+                      data: null,
+                    },
+                    HttpStatus.BAD_REQUEST,
+                  ),
+                );
+              }
               const savedVoters = await this.saveVoters(voters);
 
               resolve({
@@ -266,8 +285,10 @@ export class VoterService {
   async processExcel(
     fileBuffer: Buffer,
     electionId: string,
+    plan: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
+      const planLimits = { free: 3, basic: 50, premium: 100 };
       const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
@@ -317,6 +338,16 @@ export class VoterService {
           {
             status_code: HttpStatus.BAD_REQUEST,
             message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
+            data: null,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      if (plan in planLimits && voters.length > planLimits[plan]) {
+        throw new HttpException(
+          {
+            status_code: HttpStatus.BAD_REQUEST,
+            message: SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED,
             data: null,
           },
           HttpStatus.BAD_REQUEST,

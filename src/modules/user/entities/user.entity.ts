@@ -3,6 +3,17 @@ import { Election } from '../../election/entities/election.entity';
 import { Subscription } from '../../subscription/entities/subscription.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 
+export enum BillingInterval {
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
+}
+
+export enum UserPlan {
+  FREE = 'FREE',
+  BASIC = 'BASIC',
+  BUSINESS = 'BUSINESS',
+}
+
 @Entity({ name: 'admin' })
 export class User extends AbstractBaseEntity {
   @Column({ nullable: true })
@@ -25,6 +36,16 @@ export class User extends AbstractBaseEntity {
 
   @Column({ nullable: true })
   profile_picture: string;
+
+  @Column({ type: 'enum', enum: BillingInterval, default: BillingInterval.MONTHLY })
+  billing_Interval: BillingInterval;
+
+  @Column({
+    type: 'enum',
+    enum: UserPlan,
+    default: UserPlan.FREE,
+  })
+  plan: UserPlan;
 
   @OneToMany(() => Election, election => election.created_by_user)
   created_elections: Election[];

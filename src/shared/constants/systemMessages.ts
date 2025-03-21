@@ -66,6 +66,8 @@ export const NO_PHOTO_URL = 'No photo url';
 export const INVALID_PHOTO_URL = 'Invalid photo url';
 export const FETCH_PROFILE_URL = 'successfully stored profile URL';
 export const FAILED_PHOTO_UPLOAD = 'Failed to upload photo to Supabase.';
+export const UPDATE_PROFILE_URL = 'successfully Updated profile URL';
+export const FAILED_PHOTO_UPDATE = 'Failed to update photo to Supabase.';
 export const PHOTO_SIZE_LIMIT = 'File size exceeds 2MB limit.';
 export const INVALID_FILE_TYPE = 'Invalid file type. Only JPEG and PNG are allowed.';
 export const NO_FILE_UPLOADED = 'No file uploaded';
@@ -94,5 +96,22 @@ export const ELECTION_CREATED_EMAIL_FAILED = 'Election created email failed to s
 export const INVALID_CREDENTIALS = 'Invalid credentials';
 export const SERVER_ERROR = 'Sorry a server error occured';
 export const GOOGLE_AUTH_RESPONSE = 'Authentication successful';
+
+export const INVALID_FIRST_NAME = 'First name must be a valid non-empty string.';
+export const FIRST_NAME_TOO_SHORT = 'First name must be at least 2 characters long.';
+export const FIRST_NAME_TOO_LONG = 'First name cannot exceed 50 characters.';
+export const FIRST_NAME_INVALID_CHARACTERS = 'First name can only contain letters and spaces.';
+
+export const INVALID_LAST_NAME = 'Last name must be a string';
+export const LAST_NAME_TOO_SHORT = 'Last name must be at least 2 characters long.';
+export const LAST_NAME_TOO_LONG = 'Last name cannot exceed 50 characters.';
+export const LAST_NAME_INVALID_CHARACTERS = 'Last name can only contain letters and spaces.';
+
+export const MAX_ELECTIONS_LIMIT_REACHED =
+  'You have reached the maximum number of elections for your plan. Upgrade to create more.';
+
 export const VOTING_LINK_SENT_SUCCESSFULLY = 'Voting link sent successfully';
 export const FAILED_TO_SEND_VOTING_LINK = 'Failed to send voting link to voters';
+export const SUBSCRIPTION_SUCCESSFUL = 'User subscription payment successful';
+export const VOTER_UPLOAD_LIMIT_EXCEEDED =
+  'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.';
