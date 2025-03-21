@@ -189,9 +189,7 @@ export class UserService {
     };
   }
 
-  async getUserById(
-    id: string,
-  ): Promise<{
+  async getUserById(id: string): Promise<{
     status_code: number;
     message: string;
     data: Omit<User, 'password' | 'hashPassword' | 'created_elections'>;
@@ -207,7 +205,7 @@ export class UserService {
     const elections = user.created_elections.filter(
       election => election.status === ElectionStatus.ONGOING || election.status === ElectionStatus.UPCOMING,
     );
-    const { created_elections, ...rest } = user;
+    const { password, created_elections, ...rest } = user;
     Object.assign(rest, { active_elections: elections.length });
 
     return {
