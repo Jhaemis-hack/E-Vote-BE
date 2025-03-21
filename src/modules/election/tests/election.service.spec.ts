@@ -185,8 +185,8 @@ describe('ElectionService', () => {
       const createElectionDto: CreateElectionDto = {
         title: '2025 Presidential Election',
         description: 'Election to choose the next president of the country',
-        start_date: new Date('2025-03-21T00:00:00.000Z'),
-        end_date: new Date('2025-03-22T00:00:00.000Z'),
+        start_date: new Date('2025-03-25T00:00:00.000Z'),
+        end_date: new Date('2025-03-25T00:00:00.000Z'),
         start_time: '09:00:00',
         end_time: '10:00:00',
         // vote_link: '7284fdbc-a1b9-45ad-a586-72edae14526d',

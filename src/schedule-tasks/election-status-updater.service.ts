@@ -1,8 +1,9 @@
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 import { clearInterval, setInterval } from 'timers';
 import { Repository } from 'typeorm';
 import { Election, ElectionStatus } from '../modules/election/entities/election.entity';
@@ -15,6 +16,7 @@ export class ElectionStatusUpdaterService {
   private readonly logger = new Logger(ElectionStatusUpdaterService.name);
   private readonly redisKeyPrefix = 'election:status:';
   private readonly checkInterval = 30000; // Check every 30 seconds
+  private readonly applicatonTimeZone: string;
 
   private intervalId: NodeJS.Timeout;
 
@@ -27,7 +29,11 @@ export class ElectionStatusUpdaterService {
     private voteRepository: Repository<Vote>,
     @InjectRepository(Voter)
     private voterRepository: Repository<Voter>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.applicatonTimeZone = this.configService.get<string>('APP_TIMEZONE', 'UTC');
+    this.logger.log(`Application timezone set to : ${this.applicatonTimeZone}`);
+  }
 
   async onModuleInit() {
     this.logger.log('Initializing ElectionStatusUpdaterService with Redis...');
@@ -114,16 +120,27 @@ export class ElectionStatusUpdaterService {
   async scheduleElectionUpdates(election: Election) {
     const { id, start_date, start_time, end_date, end_time } = election;
 
+    const electionTimezone = this.applicatonTimeZone;
+
     // Get the current date/time in UTC
     const currentDate = moment().utc();
     this.logger.log(`Current Date: ${currentDate.format('YYYY-MM-DD HH:mm:ss UTC')}`);
 
     // Parse start and end date/times in UTC
-    const startDateTime = moment.utc(`${moment.utc(start_date).format('YYYY-MM-DD')}T${start_time}`);
-    const endDateTime = moment.utc(`${moment.utc(end_date).format('YYYY-MM-DD')}T${end_time}`);
+    const startDateStr = moment(start_date).format('YYYY-MM-DD');
+    const startDateTime = moment.tz(`${startDateStr}T${start_time}`, electionTimezone).utc();
 
-    this.logger.log(`Start Date/Time: ${startDateTime.format('YYYY-MM-DD HH:mm:ss UTC')}`);
-    this.logger.log(`End Date/Time: ${endDateTime.format('YYYY-MM-DD HH:mm:ss UTC')}`);
+    const endDateStr = moment(end_date).format('YYYY-MM-DD');
+    const endDateTime = moment.tz(`${endDateStr}T${end_time}`, electionTimezone).utc();
+
+    this.logger.log(
+      `Election ${id} timing (${electionTimezone}):
+      Start: ${startDateTime.clone().tz(electionTimezone).format('YYYY-MM-DD HH:mm:ss')} (${startDateTime.format('YYYY-MM-DD HH:mm:ss')} UTC)
+      End: ${endDateTime.clone().tz(electionTimezone).format('YYYY-MM-DD HH:mm:ss')} (${endDateTime.format('YYYY-MM-DD HH:mm:ss')} UTC)`,
+    );
+
+    // this.logger.log(`Start Date/Time: ${startDateTime.format('YYYY-MM-DD HH:mm:ss UTC')}`);
+    // this.logger.log(`End Date/Time: ${endDateTime.format('YYYY-MM-DD HH:mm:ss UTC')}`);
 
     // Store election timing information in Redis
     await this.redis.hset(`${this.redisKeyPrefix}info:${id}`, {
@@ -189,10 +206,13 @@ export class ElectionStatusUpdaterService {
     const currentTime = moment().utc();
 
     for (const election of elections) {
-      const startDateTime = moment.utc(
-        `${moment.utc(election.start_date).format('YYYY-MM-DD')}T${election.start_time}`,
-      );
-      const endDateTime = moment.utc(`${moment.utc(election.end_date).format('YYYY-MM-DD')}T${election.end_time}`);
+      const electionTimeZone = this.applicatonTimeZone;
+      const startDateTime = moment
+        .utc(`${moment.utc(election.start_date).format('YYYY-MM-DD')}T${election.start_time}`, electionTimeZone)
+        .utc();
+      const endDateTime = moment
+        .utc(`${moment.utc(election.end_date).format('YYYY-MM-DD')}T${election.end_time}`, electionTimeZone)
+        .utc();
 
       if (endDateTime.isBefore(currentTime) && election.status !== ElectionStatus.COMPLETED) {
         this.logger.log(`Periodic check: Updating election ${election.id} to COMPLETED`);
