@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   // ForbiddenException,
   HttpStatus,
   Injectable,
@@ -412,32 +413,59 @@ export class UserService {
   ): Promise<{ status_code: Number; message: string; data: null }> {
     const { old_password, new_password } = changePassword;
 
+    const password = new_password.toLowerCase();
+
     const adminExist = await this.userRepository.findOne({ where: { email: adminEmail } });
 
     if (!adminExist) {
-      throw new UnauthorizedException({
-        status_code: HttpStatus.FORBIDDEN,
-        message: SYS_MSG.USER_NOT_FOUND,
-      });
+      throw new HttpException(
+        {
+          status_code: HttpStatus.FORBIDDEN,
+          message: SYS_MSG.USER_NOT_FOUND,
+          data: null,
+        },
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     const isVerifiedPassword = await bcrypt.compare(old_password, adminExist.password);
 
     if (!isVerifiedPassword) {
-      throw new UnauthorizedException(SYS_MSG.INCORRECT_PASSWORD);
+      throw new HttpException(
+        {
+          status_code: HttpStatus.UNAUTHORIZED,
+          message: SYS_MSG.INCORRECT_PASSWORD,
+          data: null,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
-    if (new_password.length < 8 || !/\d/.test(new_password) || !/[!@#$%^&*]/.test(new_password)) {
-      throw new BadRequestException(SYS_MSG.INVALID_PASSWORD_FORMAT);
+    if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
+      throw new HttpException(
+        {
+          status_code: HttpStatus.BAD_REQUEST,
+          message: SYS_MSG.INVALID_PASSWORD_FORMAT,
+          data: null,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    const hashedPassword = await bcrypt.hash(new_password, 10);
-
-    const same_password = await bcrypt.compare(new_password, adminExist.password);
+    const same_password = await bcrypt.compare(password, adminExist.password);
 
     if (same_password) {
-      throw new NotAcceptableException(SYS_MSG.NEW_PASSWORD_MUST_BE_UNIQUE);
+      throw new HttpException(
+        {
+          status_code: HttpStatus.NOT_ACCEPTABLE,
+          message: SYS_MSG.NEW_PASSWORD_MUST_BE_UNIQUE,
+          data: null,
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     adminExist.password = hashedPassword;
     await this.userRepository.save(adminExist);
