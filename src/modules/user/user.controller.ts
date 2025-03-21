@@ -164,7 +164,10 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Payment details updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid data provided' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async updateUserPayment(@Param('id') userId: string, @Body() updatePaymentDto: UpdatePaymentDto) {
+  async updateUserPayment(
+    @Param('id') userId: string,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) updatePaymentDto: UpdatePaymentDto,
+  ) {
     return this.userService.updatePayment(userId, updatePaymentDto);
   }
 }
