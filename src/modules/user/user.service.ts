@@ -131,8 +131,8 @@ export class UserService {
     //   }
     // }
 
-    const { ...admin } = userExist;
-    const credentials = { email: userExist.email, sub: userExist.id };
+    const { password, ...admin } = userExist; // Destructure to exclude password
+    const credentials = { email: admin.email, sub: admin.id };
     const token = this.jwtService.sign(credentials);
 
     return {
@@ -141,6 +141,15 @@ export class UserService {
       data: {
         id: admin.id,
         email: admin.email,
+        first_name: admin.first_name,
+        last_name: admin.last_name,
+        is_verified: admin.is_verified,
+        google_id: admin.google_id,
+        profile_picture: admin.profile_picture,
+        billing_interval: admin.billing_Interval,
+        plan: admin.plan,
+        created_elections: admin.created_elections,
+        subscriptions: admin.subscriptions,
         token,
       },
     };
