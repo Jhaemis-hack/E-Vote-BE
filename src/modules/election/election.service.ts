@@ -603,7 +603,7 @@ export class ElectionService {
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
         endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
-        const vote_count = await this.voteRepository.findAndCount({ where: { election_id: election.id } });
+        const vote_count = await this.voteRepository.count({ where: { election_id: election.id } });
         const mappedElection = this.transformElectionResponse(election);
 
         return {
@@ -617,7 +617,7 @@ export class ElectionService {
           end_time: election.end_time,
           created_by: election.created_by,
           max_choices: election.max_choices,
-          vote_count: vote_count ? vote_count[1] : 0,
+          vote_count: vote_count ? vote_count : 0,
           election_type: electionType,
           candidates:
             election.candidates.map(candidate => ({
