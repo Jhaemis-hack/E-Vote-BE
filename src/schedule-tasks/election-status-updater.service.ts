@@ -122,6 +122,11 @@ export class ElectionStatusUpdaterService {
         return;
       }
 
+      if (updatedElection.email_notification) {
+        // Use the corrected method
+        await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
+      }
+
       this.schedulerRegistry.addCronJob(`end-${id}`, endJob);
       endJob.start();
       this.logger.log(`Scheduled end job for election ${id} at ${endDateTime}`);
@@ -135,6 +140,6 @@ export class ElectionStatusUpdaterService {
     const [hours, minutes, seconds] = timeString.split(':').map(Number);
     dateTime.setHours(hours, minutes, seconds || 0);
     const utcDateTime = new Date(dateTime.getTime() - 60 * 60 * 1000);
-    return utcDateTime;
+    return dateTime;
   }
 }
