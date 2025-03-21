@@ -17,6 +17,7 @@ import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { EmailService } from '../../email/email.service';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { DeleteResult } from 'typeorm';
+import { Election } from '../../election/entities/election.entity';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 
 interface CreateUserDto {
@@ -514,6 +515,7 @@ describe('UserService', () => {
         id: userId,
         email: 'test@example.com',
         password: 'hashedPassword',
+        created_elections: [] as Election[],
         created_at: new Date(),
       };
 
@@ -525,6 +527,7 @@ describe('UserService', () => {
         expect.objectContaining({
           id: userId,
           email: 'test@example.com',
+          created_elections: [],
         }),
       );
       // expect(result.data).not.toHaveProperty('password');

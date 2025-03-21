@@ -156,6 +156,7 @@ export class UserController {
     const adminEmail = req.user.email;
     return await this.userService.changePassword(changePasswordDto, adminEmail);
   }
+
   @Patch(':id/subscription-payment')
   @ApiOperation({ summary: 'Update user payment details' })
   @ApiParam({ name: 'id', required: true, type: String, description: 'User ID' })
