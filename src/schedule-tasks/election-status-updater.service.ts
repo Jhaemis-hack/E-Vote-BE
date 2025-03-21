@@ -147,7 +147,7 @@ export class ElectionStatusUpdaterService {
     const dateTime = new Date(date);
     const [hours, minutes, seconds] = timeString.split(':').map(Number);
     dateTime.setHours(hours, minutes, seconds || 0);
-    // const utcDateTime = new Date(dateTime.getTime() - 60 * 60 * 1000);
-    return dateTime;
+    const utcDateTime = new Date(dateTime.getTime() - 60 * 60 * 1000);
+    return utcDateTime;
   }
 }
