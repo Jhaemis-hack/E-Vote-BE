@@ -29,7 +29,7 @@ export class VoterController {
   constructor(private readonly voterService: VoterService) {}
 
   @ApiBearerAuth()
-  @Get('/:electionId/voters')
+  @Get('/:election_id/voters')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: "Get Voters' List" })
   @ApiResponse({ status: 200, description: 'List of all eligible voters' })

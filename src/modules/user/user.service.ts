@@ -403,9 +403,9 @@ export class UserService {
 
     const password = new_password.toLowerCase();
 
-    const adminExist = await this.userRepository.findOne({ where: { email: adminEmail } });
+    const admin_exist = await this.userRepository.findOne({ where: { email: adminEmail } });
 
-    if (!adminExist) {
+    if (!admin_exist) {
       throw new HttpException(
         {
           status_code: HttpStatus.FORBIDDEN,
@@ -416,7 +416,7 @@ export class UserService {
       );
     }
 
-    const isVerifiedPassword = await bcrypt.compare(old_password, adminExist.password);
+    const isVerifiedPassword = await bcrypt.compare(old_password, admin_exist.password);
 
     if (!isVerifiedPassword) {
       throw new HttpException(
@@ -440,7 +440,7 @@ export class UserService {
       );
     }
 
-    const same_password = await bcrypt.compare(password, adminExist.password);
+    const same_password = await bcrypt.compare(password, admin_exist.password);
 
     if (same_password) {
       throw new HttpException(
@@ -455,8 +455,8 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    adminExist.password = hashedPassword;
-    await this.userRepository.save(adminExist);
+    admin_exist.password = hashedPassword;
+    await this.userRepository.save(admin_exist);
     return {
       status_code: HttpStatus.CREATED,
       message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
