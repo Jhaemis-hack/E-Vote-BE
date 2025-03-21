@@ -111,4 +111,17 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - sendVotingLinkEmailJobError: ${sendVotingLinkJobError.message}`);
     }
   }
+
+  @Process('contact-us')
+  async sendContactUsEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Contact Us email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ContactUsEmailJob error: ${error.message}`);
+    }
+  }
 }
