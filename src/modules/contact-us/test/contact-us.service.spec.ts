@@ -38,7 +38,6 @@ describe('ContactService', () => {
         message: 'This is a test message.',
       };
 
-      // Mock the behavior of the EmailService
       mockEmailService.sendContactUsEmail.mockResolvedValueOnce(true);
 
       const result = await contactService.handleContactUsSubmission(contactUsDto);
@@ -51,8 +50,9 @@ describe('ContactService', () => {
       );
 
       expect(result).toEqual({
-        success: true,
+        status_code: 201,
         message: 'Thank you for reaching out. We will respond shortly.',
+        data: null,
       });
     });
 
@@ -64,7 +64,6 @@ describe('ContactService', () => {
         message: 'This is a failed test message.',
       };
 
-      // Mock the behavior of the EmailService to throw an error
       mockEmailService.sendContactUsEmail.mockRejectedValueOnce(new Error('Email send failed'));
 
       await expect(contactService.handleContactUsSubmission(contactUsDto)).rejects.toThrow('Email send failed');
@@ -74,6 +73,31 @@ describe('ContactService', () => {
         contactUsDto.name,
         contactUsDto.subject,
         contactUsDto.message,
+      );
+    });
+
+    it('should throw an error for invalid input', async () => {
+      const invalidContactUsDto = {
+        name: 'John Doe',
+        email: 'invalid-email',
+        subject: 'Test Subject',
+        message: '', // Empty message
+      };
+
+      await expect(contactService.handleContactUsSubmission(invalidContactUsDto)).rejects.toThrow('Invalid input');
+    });
+
+    it('should reject unwanted data in the input', async () => {
+      const unwantedDataDto = {
+        name: 'John Doe',
+        email: 'johndoe@example.com',
+        subject: 'Test Subject',
+        message: 'This is a test message.',
+        extraField: 'Unwanted Data', // Extra field not allowed
+      };
+
+      await expect(contactService.handleContactUsSubmission(unwantedDataDto as any)).rejects.toThrow(
+        'Unwanted data detected',
       );
     });
   });
