@@ -4,7 +4,6 @@ import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
-
   @ApiProperty({
     description: 'The first name of the user',
     example: 'John',

@@ -8,6 +8,8 @@ import {
   Logger,
   NotFoundException,
   UnauthorizedException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClient } from '@supabase/supabase-js';
@@ -48,8 +50,10 @@ export class ElectionService {
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(User) private userRepository: Repository<User>,
+    @Inject(forwardRef(() => ElectionStatusUpdaterService))
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
-    private emailService: EmailService,
+    @Inject(forwardRef(() => EmailService))
+    private readonly emailService: EmailService,
     private voterService: VoterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
@@ -599,7 +603,7 @@ export class ElectionService {
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
         endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
-        const vote_count = await this.voteRepository.findAndCount({ where: { election_id: election.id } });
+        const vote_count = await this.voteRepository.count({ where: { election_id: election.id } });
         const mappedElection = this.transformElectionResponse(election);
 
         return {
@@ -613,7 +617,7 @@ export class ElectionService {
           end_time: election.end_time,
           created_by: election.created_by,
           max_choices: election.max_choices,
-          vote_count: vote_count ? vote_count[1] : 0,
+          vote_count: vote_count ? vote_count : 0,
           election_type: electionType,
           candidates:
             election.candidates.map(candidate => ({
