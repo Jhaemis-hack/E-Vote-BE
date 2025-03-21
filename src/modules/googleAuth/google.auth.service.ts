@@ -6,12 +6,14 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 import GoogleAuthPayload from './interfaces/googlePayload';
 import { HttpStatus, HttpException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from '../email/email.service';
 @Injectable()
 export class GoogleService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
+    private readonly mailService: EmailService,
   ) {}
 
   async googleAuth(googleAuthPayload: GoogleAuthPayload) {
@@ -71,6 +73,15 @@ export class GoogleService {
 
       user = this.usersRepository.create(userPayload);
       await this.usersRepository.save(user);
+      try {
+        await this.mailService.sendWelcomeMail(userEmail);
+      } catch {
+        return {
+          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: SYS_MSG.WELCOME_EMAIL_FAILED,
+          data: null,
+        };
+      }
     }
 
     const token = this.jwtService.sign({
