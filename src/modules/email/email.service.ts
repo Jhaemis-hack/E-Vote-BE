@@ -66,6 +66,7 @@ export class EmailService {
                 electionTitle: election.title,
                 electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
                 electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionEndTime: election.end_time,
                 electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
               },
               template: 'election-start',
@@ -262,5 +263,23 @@ export class EmailService {
         this.logger.log(`Email sent successfully to ${election.voters[index].email}`);
       }
     });
+  }
+
+  async sendContactUsEmail(userEmail: string, fullName: string, subject: string, message: string): Promise<void> {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      const mail = {
+        to: adminEmail,
+        subject: 'New Contact Us Message',
+        context: {
+          subject: `New Contact Us Message: "${subject}"`,
+          fullName,
+          email: userEmail,
+          message,
+        },
+        template: 'contact-us',
+      };
+      await this.emailQueue.sendEmail({ mail, template: 'contact-us' });
+    }
   }
 }

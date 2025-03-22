@@ -49,7 +49,7 @@ export class EmailProcessor {
       } = job;
       await this.mailerService.sendMail({
         ...mail,
-        subject: 'Welcome to our platform',
+        subject: 'Welcome to Resolve',
         template: 'welcome-email',
       });
       this.logger.log(`Welcome email sent successfully to ${mail.to}`);
@@ -124,6 +124,19 @@ export class EmailProcessor {
       this.logger.log(`Results email sent successfully to ${mail.to}`);
     } catch (error) {
       this.logger.error(`EmailProcessor - ResultsToAdminEmailJob error: ${error.message}`);
+    }
+  }
+
+  @Process('contact-us')
+  async sendContactUsEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Contact Us email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ContactUsEmailJob error: ${error.message}`);
     }
   }
 }

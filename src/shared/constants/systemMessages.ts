@@ -116,4 +116,5 @@ export const FAILED_TO_SEND_VOTING_LINK = 'Failed to send voting link to voters'
 export const SUBSCRIPTION_SUCCESSFUL = 'User subscription payment successful';
 export const VOTER_UPLOAD_LIMIT_EXCEEDED =
   'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.';
+export const CONTACT_US_SENT_MESSAGE = 'Thank you for reaching out. We will respond shortly.';
 export const PICTURE_UPDATED = 'Picture updated successfully';

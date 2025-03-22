@@ -118,10 +118,7 @@ export class ElectionStatusUpdaterService {
           this.logger.error(`Election with id ${id} not found!`);
           return;
         }
-        if (updatedElection.email_notification) {
-          await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
-        }
-        await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
+
         this.schedulerRegistry.deleteCronJob(`end-${id}`);
       });
 
@@ -162,7 +159,7 @@ export class ElectionStatusUpdaterService {
 
           const updatedElection = await this.electionRepository.findOne({
             where: { id },
-            relations: ['voters'],
+            relations: ['voters', 'created_by_user'],
           });
 
           if (!updatedElection) {
@@ -176,6 +173,13 @@ export class ElectionStatusUpdaterService {
             try {
               await this.emailService.sendElectionEndEmails(updatedElection);
               this.logger.log('📩 Email service response: ${JSON.stringify(info)}');
+
+              if (updatedElection.created_by_user && updatedElection.created_by_user.email) {
+                await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
+                this.logger.log(`📩 Results sent to admin: ${updatedElection.created_by_user.email}`);
+              } else {
+                this.logger.error('Admin email not found. Unable to send results to admin.');
+              }
             } catch (error) {
               this.logger.error(`Error sending election result emails: ${error.message}`);
             }

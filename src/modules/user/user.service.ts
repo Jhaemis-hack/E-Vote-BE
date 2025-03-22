@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Repository, In } from 'typeorm';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
@@ -32,7 +32,6 @@ import { createClient } from '@supabase/supabase-js';
 
 import { ElectionStatus } from '../election/entities/election.entity';
 
-import { In } from 'typeorm';
 @Injectable()
 export class UserService {
   private readonly supabase;
