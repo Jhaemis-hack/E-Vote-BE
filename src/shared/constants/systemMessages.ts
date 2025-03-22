@@ -11,6 +11,9 @@ export const INCORRECT_PASSWORD = 'Incorrect credentials';
 export const NEW_PASSWORD_MUST_BE_UNIQUE = 'Password already used, try something different.';
 export const INVALID_EMAIL_FORMAT = 'Invalid email format';
 export const EMAIL_IN_USE = 'Email already in use';
+export const SUPPORT_MESSAGE_NOT_SENT = 'Message Failed to send.';
+export const SUPPORT_ENQUIRY_NOT_SAVED = 'Could not save enquiry.';
+export const SUPPORT_MESSAGE_SENT = 'Message sent successfully.';
 export const INVALID_PASSWORD_FORMAT =
   'Password must be at least 8 characters long and include a number and special character';
 export const PASSWORD_RESET_LINK_SENT = 'Email sent successfully';

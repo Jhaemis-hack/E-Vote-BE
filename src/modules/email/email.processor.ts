@@ -137,4 +137,17 @@ export class EmailProcessor {
       this.logger.error(`EmailProcessor - ContactUsEmailJob error: ${error.message}`);
     }
   }
+
+  @Process('support')
+  async sendSupportEmail(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Support email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - SupportEmailJob error: ${error.message}`);
+    }
+  }
 }

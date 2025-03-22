@@ -15,6 +15,7 @@ import { CandidateModule } from './modules/candidate/candidate.module';
 
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
+import { SupportModule } from './modules/support/support.module';
 import { ContactModule } from './modules/contact-us/contact-us.module';
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ContactModule } from './modules/contact-us/contact-us.module';
     CandidateModule,
     SubscriptionModule,
     GoogleAuthModule,
+    SupportModule,
     ContactModule,
   ],
   controllers: [AppController],
