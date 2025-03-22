@@ -21,5 +21,6 @@ export interface EmailSender {
     | 'election-creation'
     | 'voter-invite'
     | 'results-to-admin'
-    | 'election-results';
+    | 'election-results'
+    | 'contact-us';
 }
