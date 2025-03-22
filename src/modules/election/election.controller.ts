@@ -41,6 +41,7 @@ import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-electi
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
 import { ElectionResultsDto } from './dto/results.dto';
+import { Response } from 'express';
 
 @ApiTags()
 @Controller('elections')
@@ -252,5 +253,20 @@ export class ElectionController {
   async getElectionResults(@Param('id') id: string, @Req() req: any): Promise<ElectionResultsDto> {
     const adminId = req.user.sub;
     return this.electionService.getElectionResults(id, adminId);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/result/download')
+  @UseGuards(AuthGuard)
+  async downloadElectionResults(@Param('id') id: string, @Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const adminId = req.user.sub;
+    const { filename, csvData } = await this.electionService.getElectionResultsForDownload(id, adminId);
+
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    return csvData;
   }
 }
