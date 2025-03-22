@@ -2,44 +2,62 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class GoogleAuthDto {
   @ApiProperty({
-    description: 'The email associated with the Google account',
-    example: 'user@example.com',
-    readOnly: true,
+    description: 'Access token provided by Google',
+    example: 'ya29.a0AfH6SMBb4JG...',
   })
-  email: string;
+  access_token: string;
 
   @ApiProperty({
-    description: 'Google ID of the authenticated user',
-    example: '10987654321',
-    readOnly: true,
+    description: 'Expiration time in seconds for the access token',
+    example: 3599,
   })
-  googleId: string;
+  expires_in: number;
 
   @ApiProperty({
-    description: "User's first name from Google",
-    example: 'John',
-    readOnly: true,
+    description: 'Refresh token provided by Google',
+    example: '1//09gJ...',
   })
-  firstName?: string;
+  refresh_token: string;
 
   @ApiProperty({
-    description: "User's last name from Google",
-    example: 'Doe',
-    readOnly: true,
+    description: 'Scope of the access token',
+    example: 'https://www.googleapis.com/auth/userinfo.profile',
   })
-  lastName?: string;
+  scope: string;
 
   @ApiProperty({
-    description: "User's profile picture URL from Google",
-    example: 'https://lh3.googleusercontent.com/photo.jpg',
-    readOnly: true,
+    description: 'Type of the token provided',
+    example: 'Bearer',
   })
-  profilePicture?: string;
+  token_type: string;
 
   @ApiProperty({
-    description: 'Indicates whether the user is verified',
-    example: true,
-    readOnly: true,
+    description: 'ID token provided by Google',
+    example: 'eyJhbGciOiJSUzI1NiIs...',
   })
-  isVerified: boolean;
+  id_token: string;
+
+  @ApiProperty({
+    description: 'Expiration time in epoch format',
+    example: 1629716100,
+  })
+  expires_at: number;
+
+  @ApiProperty({
+    description: 'Provider of the authentication service',
+    example: 'google',
+  })
+  provider: string;
+
+  @ApiProperty({
+    description: 'Type of the authentication',
+    example: 'oauth',
+  })
+  type: string;
+
+  @ApiProperty({
+    description: 'Provider account ID',
+    example: '1234567890',
+  })
+  providerAccountId: string;
 }

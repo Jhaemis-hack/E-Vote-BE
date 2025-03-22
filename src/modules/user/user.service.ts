@@ -15,7 +15,9 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { User } from './entities/user.entity';
-
+import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { omit } from 'lodash';
+import { ElectionStatus } from '../election/entities/election.entity';
 @Injectable()
 export class UserService {
   constructor(
@@ -146,40 +148,18 @@ export class UserService {
   async getUserById(
     userId: string,
   ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository.findOne({
+      where: { id: userId, created_elections: { status: ElectionStatus.ONGOING || ElectionStatus.UPCOMING } },
+      relations: ['created_elections'],
+    });
     if (!user) {
       throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
-
-    const {
-      id,
-      email,
-      is_verified,
-      created_elections,
-      created_at,
-      updated_at,
-      deleted_at,
-      profile_picture,
-      first_name,
-      last_name,
-      google_id,
-    } = user;
+    const { password: _, ...rest } = user;
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
-      data: {
-        id,
-        google_id,
-        first_name,
-        last_name,
-        profile_picture,
-        email,
-        is_verified,
-        created_elections,
-        created_at,
-        updated_at,
-        deleted_at,
-      },
+      data: rest,
     };
   }
 
@@ -197,9 +177,19 @@ export class UserService {
       throw new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER);
     }
 
-    if (updateUserDto.password) {
-      this.validatePassword(updateUserDto.password);
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    if (updateUserDto.first_name) {
+      this.validateFirstName(updateUserDto.first_name);
+      user.first_name = updateUserDto.first_name;
+    }
+
+    if (updateUserDto.last_name) {
+      this.validateLastName(updateUserDto.last_name);
+      user.last_name = updateUserDto.last_name;
+    }
+
+    if (updateUserDto.email) {
+      this.validateEmail(updateUserDto.email);
+      user.email = updateUserDto.email;
     }
 
     if (updateUserDto.email) {
@@ -224,10 +214,49 @@ export class UserService {
       throw new BadRequestError(SYS_MSG.INVALID_PASSWORD_FORMAT);
     }
   }
+
   private validateEmail(email: string) {
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
       throw new BadRequestError(SYS_MSG.INVALID_EMAIL_FORMAT);
+    }
+  }
+
+  private validateFirstName(first_name: string): void {
+    if (typeof first_name !== 'string' || first_name.trim().length === 0) {
+      throw new BadRequestError(SYS_MSG.INVALID_FIRST_NAME);
+    }
+
+    if (first_name.trim().length < 2) {
+      throw new BadRequestError(SYS_MSG.FIRST_NAME_TOO_SHORT);
+    }
+
+    if (first_name.trim().length > 50) {
+      throw new BadRequestError(SYS_MSG.FIRST_NAME_TOO_LONG);
+    }
+
+    const allowedCharacters = /^[A-Za-z\s]+$/;
+    if (!allowedCharacters.test(first_name)) {
+      throw new BadRequestError(SYS_MSG.FIRST_NAME_INVALID_CHARACTERS);
+    }
+  }
+
+  private validateLastName(last_name: string): void {
+    if (typeof last_name !== 'string' || last_name.trim().length === 0) {
+      throw new BadRequestError(SYS_MSG.INVALID_LAST_NAME);
+    }
+
+    if (last_name.trim().length < 2) {
+      throw new BadRequestError(SYS_MSG.LAST_NAME_TOO_SHORT);
+    }
+
+    if (last_name.trim().length > 50) {
+      throw new BadRequestError(SYS_MSG.LAST_NAME_TOO_LONG);
+    }
+
+    const allowedCharacters = /^[A-Za-z\s]+$/;
+    if (!allowedCharacters.test(last_name)) {
+      throw new BadRequestError(SYS_MSG.LAST_NAME_INVALID_CHARACTERS);
     }
   }
 
@@ -260,7 +289,7 @@ export class UserService {
 
     await this.mailService.sendForgotPasswordMail(
       user.email,
-      'Admin',
+      user.email,
       `${process.env.FRONTEND_URL}/reset-password`,
       resetToken,
     );
@@ -329,5 +358,20 @@ export class UserService {
       }
       throw new InternalServerError(error);
     }
+  }
+
+  async updatePayment(userId: string, updatePaymentDto: UpdatePaymentDto): Promise<{ message: string; data: User }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundError(`User with ID ${userId} not found`);
+    }
+
+    Object.assign(user, updatePaymentDto);
+    const updatedPaymentData = await this.userRepository.save(user);
+    return {
+      message: SYS_MSG.SUBSCRIPTION_SUCCESSFUL,
+      data: omit(updatedPaymentData, ['password']),
+    };
   }
 }

@@ -12,7 +12,8 @@ import { VoteModule } from './modules/votes/votes.module';
 import { EmailModule } from './modules/email/email.module';
 import { VoterModule } from './modules/voter/voter.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
-
+import { CandidateModule } from './modules/candidate/candidate.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
 
 @Module({
@@ -52,6 +53,8 @@ import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
     ScheduleModule.forRoot(),
     EmailModule,
     VoterModule,
+    CandidateModule,
+    SubscriptionModule,
     GoogleAuthModule,
   ],
   controllers: [AppController],

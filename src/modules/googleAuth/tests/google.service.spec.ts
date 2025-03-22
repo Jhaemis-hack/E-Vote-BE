@@ -1,73 +1,154 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Repository } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { GoogleService } from '../google.auth.service';
+import { JwtService } from '@nestjs/jwt';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../../user/entities/user.entity';
-const mockUserRepo = {
+import { Repository } from 'typeorm';
+import { HttpException, HttpStatus } from '@nestjs/common';
+
+const mockUserRepository = {
   findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
 };
 
-describe('GoogleService', () => {
+const mockJwtService = {
+  sign: jest.fn(() => 'mocked_jwt_token'),
+};
+
+globalThis.fetch = jest.fn();
+
+describe('GoogleAuthService', () => {
   let service: GoogleService;
   let _: Repository<User>;
+  let __: JwtService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GoogleService, { provide: getRepositoryToken(User), useValue: mockUserRepo }],
+      providers: [
+        GoogleService,
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockUserRepository,
+        },
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
+      ],
     }).compile();
 
     service = module.get<GoogleService>(GoogleService);
     _ = module.get<Repository<User>>(getRepositoryToken(User));
+    __ = module.get<JwtService>(JwtService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('should throw UNAUTHORIZED if id_token is missing', async () => {
+    await expect(service.googleAuth({ id_token: '' })).rejects.toThrow(
+      new HttpException(
+        { status_code: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials', data: null },
+        HttpStatus.UNAUTHORIZED,
+      ),
+    );
   });
 
-  it('should return an existing user if found', async () => {
-    const mockUser = { id: 1, email: 'test@example.com', is_verified: false };
-    mockUserRepo.findOne.mockResolvedValue(mockUser);
-    mockUserRepo.save.mockResolvedValue({ ...mockUser, is_verified: true });
+  it('should throw UNAUTHORIZED if Google token is invalid', async () => {
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      status: 400,
+      json: jest.fn().mockResolvedValue({}),
+    });
 
-    const result = await service.validateUser({ email: 'test@example.com' });
-
-    expect(mockUserRepo.findOne).toHaveBeenCalledWith({ where: { email: 'test@example.com' } });
-    expect(mockUserRepo.save).toHaveBeenCalledWith({ ...mockUser, is_verified: true });
-    expect(result.is_verified).toBe(true);
+    await expect(service.googleAuth({ id_token: 'invalid_token' })).rejects.toThrow(
+      new HttpException(
+        { status_code: HttpStatus.UNAUTHORIZED, message: 'Invalid credentials', data: null },
+        HttpStatus.UNAUTHORIZED,
+      ),
+    );
   });
 
-  it('should create a new user if not found', async () => {
-    const userDetails = {
-      email: 'newuser@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      googleId: 'google123',
-      profilePicture: 'http://image.url',
-    };
+  it('should throw SERVER_ERROR if Google API fails', async () => {
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      status: 500,
+      json: jest.fn().mockResolvedValue({}),
+    });
 
-    const expectedUser = {
+    await expect(service.googleAuth({ id_token: 'valid_token' })).rejects.toThrow(
+      new HttpException(
+        { status_code: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Sorry a server error occured', data: null },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      ),
+    );
+  });
+
+  it('should register a new user and return JWT token', async () => {
+    const mockGoogleResponse = {
       email: 'newuser@example.com',
       first_name: 'John',
       last_name: 'Doe',
-      google_id: 'google123',
-      profile_picture: 'http://image.url',
-      is_verified: true,
+      profile_picture: 'profile_pic_url',
     };
 
-    mockUserRepo.findOne.mockResolvedValue(null);
-    mockUserRepo.create.mockReturnValue(expectedUser);
-    mockUserRepo.save.mockResolvedValue(expectedUser);
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      status: 200,
+      json: jest.fn().mockResolvedValue(mockGoogleResponse),
+    });
 
-    const result = await service.validateUser(userDetails);
+    mockUserRepository.findOne.mockResolvedValue(null); // No existing user
+    mockUserRepository.create.mockReturnValue({ id: '123', ...mockGoogleResponse });
+    mockUserRepository.save.mockResolvedValue({ id: '123', ...mockGoogleResponse });
 
-    expect(mockUserRepo.create).toHaveBeenCalledWith(expectedUser);
-    expect(mockUserRepo.save).toHaveBeenCalledWith(expectedUser);
-    expect(result.email).toBe('newuser@example.com');
+    const result = await service.googleAuth({ id_token: 'valid_token' });
+
+    expect(result).toEqual({
+      message: 'Authentication successful',
+      data: {
+        id: '123',
+        email: 'newuser@example.com',
+        first_name: 'John',
+        last_name: 'Doe',
+        profile_picture: 'profile_pic_url',
+        token: 'mocked_jwt_token',
+      },
+    });
+  });
+
+  it('should log in an existing user and return JWT token', async () => {
+    const mockExistingUser = {
+      id: '123',
+      email: 'existinguser@example.com',
+      first_name: 'Jane',
+      last_name: 'Doe',
+      profile_picture: 'profile_pic_url',
+    };
+
+    (globalThis.fetch as jest.Mock).mockResolvedValue({
+      status: 200,
+      json: jest.fn().mockResolvedValue({
+        email: 'existinguser@example.com',
+        given_name: 'Jane',
+        family_name: 'Doe',
+        picture: 'profile_pic_url',
+      }),
+    });
+
+    mockUserRepository.findOne.mockResolvedValue(mockExistingUser); // Existing user
+
+    const result = await service.googleAuth({ id_token: 'valid_token' });
+
+    expect(result).toEqual({
+      message: 'Authentication successful',
+      data: {
+        id: '123',
+        email: 'existinguser@example.com',
+        first_name: 'Jane',
+        last_name: 'Doe',
+        profile_picture: 'profile_pic_url',
+        token: 'mocked_jwt_token',
+      },
+    });
   });
 });

@@ -227,4 +227,15 @@ export class ElectionController {
   async sendReminders(@Param('id') id: string) {
     return this.electionService.sendReminderEmails(id);
   }
+
+  @ApiBearerAuth()
+  @Get(':id/send-voting-links')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send voting link to all voters' })
+  @ApiResponse({ status: 200, description: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY })
+  @ApiResponse({ status: 500, description: SYS_MSG.FAILED_TO_SEND_VOTING_LINK })
+  async sendVotingLinks(@Param('id') id: string) {
+    return await this.electionService.sendVotingLinkToVoters(id);
+  }
 }

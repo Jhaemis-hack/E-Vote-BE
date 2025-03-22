@@ -1,3 +1,2 @@
-
 # validate commit using commitLint
 npx --no -- commitlint --edit "$1"

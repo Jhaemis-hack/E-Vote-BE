@@ -6,21 +6,22 @@ import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
 import * as moment from 'moment';
 import * as path from 'path';
-import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { Repository } from 'typeorm';
+import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
+import { EmailService } from '../email/email.service';
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+import { User } from '../user/entities/user.entity';
+import { Voter } from '../voter/entities/voter.entity';
+import { VoterService } from '../voter/voter.service';
 import { Vote } from '../votes/entities/votes.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
 import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
-import { Voter } from '../voter/entities/voter.entity';
-import { EmailService } from '../email/email.service';
-import { User } from '../user/entities/user.entity';
 
 config();
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
@@ -58,6 +59,7 @@ export class ElectionService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
     private emailService: EmailService,
+    private voterService: VoterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
       throw new Error('Supabase environment variables are not set.');
@@ -68,13 +70,44 @@ export class ElectionService {
   }
 
   async create(createElectionDto: CreateElectionDto, adminId: string): Promise<any> {
-    const { title, description, start_date, end_date, election_type, candidates, start_time, end_time, max_choices } =
-      createElectionDto;
+    const {
+      title,
+      description,
+      start_date,
+      end_date,
+      election_type,
+      candidates,
+      start_time,
+      end_time,
+      max_choices,
+      email_notification,
+    } = createElectionDto;
+
+    const admin = await this.userRepository.findOne({ where: { id: adminId } });
+
+    if (!admin) {
+      throw new NotFoundError(SYS_MSG.ADMIN_NOT_FOUND);
+    }
+
+    const createdElectionCount = await this.electionRepository.count({
+      where: { created_by: adminId },
+    });
+
+    const planLimits = {
+      FREE: 1,
+      BASIC: 5,
+      BUSINESS: Infinity,
+    };
+
+    const userPlan = admin.plan || 'FREE';
+    const maxAllowed = planLimits[userPlan];
+
+    if (createdElectionCount >= maxAllowed) {
+      throw new BadRequestError(SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED);
+    }
 
     const currentDate = moment().utc();
-
     const currentDateStartOfDay = moment.utc().startOf('day');
-
     const startDate = moment.utc(start_date);
     const endDate = moment.utc(end_date);
 
@@ -125,6 +158,7 @@ export class ElectionService {
       end_time: end_time,
       created_by: adminId,
       max_choices: election_type === ElectionType.MULTIPLECHOICE ? max_choices : undefined,
+      email_notification,
     });
 
     const savedElection = await this.electionRepository.save(election);
@@ -140,15 +174,8 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
-    const admin = await this.userRepository.findOne({
-      where: { id: savedElection.created_by },
-    });
-    if (!admin) {
-      this.logger.error(`Admin with ID ${savedElection.created_by} not found`);
-      return;
-    } else {
-      await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
-    }
+
+    await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
     return {
@@ -171,6 +198,7 @@ export class ElectionService {
           photo_url: candidate.photo_url,
           bio: candidate.bio,
         })),
+        email_notification: savedElection.email_notification,
       },
     };
   }
@@ -259,7 +287,7 @@ export class ElectionService {
       relations: ['created_by_user', 'candidates', 'votes'],
     });
 
-    const data = this.mapElections(result);
+    const data = await this.mapElections(result);
     const total_pages = Math.ceil(total / pageSize);
 
     return {
@@ -481,9 +509,9 @@ export class ElectionService {
     };
   }
 
-  private mapElections(result: Election[]) {
-    return result
-      .map(election => {
+  private async mapElections(result: Election[]) {
+    const mappedElections = await Promise.all(
+      result.map(async election => {
         if (!election.created_by) {
           console.warn(`Admin for election with ID ${election.id} not found.`);
           return null;
@@ -507,6 +535,7 @@ export class ElectionService {
         const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
         endDateTime.setHours(endHour - 1, endMinute, endSecond || 0);
 
+        const vote_count = await this.voteRepository.count({ where: { election_id: election.id } });
         const mappedElection = this.transformElectionResponse(election);
 
         return {
@@ -520,6 +549,7 @@ export class ElectionService {
           end_time: election.end_time,
           created_by: election.created_by,
           max_choices: election.max_choices,
+          vote_count: vote_count ? vote_count : 0,
           election_type: electionType,
           candidates:
             election.candidates.map(candidate => ({
@@ -529,8 +559,9 @@ export class ElectionService {
               bio: candidate.bio,
             })) || [],
         };
-      })
-      .filter(election => election !== null);
+      }),
+    );
+    return mappedElections.filter(election => election !== null);
   }
 
   private transformElectionResponse(election: any, includeCandidates: boolean = false): ElectionResponse | null {
@@ -738,5 +769,64 @@ export class ElectionService {
     } else {
       throw new BadRequestError('Email notifications are not enabled for this election');
     }
+  }
+
+  async sendVotingLinkToVoters(id: string) {
+    if (!isUUID(id)) {
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
+    }
+
+    const election = await this.electionRepository.findOne({ where: { id } });
+    if (!election) {
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
+    }
+
+    if (election.email_notification === false) {
+      return {
+        status_code: HttpStatus.OK,
+        message: SYS_MSG.EMAIL_NOTIFICATION_DISABLED,
+        data: null,
+      };
+    }
+
+    const voters = await this.voterService.getVotersByElection(id);
+    if (voters.length === 0) {
+      return {
+        status_code: HttpStatus.NO_CONTENT,
+        message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND,
+        data: null,
+      };
+    }
+
+    const jobPromises = voters.map(async voter => {
+      try {
+        const votingLinkId = voter.verification_token;
+        const formattedStartDate = moment(election.start_date).format('MMMM Do YYYY');
+        const formattedStartTime = moment(election.start_time, 'HH:mm:ss').format('h:mm A');
+        const formattedEndDate = moment(election.end_date).format('MMMM Do YYYY');
+        const formattedEndTime = moment(election.end_time, 'HH:mm:ss').format('h:mm A');
+
+        await this.emailService.sendVotingLinkMail(
+          voter.email,
+          voter.name,
+          election.title,
+          formattedStartDate,
+          formattedStartTime,
+          formattedEndDate,
+          formattedEndTime,
+          votingLinkId,
+        );
+      } catch (error) {
+        this.logger.error(`Email job failed for ${voter.email}: ${error.message}`);
+      }
+    });
+
+    await Promise.all(jobPromises);
+
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.VOTING_LINK_SENT_SUCCESSFULLY,
+      data: null,
+    };
   }
 }

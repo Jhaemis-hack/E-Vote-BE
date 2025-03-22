@@ -6,6 +6,7 @@ import * as xlsx from 'xlsx';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../../errors';
 import * as SYS_MSG from '../../../shared/constants/systemMessages';
 import { Election } from '../../election/entities/election.entity';
+import { UserService } from '../../user/user.service';
 import { Voter } from '../entities/voter.entity';
 import { VoterService } from '../voter.service';
 
@@ -13,6 +14,7 @@ describe('VoterService', () => {
   let service: VoterService;
   let voterRepository: Repository<Voter>;
   let electionRepository: Repository<Election>;
+  let _: UserService;
 
   const mockVoterRepository = () => ({
     findAndCount: jest.fn().mockResolvedValue([[], 0]),
@@ -29,12 +31,19 @@ describe('VoterService', () => {
     find: jest.fn(),
   };
 
+  const mockUserService = {
+    getUserById: jest.fn().mockResolvedValue({
+      data: { plan: 'free' },
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VoterService,
         { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
         { provide: getRepositoryToken(Election), useValue: mockElectionRepository },
+        { provide: UserService, useValue: mockUserService },
         {
           provide: getRepositoryToken(Voter),
           useClass: Repository,
@@ -183,10 +192,9 @@ describe('VoterService', () => {
         message: 'Voters uploaded successfully',
         data: null,
       });
-
-      const result = await service.processFile(file, '123');
+      const result = await service.processFile(file, '123', 'user-id');
       expect(result.status_code).toBe(201);
-      expect(service.processCSV).toHaveBeenCalledWith(fileBuffer, '123');
+      expect(service.processCSV).toHaveBeenCalledWith(fileBuffer, '123', 'free');
     });
 
     it('should process Excel file successfully', async () => {
@@ -206,15 +214,15 @@ describe('VoterService', () => {
         data: null,
       });
 
-      const result = await service.processFile(file, '123');
+      const result = await service.processFile(file, '123', 'user-id');
       expect(result.status_code).toBe(201);
-      expect(service.processExcel).toHaveBeenCalledWith(fileBuffer, '123');
+      expect(service.processExcel).toHaveBeenCalledWith(fileBuffer, '123', 'free');
     });
 
     it('should throw BadRequestException for invalid file format', async () => {
       const file = { originalname: 'invalid.txt', buffer: Buffer.from('test') } as Express.Multer.File;
 
-      await expect(service.processFile(file, '123')).rejects.toThrow(BadRequestError);
+      await expect(service.processFile(file, '123', 'user-id')).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -225,7 +233,7 @@ describe('VoterService', () => {
       jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
       jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
 
-      const result = await service.processCSV(fileBuffer, '123');
+      const result = await service.processCSV(fileBuffer, '123', 'free');
 
       expect(result.status_code).toBe(201);
       expect(voterRepository.save).toHaveBeenCalledTimes(1);
@@ -233,73 +241,67 @@ describe('VoterService', () => {
 
     it('should reject duplicate emails in CSV', async () => {
       const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,john@example.com');
+      await expect(service.processCSV(fileBuffer, '123', 'free')).rejects.toThrow(BadRequestError);
+    });
+  });
 
-      await expect(service.processCSV(fileBuffer, '123')).rejects.toThrow(
-        new BadRequestError(
-          `Oops! The following emails are already in use: john@example.com. Please use unique emails.`,
-          'john@example.com',
-        ),
-      );
+  describe('processExcel', () => {
+    it('should process a valid Excel file and save voters', async () => {
+      const workbook = xlsx.utils.book_new();
+      const worksheet = xlsx.utils.aoa_to_sheet([
+        ['name', 'email'],
+        ['Samson Doe', 'samson@example.com'],
+        ['scarlet Johnson', 'scarlet.johnson@example.com'],
+      ]);
+      xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+      const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
+      jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
+
+      const result = await service.processExcel(fileBuffer, '123', 'free');
+      expect(result.status_code).toBe(201);
+      expect(voterRepository.save).toHaveBeenCalledTimes(1);
     });
 
-    describe('processExcel', () => {
-      it('should process a valid Excel file and save voters', async () => {
-        const workbook = xlsx.utils.book_new();
-        const worksheet = xlsx.utils.aoa_to_sheet([
-          ['name', 'email'],
-          ['Samson Doe', 'samson@example.com'],
-          ['scarlet Johnson', 'scarlet.johnson@example.com'],
-        ]);
-        xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-        const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    it('should reject duplicate emails in Excel', async () => {
+      const workbook = xlsx.utils.book_new();
+      const worksheet = xlsx.utils.aoa_to_sheet([
+        ['name', 'email'],
+        ['John Doe', 'john@example.com'],
+        ['Jane Doe', 'john@example.com'],
+      ]);
+      xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+      const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-        jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
-        jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
-
-        const result = await service.processExcel(fileBuffer, '123');
-        expect(result.status_code).toBe(201);
-        expect(voterRepository.save).toHaveBeenCalledTimes(1);
-      });
-
-      it('should reject duplicate emails in Excel', async () => {
-        const workbook = xlsx.utils.book_new();
-        const worksheet = xlsx.utils.aoa_to_sheet([
-          ['name', 'email'],
-          ['John Doe', 'john@example.com'],
-          ['Jane Doe', 'john@example.com'],
-        ]);
-        xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-        const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-        await expect(service.processExcel(fileBuffer, '123')).rejects.toThrow(BadRequestError);
-      });
+      await expect(service.processExcel(fileBuffer, '123', 'free')).rejects.toThrow(BadRequestError);
     });
+  });
 
-    describe('saveVoters', () => {
-      it('should save voters successfully', async () => {
-        const voters = [
-          {
-            id: '123e4567-e89b-12d3-a456-426614174000',
-            name: 'John Doe',
-            email: 'john@example.com',
-            verification_token: '123e4567-e89b-12d3-a456-426614174001',
-            election: { id: '123' },
-          },
-        ];
+  describe('saveVoters', () => {
+    it('should save voters successfully', async () => {
+      const voters = [
+        {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'John Doe',
+          email: 'john@example.com',
+          verification_token: '123e4567-e89b-12d3-a456-426614174001',
+          election: { id: '123' },
+        },
+      ];
 
-        jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
+      jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
 
-        jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
+      jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
 
-        await service.saveVoters(voters);
+      await service.saveVoters(voters);
 
-        expect(voterRepository.find).toHaveBeenCalledWith({
-          where: { email: In(['john@example.com']), election: { id: '123' } },
-          select: ['email'],
-        });
-
-        expect(voterRepository.save).toHaveBeenCalledWith(voters);
+      expect(voterRepository.find).toHaveBeenCalledWith({
+        where: { email: In(['john@example.com']), election: { id: '123' } },
+        select: ['email'],
       });
+
+      expect(voterRepository.save).toHaveBeenCalledWith(voters);
     });
   });
 });

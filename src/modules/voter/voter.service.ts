@@ -17,6 +17,7 @@ import {
 } from '../../errors';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Election } from '../election/entities/election.entity';
+import { UserService } from '../user/user.service';
 import { Voter } from '../voter/entities/voter.entity';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class VoterService {
   constructor(
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
+    private userService: UserService,
   ) {}
 
   async findAll(
@@ -116,12 +118,15 @@ export class VoterService {
   async processFile(
     file: Express.Multer.File,
     electionId: string,
+    userid: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     const ext = file.originalname.split('.').pop()?.toLowerCase();
+    const user = await this.userService.getUserById(userid);
+    const plan = user.data.plan.toLowerCase();
     if (ext === 'csv') {
-      return this.processCSV(file.buffer, electionId);
+      return this.processCSV(file.buffer, electionId, plan);
     } else if (ext === 'xlsx') {
-      return this.processExcel(file.buffer, electionId);
+      return this.processExcel(file.buffer, electionId, plan);
     } else {
       throw new BadRequestError(SYS_MSG.INVALID_VOTER_FILE_UPLOAD);
     }
@@ -130,8 +135,10 @@ export class VoterService {
   async processCSV(
     fileBuffer: Buffer,
     electionId: string,
+    plan: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
+      const planLimits = { free: 20, basic: 200, premium: 1000 };
       const voters: {
         id: string;
         name: string;
@@ -168,8 +175,7 @@ export class VoterService {
                 }
               }
               rowIndex++;
-            } catch (error) {
-              console.log('Error:', error);
+            } catch {
               reject(new InternalServerError(SYS_MSG.ERROR_CSV_PROCESSING));
             }
           })
@@ -186,9 +192,10 @@ export class VoterService {
                   ),
                 );
               }
-
-              await this.saveVoters(voters);
-
+              if (plan in planLimits && voters.length > planLimits[plan]) {
+                throw new BadRequestError(SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED);
+              }
+              const _ = await this.saveVoters(voters);
               resolve({
                 status_code: HttpStatus.CREATED,
                 message: SYS_MSG.UPLOAD_VOTER_SUCCESS,
@@ -213,8 +220,10 @@ export class VoterService {
   async processExcel(
     fileBuffer: Buffer,
     electionId: string,
+    plan: string,
   ): Promise<{ status_code: number; message: string; data: any }> {
     try {
+      const planLimits = { free: 3, basic: 50, premium: 100 };
       const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
@@ -259,6 +268,9 @@ export class VoterService {
         throw new BadRequestError(
           `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
         );
+      }
+      if (plan in planLimits && voters.length > planLimits[plan]) {
+        throw new BadRequestError(SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED);
       }
 
       await this.saveVoters(voters);
@@ -306,11 +318,22 @@ export class VoterService {
       }
       await this.voterRepository.save(data);
     } catch (error) {
-      console.log('error from save voters', error);
+      this.logger.error(error);
       if (error instanceof ConflictError) {
         throw error;
       }
       throw new InternalServerError(SYS_MSG.VOTER_INSERTION_ERROR);
     }
+  }
+
+  async getVotersByElection(electionId: string) {
+    if (!isUUID(electionId)) {
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
+    }
+
+    return await this.voterRepository.find({
+      where: { election: { id: electionId } },
+      relations: ['election'],
+    });
   }
 }
