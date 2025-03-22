@@ -66,6 +66,7 @@ export class EmailService {
                 electionTitle: election.title,
                 electionStartDate: new Date(election.start_date).toISOString().split('T')[0],
                 electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
+                electionEndTime: election.end_time,
                 electionLink: `${process.env.FRONTEND_URL}/votes/${voter.verification_token}`,
               },
               template: 'election-start',
