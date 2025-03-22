@@ -385,6 +385,11 @@ export class EmailService {
       isWinner: res.votes === highestVotes,
     }));
 
+    const { filename, csvData } = await this.electionService.getElectionResultsForDownload(
+      election.id,
+      election.created_by,
+    );
+
     const emailPromises = election.voters.map(voter => {
       this.logger.log(`Sending email to: ${voter.email}`);
       return this.emailQueue.sendEmail({
@@ -398,9 +403,15 @@ export class EmailService {
             electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
             electionWinner: winner,
             electionResults: formattedResults,
-            electionLink: `${process.env.FRONTEND_URL}/results/${election.id}`,
           },
           template: 'election-results',
+          attachments: [
+            {
+              filename,
+              content: csvData,
+              contentType: 'text/csv',
+            },
+          ],
         },
         template: 'election-results',
       });

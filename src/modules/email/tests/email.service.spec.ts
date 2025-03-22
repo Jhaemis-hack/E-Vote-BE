@@ -35,6 +35,10 @@ describe('EmailService', () => {
           useValue: {
             getElectionResults: jest.fn(),
             getElectionById: jest.fn(),
+            getElectionResultsForDownload: jest.fn().mockResolvedValue({
+              filename: 'election_results.csv',
+              csvData: 'name,votes\nCandidate 1,5\nCandidate 2,3',
+            }),
           },
         },
       ],
@@ -260,10 +264,18 @@ describe('EmailService', () => {
 
     beforeEach(() => {
       electionServiceMock.getElectionResults.mockResolvedValue(mockResults);
+      electionServiceMock.getElectionResultsForDownload.mockResolvedValue({
+        filename: 'election_results.csv',
+        csvData: 'Candidate, Votes\nCandidate 1,5\nCandidate 2,3',
+      });
     });
 
     it('should send election end emails with results to all voters', async () => {
       await emailService.sendElectionEndEmails(mockElection);
+      expect(electionServiceMock.getElectionResultsForDownload).toHaveBeenCalledWith(
+        mockElection.id,
+        mockElection.created_by,
+      );
 
       expect(emailQueueMock.sendEmail).toHaveBeenCalledTimes(2);
       mockElection.voters.forEach((voter, index) => {
@@ -281,9 +293,15 @@ describe('EmailService', () => {
                 { name: 'Candidate 1', votes: 5, percentage: '62.50', isWinner: true },
                 { name: 'Candidate 2', votes: 3, percentage: '37.50', isWinner: false },
               ],
-              electionLink: `${process.env.FRONTEND_URL}/results/${mockElection.id}`,
             },
             template: 'election-results',
+            attachments: [
+              {
+                filename: 'election_results.csv',
+                content: 'Candidate, Votes\nCandidate 1,5\nCandidate 2,3',
+                contentType: 'text/csv',
+              },
+            ],
           },
           template: 'election-results',
         });
@@ -319,6 +337,10 @@ describe('EmailService', () => {
       };
 
       electionServiceMock.getElectionResults.mockResolvedValueOnce(tieResults);
+      electionServiceMock.getElectionResultsForDownload.mockResolvedValue({
+        filename: 'election_results.csv',
+        csvData: 'Candidate, Votes\nCandidate 1,5\nCandidate 2,5',
+      });
 
       await emailService.sendElectionEndEmails(mockElection);
 
@@ -333,6 +355,12 @@ describe('EmailService', () => {
                 { name: 'Candidate 2', votes: 5, percentage: '50.00', isWinner: true },
               ],
             }),
+            attachments: expect.arrayContaining([
+              expect.objectContaining({
+                filename: 'election_results.csv',
+                contentType: 'text/csv',
+              }),
+            ]),
             template: 'election-results',
           },
           template: 'election-results',
@@ -357,6 +385,10 @@ describe('EmailService', () => {
       };
 
       electionServiceMock.getElectionResults.mockResolvedValueOnce(resultsWithMissingNames);
+      electionServiceMock.getElectionResultsForDownload.mockResolvedValue({
+        filename: 'election_results.csv',
+        csvData: 'Candidate, Votes\nUnknown,5\nUnknown Candidate,3',
+      });
 
       await emailService.sendElectionEndEmails(mockElection);
 
@@ -376,9 +408,14 @@ describe('EmailService', () => {
                 { name: 'Unknown', votes: 5, percentage: '62.50', isWinner: true },
                 { name: 'Unknown Candidate', votes: 3, percentage: '37.50', isWinner: false },
               ],
-              electionLink: `${process.env.FRONTEND_URL}/results/${mockElection.id}`,
             },
             template: 'election-results',
+            attachments: expect.arrayContaining([
+              expect.objectContaining({
+                filename: 'election_results.csv',
+                contentType: 'text/csv',
+              }),
+            ]),
           },
           template: 'election-results',
         });
