@@ -15,7 +15,7 @@ import { CandidateModule } from './modules/candidate/candidate.module';
 
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
-import { ContactModule } from './modules/contact-us/candidate-us.module';
+import { ContactModule } from './modules/contact-us/contact-us.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
