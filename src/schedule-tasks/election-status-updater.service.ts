@@ -104,6 +104,73 @@ export class ElectionStatusUpdaterService {
         reminderJob.start();
         this.logger.log(`Scheduled reminder job for election ${id} at ${reminderDateTime}`);
       }
+
+      // Schedule interval-based reminders (90 minutes, 60 minutes, 30 minutes)
+      const reminderIntervals = [
+        { time: 90, key: '1hour30min' },
+        { time: 60, key: '1hour' },
+        { time: 30, key: '30min' },
+      ];
+
+      for (const interval of reminderIntervals) {
+        const intervalReminderTime = new Date(endDateTime.getTime() - interval.time * 60 * 1000);
+
+        // Only schedule if this time is in the future
+        if (intervalReminderTime > new Date()) {
+          const intervalJobName = `reminder-${id}-${interval.key}`;
+
+          const intervalReminderJob = new CronJob(intervalReminderTime, async () => {
+            this.logger.log(`Sending ${interval.key} reminder emails for election ${id}`);
+
+            // Get election with voters
+            const electionWithVoters = await this.electionRepository.findOne({
+              where: { id },
+              relations: ['voters', 'created_by_user'],
+            });
+
+            if (!electionWithVoters) {
+              this.logger.error(`Election with id ${id} not found for ${interval.key} reminder!`);
+              return;
+            }
+
+            // Find voters who haven't voted yet
+            const allVoterIds = electionWithVoters.voters.map(voter => voter.id);
+            const votedVoterIds = await this.voteRepository
+              .createQueryBuilder('vote')
+              .where('vote.electionId = :electionId', { electionId: id })
+              .select('vote.voterId')
+              .getMany()
+              .then(votes => votes.map(vote => vote.voter_id));
+
+            const nonVotedVoterIds = allVoterIds.filter(id => !votedVoterIds.includes(id));
+
+            if (nonVotedVoterIds.length > 0) {
+              const nonVotedVoters = electionWithVoters.voters.filter(voter => nonVotedVoterIds.includes(voter.id));
+
+              if (electionWithVoters.email_notification) {
+                try {
+                  const result = await this.emailService.sendIntervalReminderEmails(
+                    electionWithVoters,
+                    nonVotedVoters,
+                    interval.key as '30min' | '1hour' | '1hour30min',
+                  );
+                  this.logger.log(`Interval reminder (${interval.key}) result: ${result.message}`);
+                } catch (error) {
+                  this.logger.error(`Error sending ${interval.key} reminder emails: ${error.message}`);
+                }
+              }
+            }
+
+            this.schedulerRegistry.deleteCronJob(intervalJobName);
+          });
+
+          this.schedulerRegistry.addCronJob(intervalJobName, intervalReminderJob);
+          intervalReminderJob.start();
+          this.logger.log(`Scheduled ${interval.key} reminder job for election ${id} at ${intervalReminderTime}`);
+        }
+      }
+      // ADD INTERVAL REMINDERS HERE - END
+
       const endJob = new CronJob(endDateTime, async () => {
         this.logger.log(`Cron job triggered for election end at ${new Date()}`);
 
