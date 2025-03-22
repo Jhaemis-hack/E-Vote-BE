@@ -40,7 +40,7 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
-import { Response } from 'express';
+import { ElectionResultsDto } from './dto/results.dto';
 
 @ApiTags()
 @Controller('elections')
@@ -243,17 +243,14 @@ export class ElectionController {
   }
 
   @ApiBearerAuth()
-  @Get(':id/result/download')
+  @Get(':id/result')
   @UseGuards(AuthGuard)
-  async downloadElectionResults(@Param('id') id: string, @Req() req: any, @Res({ passthrough: true }) res: Response) {
+  @ApiOperation({ summary: 'Get election results by ID' })
+  @ApiResponse({ status: 200, description: 'Election results retrieved', type: ElectionResultsDto })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Election not found' })
+  async getElectionResults(@Param('id') id: string, @Req() req: any): Promise<ElectionResultsDto> {
     const adminId = req.user.sub;
-    const { filename, csvData } = await this.electionService.getElectionResultsForDownload(id, adminId);
-
-    res.set({
-      'Content-Type': 'text/csv',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-    });
-
-    return csvData;
+    return this.electionService.getElectionResults(id, adminId);
   }
 }
