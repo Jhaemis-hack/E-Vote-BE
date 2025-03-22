@@ -687,27 +687,29 @@ export class ElectionService {
 
     const resultWithPosition: CandidateResult[] = [];
     let previousVotes = -1;
-    let previousPosition = 0;
+    let currentPosition = 0;
+    let tieCount = 0;
 
     for (let i = 0; i < sortedCandidates.length; i++) {
       const candidate = sortedCandidates[i];
+
+      if (candidate.votes == 0) {
+        candidate.position = 0;
+        resultWithPosition.push(candidate);
+        continue;
+      }
+
       if (candidate.votes === previousVotes) {
-        candidate.position = previousPosition;
+        candidate.position = currentPosition;
+        tieCount++;
       } else {
-        candidate.position = i + 1;
-        previousPosition = i + 1;
+        currentPosition = i + 1 - tieCount;
+        candidate.position = currentPosition;
+        tieCount = 0;
       }
       previousVotes = candidate.votes;
       resultWithPosition.push(candidate);
     }
-
-    // const results = election.candidates.map(candidate => ({
-    //   candidate_id: candidate.id,
-    //   name: candidate.name,
-    //   votes: voteCounts.get(candidate.id) || 0,
-    //   photo_url: candidate.photo_url,
-    //   bio: candidate.bio,
-    // }));
 
     return {
       status_code: HttpStatus.OK,

@@ -382,7 +382,8 @@ export class EmailService {
       name: res.name || 'Unknown Candidate',
       votes: res.votes !== undefined ? res.votes : 0,
       percentage: totalVotes > 0 ? ((res.votes / totalVotes) * 100).toFixed(2) : '0.00',
-      isWinner: res.votes === highestVotes,
+      isWinner: res.votes === highestVotes && res.votes > 0,
+      position: res.position,
     }));
 
     const { filename, csvData } = await this.electionService.getElectionResultsForDownload(
