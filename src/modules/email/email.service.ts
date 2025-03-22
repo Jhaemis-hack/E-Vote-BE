@@ -263,4 +263,22 @@ export class EmailService {
       }
     });
   }
+
+  async sendContactUsEmail(userEmail: string, fullName: string, subject: string, message: string): Promise<void> {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      const mail = {
+        to: adminEmail,
+        subject: 'New Contact Us Message',
+        context: {
+          subject: `New Contact Us Message: "${subject}"`,
+          fullName,
+          email: userEmail,
+          message,
+        },
+        template: 'contact-us',
+      };
+      await this.emailQueue.sendEmail({ mail, template: 'contact-us' });
+    }
+  }
 }
