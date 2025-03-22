@@ -6,6 +6,9 @@ import { ElectionService } from '../election/election.service';
 import { Election } from '../election/entities/election.entity';
 @Injectable()
 export class EmailService {
+  sendSupportMessage(sendSupportMessage: any) {
+    throw new Error('Method not implemented.');
+  }
   private readonly logger = new Logger(EmailService.name);
   constructor(
     private emailQueue: EmailQueue,
@@ -324,6 +327,23 @@ export class EmailService {
       },
       template: 'voter-invite',
     });
+  }
+
+  async sendSupportEmail(mailDetail: any): Promise<void> {
+    if (mailDetail) {
+      const mailTemplate = {
+        to: `${process.env.RESOLVE_SUPPORT}`,
+        subject: `Support Message from ${mailDetail.first_name}`,
+        context: {
+          name: `${mailDetail.first_name} ${mailDetail.last_name}`,
+          email: mailDetail.email,
+          message: mailDetail.message,
+        },
+        template: 'support',
+      };
+
+      await this.emailQueue.sendEmail({ mail: mailTemplate, template: 'support' });
+    }
   }
 
   async sendResultsToAdminEmail(email: string, election: Election): Promise<void> {
