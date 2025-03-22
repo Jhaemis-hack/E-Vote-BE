@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { forwardRef, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClient } from '@supabase/supabase-js';
 import { isUUID } from 'class-validator';
@@ -6,8 +6,8 @@ import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
 import * as moment from 'moment';
 import * as path from 'path';
-import { Repository } from 'typeorm';
 import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
+import { In, Repository } from 'typeorm';
 import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
@@ -57,8 +57,10 @@ export class ElectionService {
     @InjectRepository(Vote) private voteRepository: Repository<Vote>,
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(User) private userRepository: Repository<User>,
+    @Inject(forwardRef(() => ElectionStatusUpdaterService))
     private electionStatusUpdaterService: ElectionStatusUpdaterService,
-    private emailService: EmailService,
+    @Inject(forwardRef(() => EmailService))
+    private readonly emailService: EmailService,
     private voterService: VoterService,
   ) {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
@@ -89,8 +91,8 @@ export class ElectionService {
       throw new NotFoundError(SYS_MSG.ADMIN_NOT_FOUND);
     }
 
-    const createdElectionCount = await this.electionRepository.count({
-      where: { created_by: adminId },
+    const activeElectionCount = await this.electionRepository.count({
+      where: { created_by: adminId, status: In([ElectionStatus.UPCOMING, ElectionStatus.ONGOING]) },
     });
 
     const planLimits = {
@@ -102,7 +104,7 @@ export class ElectionService {
     const userPlan = admin.plan || 'FREE';
     const maxAllowed = planLimits[userPlan];
 
-    if (createdElectionCount >= maxAllowed) {
+    if (activeElectionCount >= maxAllowed) {
       throw new BadRequestError(SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED);
     }
 

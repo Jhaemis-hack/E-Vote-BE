@@ -49,7 +49,7 @@ export class EmailProcessor {
       } = job;
       await this.mailerService.sendMail({
         ...mail,
-        subject: 'Welcome to our platform',
+        subject: 'Welcome to Resolve',
         template: 'welcome-email',
       });
       this.logger.log(`Welcome email sent successfully to ${mail.to}`);
@@ -71,29 +71,16 @@ export class EmailProcessor {
     }
   }
 
-  @Process('election-monitor')
-  async sendAdminElectionMonitorEmailJob(job: Job<MailInterface>) {
+  @Process('election-results')
+  async sendElectionEndEmailJob(job: Job<MailInterface>) {
     const { mail } = job.data;
     try {
       await this.mailerService.sendMail({
         ...mail,
       });
-      this.logger.log(`Admin Election Monitor email sent successfully to ${mail.to}`);
+      this.logger.log(`Election end email sent successfully to ${mail.to}`);
     } catch (error) {
-      this.logger.error(`EmailProcessor - AdminElectionMonitorEmailJob error: ${error.message}`);
-    }
-  }
-
-  @Process('election-reminder')
-  async sendElectionReminderEmailJob(job: Job<MailInterface>) {
-    const { mail } = job.data;
-    try {
-      await this.mailerService.sendMail({
-        ...mail,
-      });
-      this.logger.log(`Election reminder email sent successfully to ${mail.to}`);
-    } catch (error) {
-      this.logger.error(`EmailProcessor - ElectionReminderEmailJob error: ${error.message}`);
+      this.logger.error(`EmailProcessor - ElectionEndEmailJob error: ${error.message}`);
     }
   }
 
@@ -122,6 +109,34 @@ export class EmailProcessor {
       this.logger.log(`Voting link has been sent sucessfully to ${mail.to}`);
     } catch (sendVotingLinkJobError) {
       this.logger.error(`EmailProcessor - sendVotingLinkEmailJobError: ${sendVotingLinkJobError.message}`);
+    }
+  }
+
+  @Process('results-to-admin')
+  async sendResultsToAdminEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+        subject: 'Election Results Are Out!',
+        template: 'results-to-admin',
+      });
+      this.logger.log(`Results email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ResultsToAdminEmailJob error: ${error.message}`);
+    }
+  }
+
+  @Process('contact-us')
+  async sendContactUsEmailJob(job: Job<MailInterface>) {
+    const { mail } = job.data;
+    try {
+      await this.mailerService.sendMail({
+        ...mail,
+      });
+      this.logger.log(`Contact Us email sent successfully to ${mail.to}`);
+    } catch (error) {
+      this.logger.error(`EmailProcessor - ContactUsEmailJob error: ${error.message}`);
     }
   }
 }

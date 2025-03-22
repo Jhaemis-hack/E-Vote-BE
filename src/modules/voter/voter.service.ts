@@ -19,6 +19,7 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Election } from '../election/entities/election.entity';
 import { UserService } from '../user/user.service';
 import { Voter } from '../voter/entities/voter.entity';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class VoterService {
@@ -28,6 +29,7 @@ export class VoterService {
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     private userService: UserService,
+    private emailService: EmailService,
   ) {}
 
   async findAll(

@@ -19,6 +19,7 @@ import { DeleteResult } from 'typeorm';
 import { HttpStatus } from '@nestjs/common';
 import { EmailQueue } from '../../email/email.queue';
 import { Election } from '../../election/entities/election.entity';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 
 interface CreateUserDto {
   id?: string;
@@ -36,6 +37,12 @@ describe('UserService', () => {
   let emailService: EmailService;
 
   beforeEach(async () => {
+    // Mock environment variables
+    process.env.SUPABASE_URL = 'https://mock-supabase-url.com';
+    process.env.SUPABASE_ANON_KEY = 'mock-anon-key';
+    process.env.SUPABASE_BUCKET = 'mock-bucket';
+    process.env.DEFAULT_PHOTO_URL = 'https://default-photo-url.com';
+
     const mockUserRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
@@ -504,7 +511,7 @@ describe('UserService', () => {
         expect.objectContaining({
           id: userId,
           email: 'test@example.com',
-          created_elections: [],
+          active_elections: 0,
         }),
       );
 
@@ -546,6 +553,7 @@ describe('UserService', () => {
       );
     });
   });
+
   describe('update', () => {
     it('should update a user successfully', async () => {
       const userId = '550e8400-e29b-41d4-a716-446655440000';
@@ -690,6 +698,7 @@ describe('UserService', () => {
       );
     });
   });
+
   describe('forgotPassword', () => {
     const email = 'test@example.com';
     const forgotPasswordDto: ForgotPasswordDto = {
@@ -818,7 +827,7 @@ describe('UserService', () => {
     // });
 
     it('❌ should throw NotFoundException if user does not exist', async () => {
-      userRepository.findOne.mockResolvedValue(null);
+      (userRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       await expect(userService.verifyEmail(mockToken)).rejects.toThrow(SYS_MSG.USER_NOT_FOUND);
 
@@ -863,6 +872,83 @@ describe('UserService', () => {
       );
 
       expect(jwtService.verify).toHaveBeenCalledWith(mockToken);
+    });
+  });
+
+  describe('UserService - changePassword', () => {
+    it('should throw UnauthorizedException if user is not found', async () => {
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+      const changePasswordDto: ChangePasswordDto = {
+        old_password: 'oldPassword123',
+        new_password: 'newPassword123!',
+      };
+
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).rejects.toThrow(
+        new UnauthorizedError(SYS_MSG.USER_NOT_FOUND),
+      );
+    });
+
+    it('should throw UnauthorizedException if old password is incorrect', async () => {
+      const changePasswordDto = {
+        old_password: 'oldPassword123',
+        new_password: 'newPassword123!',
+      };
+
+      const hashedPassword = await bcrypt.hash(changePasswordDto.old_password, 10);
+
+      const mockUser = { email: 'admin@example.com', password: hashedPassword } as User;
+      userRepository.findOne = jest.fn().mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => false);
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).rejects.toThrow(
+        new UnauthorizedError(SYS_MSG.INCORRECT_PASSWORD),
+      );
+    });
+
+    it('should throw NotAcceptableException if old password is same as new password', async () => {
+      const changePasswordDto = {
+        old_password: 'Password123!',
+        new_password: 'Password123!',
+      };
+
+      const hashedPassword = await bcrypt.hash(changePasswordDto.old_password, 10);
+
+      const _ = { email: 'admin@example.com', password: hashedPassword } as User;
+      userRepository.findOne = jest.fn().mockResolvedValue(changePasswordDto.new_password);
+      jest.spyOn(bcrypt, 'compare').mockImplementationOnce(async () => true);
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).rejects.toThrow(
+        new UnauthorizedError(SYS_MSG.NEW_PASSWORD_MUST_BE_UNIQUE),
+      );
+    });
+
+    it('should update password successfully', async () => {
+      const changePasswordDto: ChangePasswordDto = {
+        old_password: 'oldPassword123',
+        new_password: 'newPassword123!',
+      };
+
+      const hashedOldPassword = await bcrypt.hash(changePasswordDto.old_password, 10);
+      const mockUser = { email: 'admin@example.com', password: hashedOldPassword } as User;
+
+      const hashedNewPassword = await bcrypt.hash(changePasswordDto.new_password, 10);
+
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementationOnce(async () => true) // First call: old password matches
+        .mockImplementationOnce(async () => false); // Second call: new password is different
+
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
+      jest.spyOn(userRepository, 'save').mockResolvedValue(mockUser);
+
+      await expect(userService.changePassword(changePasswordDto, 'admin@example.com')).resolves.toEqual({
+        status_code: 201,
+        message: 'Admin Password Updated Successfully,please proceed to login',
+        data: null,
+      });
+
+      expect(userRepository.save).toHaveBeenCalledWith({
+        ...mockUser,
+        password: hashedNewPassword,
+      });
     });
   });
 });

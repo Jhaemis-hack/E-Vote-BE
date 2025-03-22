@@ -1,16 +1,22 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ElectionModule } from '../election/election.module';
+import { Election } from '../election/entities/election.entity';
+import { EmailModule } from '../email/email.module';
+import { UserModule } from '../user/user.module';
+import { Voter } from './entities/voter.entity';
 import { VoterController } from './voter.controller';
 import { VoterService } from './voter.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Election } from '../election/entities/election.entity';
-import { Voter } from './entities/voter.entity';
-import { UserModule } from '../user/user.module';
-import { ElectionModule } from '../election/election.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Voter, Election]), UserModule, ElectionModule],
+  imports: [
+    TypeOrmModule.forFeature([Voter, Election]),
+    forwardRef(() => UserModule),
+    forwardRef(() => EmailModule),
+    forwardRef(() => ElectionModule),
+  ],
   controllers: [VoterController],
   providers: [VoterService],
-  exports: [VoterService],
+  exports: [VoterService, TypeOrmModule],
 })
 export class VoterModule {}

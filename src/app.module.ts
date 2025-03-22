@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ElectionModule } from './modules/election/election.module';
+import { ElectionModule } from '../src/modules/election/election.module';
 import { UserModule } from './modules/user/user.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import authConfig from './config/auth.config';
@@ -15,7 +15,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { CandidateModule } from './modules/candidate/candidate.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
-
+import { ContactModule } from './modules/contact-us/contact-us.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -56,6 +56,7 @@ import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
     CandidateModule,
     SubscriptionModule,
     GoogleAuthModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

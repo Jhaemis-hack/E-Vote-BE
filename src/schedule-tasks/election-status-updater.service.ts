@@ -139,9 +139,6 @@ export class ElectionStatusUpdaterService {
       End: ${endDateTime.clone().tz(electionTimezone).format('YYYY-MM-DD HH:mm:ss')} (${endDateTime.format('YYYY-MM-DD HH:mm:ss')} UTC)`,
     );
 
-    // this.logger.log(`Start Date/Time: ${startDateTime.format('YYYY-MM-DD HH:mm:ss UTC')}`);
-    // this.logger.log(`End Date/Time: ${endDateTime.format('YYYY-MM-DD HH:mm:ss UTC')}`);
-
     // Store election timing information in Redis
     await this.redis.hset(`${this.redisKeyPrefix}info:${id}`, {
       startDateTime: startDateTime.valueOf(),

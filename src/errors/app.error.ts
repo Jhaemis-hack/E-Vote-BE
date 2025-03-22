@@ -63,3 +63,10 @@ export class ConflictError extends AppError {
     Object.setPrototypeOf(this, ConflictError.prototype);
   }
 }
+
+export class NotAcceptableError extends AppError {
+  constructor(message: string, data: any = null) {
+    super(HttpStatus.NOT_ACCEPTABLE, message, data);
+    Object.setPrototypeOf(this, NotAcceptableError.prototype);
+  }
+}

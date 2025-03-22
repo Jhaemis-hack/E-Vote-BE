@@ -8,6 +8,7 @@ export const DELETE_USER = 'User deleted successfully';
 export const USER_NOT_FOUND = 'User not found';
 export const EMAIL_NOT_FOUND = 'User with this email not found';
 export const INCORRECT_PASSWORD = 'Incorrect credentials';
+export const NEW_PASSWORD_MUST_BE_UNIQUE = 'Password already used, try something different.';
 export const INVALID_EMAIL_FORMAT = 'Invalid email format';
 export const EMAIL_IN_USE = 'Email already in use';
 export const INVALID_PASSWORD_FORMAT =
@@ -119,3 +120,6 @@ export const SUBSCRIPTION_SUCCESSFUL = 'User subscription payment successful';
 export const VOTER_UPLOAD_LIMIT_EXCEEDED =
   'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.';
 export const ADMIN_NOT_FOUND = 'Admin not found';
+export const CONTACT_US_SENT_MESSAGE = 'Thank you for reaching out. We will respond shortly.';
+export const PICTURE_UPDATED = 'Picture updated successfully';
+export const INVALID_TOKEN = 'invalid token';

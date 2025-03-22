@@ -1,6 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import * as xlsx from 'xlsx';
 import { BadRequestError, NotFoundError, UnauthorizedError } from '../../../errors';
@@ -16,46 +14,42 @@ describe('VoterService', () => {
   let electionRepository: Repository<Election>;
   let _: UserService;
 
-  const mockVoterRepository = () => ({
-    findAndCount: jest.fn().mockResolvedValue([[], 0]),
-    save: jest
-      .fn()
-      .mockImplementation((entity: DeepPartial<Voter>) => Promise.resolve(Object.assign(new Voter(), entity))),
-    findOne: jest.fn().mockResolvedValue(null),
-    update: jest.fn().mockResolvedValue(true),
-    delete: jest.fn().mockResolvedValue(true),
-  });
-
-  const mockElectionRepository = {
-    findOne: jest.fn(),
-    find: jest.fn(),
-  };
-
-  const mockUserService = {
-    getUserById: jest.fn().mockResolvedValue({
-      data: { plan: 'free' },
-    }),
-  };
-
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        VoterService,
-        { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
-        { provide: getRepositoryToken(Election), useValue: mockElectionRepository },
-        { provide: UserService, useValue: mockUserService },
-        {
-          provide: getRepositoryToken(Voter),
-          useClass: Repository,
-        },
-      ],
-    }).compile();
+    // Mock repositories
+    voterRepository = {
+      findAndCount: jest.fn().mockResolvedValue([[], 0]),
+      save: jest.fn().mockImplementation(entity => Promise.resolve({ ...entity })),
+      findOne: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(true),
+      delete: jest.fn().mockResolvedValue(true),
+      find: jest.fn().mockResolvedValue([]),
+    } as any;
 
-    service = module.get<VoterService>(VoterService);
-    voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
-    electionRepository = module.get<Repository<Election>>(getRepositoryToken(Election));
+    electionRepository = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+    } as any;
 
-    // Reset the emailOccurrences map before each test
+    // Mock services
+    const mockUserService = {
+      getUserById: jest.fn().mockResolvedValue({
+        data: { plan: 'free' },
+      }),
+    };
+
+    const mockEmailService = {
+      sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+    };
+
+    // Create service instance directly
+    service = new VoterService(
+      voterRepository as any,
+      electionRepository as any,
+      mockUserService as any,
+      mockEmailService as any,
+    );
+
+    // Reset the emailOccurrences map
     (service as any).emailOccurrences = new Map<string, number[]>();
   });
 
@@ -78,7 +72,7 @@ describe('VoterService', () => {
           deleted_at: null,
           is_voted: false,
           is_verified: false,
-          verification_token: '',
+          verification_token: '6d33c7c5-b7c9-479e-969f-7c354fd57e3b',
           votes: [],
           election: { id: validElectionId } as Election,
         },
@@ -91,7 +85,7 @@ describe('VoterService', () => {
           deleted_at: null,
           is_voted: false,
           is_verified: false,
-          verification_token: '',
+          verification_token: '6d33c7c5-b7c9-339e-969f-7c354fd57e3b',
           votes: [],
           election: { id: validElectionId } as Election,
         },

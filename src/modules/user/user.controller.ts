@@ -12,20 +12,34 @@ import {
   HttpCode,
   ParseUUIDPipe,
   ValidationPipe,
-  BadRequestException,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { AuthGuard } from '../../guards/auth.guard';
-import { ApiBearerAuth, ApiBody, ApiParam, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { BadRequestError } from '../../errors';
+
 @ApiTags('Auth')
 @Controller('auth')
 export class UserController {
@@ -82,10 +96,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found.' })
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Req() req: any) {
     if (!id.match(/^[0-9a-fA-F-]{36}$/)) {
-      throw new BadRequestException({
-        message: SYS_MSG.INCORRECT_UUID,
-        status_code: HttpStatus.BAD_REQUEST,
-      });
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     const currentUser = req.user;
@@ -136,6 +147,23 @@ export class UserController {
   async verifyEmail(@Query('token') token: string) {
     return this.userService.verifyEmail(token);
   }
+
+  @Patch('/change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update User password' })
+  @ApiResponse({ status: 200, description: 'Password successfully updated.' })
+  @ApiResponse({ status: 403, description: 'User not Authenticated.' })
+  async changePassword(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    changePasswordDto: ChangePasswordDto,
+    @Req() req: any,
+  ) {
+    const adminEmail = req.user.email;
+    return await this.userService.changePassword(changePasswordDto, adminEmail);
+  }
+
   @Patch(':id/subscription-payment')
   @ApiOperation({ summary: 'Update user payment details' })
   @ApiParam({ name: 'id', required: true, type: String, description: 'User ID' })
@@ -143,7 +171,37 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Payment details updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid data provided' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async updateUserPayment(@Param('id') userId: string, @Body() updatePaymentDto: UpdatePaymentDto) {
+  async updateUserPayment(
+    @Param('id') userId: string,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) updatePaymentDto: UpdatePaymentDto,
+  ) {
     return this.userService.updatePayment(userId, updatePaymentDto);
+  }
+
+  @Post('users/photo_upload')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('photo'))
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upload a photo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: SYS_MSG.FETCH_PROFILE_URL })
+  @ApiResponse({ status: 401, description: SYS_MSG.UNAUTHORIZED_USER })
+  @ApiResponse({ status: 400, description: SYS_MSG.BAD_REQUEST })
+  @ApiResponse({ status: 500, description: SYS_MSG.FAILED_PHOTO_UPLOAD })
+  async profilePictureUpload(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const admin_id = req.user.sub;
+    return this.userService.uploadProfilePicture(file, admin_id);
   }
 }

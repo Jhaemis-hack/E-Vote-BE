@@ -10,6 +10,7 @@ import { UserModule } from '../user/user.module';
 import { EmailProcessor } from './email.processor';
 import { EmailQueue } from './email.queue';
 import { EmailService } from './email.service';
+import { ElectionModule } from '../election/election.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { EmailService } from './email.service';
     ConfigModule,
     TypeOrmModule.forFeature([User]),
     forwardRef(() => UserModule),
+    forwardRef(() => ElectionModule),
   ],
   providers: [EmailQueue, EmailProcessor, EmailService],
   exports: [EmailService, EmailQueue],

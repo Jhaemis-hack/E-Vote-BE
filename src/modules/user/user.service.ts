@@ -3,30 +3,51 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
+import { omit } from 'lodash';
 import { IsNull, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+  NotAcceptableError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../errors';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { EmailService } from '../email/email.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ForgotPasswordToken } from './entities/forgot-password.entity';
 import { User } from './entities/user.entity';
-import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { omit } from 'lodash';
+
+import { createClient } from '@supabase/supabase-js';
+import * as path from 'path';
+
 import { ElectionStatus } from '../election/entities/election.entity';
+
 @Injectable()
 export class UserService {
+  private readonly supabase;
+  private readonly bucketName = process.env.SUPABASE_BUCKET;
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(ForgotPasswordToken) private forgotPasswordRepository: Repository<ForgotPasswordToken>,
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly mailService: EmailService,
-  ) {}
+  ) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY || !process.env.SUPABASE_BUCKET) {
+      throw new Error('Supabase environment variables are not set.');
+    }
+    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    this.bucketName = process.env.SUPABASE_BUCKET;
+  }
 
   async registerAdmin(createAdminDto: CreateUserDto) {
     const { email: rawEmail, password } = createAdminDto;
@@ -109,16 +130,25 @@ export class UserService {
     //   }
     // }
 
-    const { id, email } = userExist;
-    const credentials = { email: userExist.email, sub: userExist.id };
+    const { password: _, ...admin } = userExist; // Destructure to exclude password
+    const credentials = { email: admin.email, sub: admin.id };
     const token = this.jwtService.sign(credentials);
 
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.LOGIN_MESSAGE,
       data: {
-        id,
-        email,
+        id: admin.id,
+        email: admin.email,
+        first_name: admin.first_name,
+        last_name: admin.last_name,
+        is_verified: admin.is_verified,
+        google_id: admin.google_id,
+        profile_picture: admin.profile_picture,
+        billing_interval: admin.billing_Interval,
+        plan: admin.plan,
+        created_elections: admin.created_elections,
+        subscriptions: admin.subscriptions,
         token,
       },
     };
@@ -145,17 +175,24 @@ export class UserService {
     };
   }
 
-  async getUserById(
-    userId: string,
-  ): Promise<{ status_code: number; message: string; data: Omit<User, 'password' | 'hashPassword'> }> {
+  async getUserById(id: string): Promise<{
+    status_code: number;
+    message: string;
+    data: Omit<User, 'password' | 'hashPassword' | 'created_elections'>;
+  }> {
     const user = await this.userRepository.findOne({
-      where: { id: userId, created_elections: { status: ElectionStatus.ONGOING || ElectionStatus.UPCOMING } },
+      where: { id },
       relations: ['created_elections'],
     });
     if (!user) {
       throw new NotFoundError(SYS_MSG.USER_NOT_FOUND);
     }
-    const { password: _, ...rest } = user;
+
+    const elections = user.created_elections.filter(
+      election => election.status === ElectionStatus.ONGOING || election.status === ElectionStatus.UPCOMING,
+    );
+    const { password: _, created_elections: __, ...rest } = user;
+    Object.assign(rest, { active_elections: elections.length });
     return {
       status_code: HttpStatus.OK,
       message: SYS_MSG.FETCH_USER,
@@ -324,6 +361,47 @@ export class UserService {
     };
   }
 
+  async changePassword(
+    changePassword: ChangePasswordDto,
+    adminEmail: string,
+  ): Promise<{ status_code: Number; message: string; data: null }> {
+    const { old_password, new_password } = changePassword;
+
+    const password = new_password.toLowerCase();
+
+    const admin_exist = await this.userRepository.findOne({ where: { email: adminEmail } });
+
+    if (!admin_exist) {
+      throw new ForbiddenError(SYS_MSG.USER_NOT_FOUND);
+    }
+
+    const isVerifiedPassword = await bcrypt.compare(old_password, admin_exist.password);
+
+    if (!isVerifiedPassword) {
+      throw new UnauthorizedError(SYS_MSG.INCORRECT_PASSWORD);
+    }
+
+    if (password.length < 8 || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
+      throw new BadRequestError(SYS_MSG.INVALID_PASSWORD_FORMAT);
+    }
+
+    const same_password = await bcrypt.compare(password, admin_exist.password);
+
+    if (same_password) {
+      throw new NotAcceptableError(SYS_MSG.NEW_PASSWORD_MUST_BE_UNIQUE);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    admin_exist.password = hashedPassword;
+    await this.userRepository.save(admin_exist);
+    return {
+      status_code: HttpStatus.CREATED,
+      message: SYS_MSG.PASSWORD_UPDATED_SUCCESSFULLY,
+      data: null,
+    };
+  }
+
   async verifyEmail(token: string) {
     try {
       const payload = this.jwtService.verify(token);
@@ -364,7 +442,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundError(`User with ID ${userId} not found`);
+      throw new NotFoundError(SYS_MSG.ADMIN_NOT_FOUND, `User with ID ${userId} not found`);
     }
 
     Object.assign(user, updatePaymentDto);
@@ -372,6 +450,49 @@ export class UserService {
     return {
       message: SYS_MSG.SUBSCRIPTION_SUCCESSFUL,
       data: omit(updatedPaymentData, ['password']),
+    };
+  }
+
+  async uploadProfilePicture(file: Express.Multer.File, admin_id: string) {
+    const admin = await this.userRepository.findOne({ where: { id: admin_id } });
+    if (!admin) {
+      throw new NotFoundError(`Admin with ID ${admin_id} not found`);
+    }
+    if (!file) {
+      return {
+        status_code: HttpStatus.BAD_REQUEST,
+        message: SYS_MSG.NO_FILE_UPLOADED,
+        data: null,
+      };
+    }
+    // Validate file type
+    const allowed_mime_types = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowed_mime_types.includes(file.mimetype)) {
+      throw new BadRequestError(SYS_MSG.INVALID_FILE_TYPE);
+    }
+    const maxSize = 1 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestError(SYS_MSG.PHOTO_SIZE_LIMIT);
+    }
+    const { buffer, originalname, mimetype } = file;
+    const fileExt = path.extname(originalname);
+    const fileName = `${Date.now()}${fileExt}`;
+    const { error } = await this.supabase.storage
+      .from(this.bucketName)
+      .upload(`resolve-vote/${fileName}`, buffer, { contentType: mimetype });
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new InternalServerError(SYS_MSG.FAILED_PHOTO_UPLOAD);
+    }
+    const { data: public_url_data } = this.supabase.storage
+      .from(this.bucketName)
+      .getPublicUrl(`resolve-vote/${fileName}`);
+    admin.profile_picture = public_url_data.publicUrl;
+    await this.userRepository.save(admin);
+    return {
+      status_code: HttpStatus.OK,
+      message: SYS_MSG.PICTURE_UPDATED,
+      data: { profile_picture: admin.profile_picture },
     };
   }
 }
