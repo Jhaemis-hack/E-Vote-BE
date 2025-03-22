@@ -1092,4 +1092,27 @@ describe('ElectionService', () => {
       });
     });
   });
+
+  describe('getElectionResultsForDownload', () => {
+    const electionId = '550e8400-e29b-41d4-a716-446655440000';
+    const adminId = 'f14acef6-abf1-41fc-aca5-0cf932db657e';
+
+    it('should generate CSV data with correct format', async () => {
+      const mockResults = {
+        data: {
+          results: [
+            { name: 'Candidate A', votes: 2 },
+            { name: 'Candidate B', votes: 1 },
+          ],
+        },
+      };
+
+      jest.spyOn(service, 'getElectionResults').mockResolvedValue(mockResults as any);
+
+      const result = await service.getElectionResultsForDownload(electionId, adminId);
+
+      expect(result.csvData).toBe('Candidate Name,Votes\n' + '"Candidate A",2\n' + '"Candidate B",1');
+      expect(result.filename).toBe(`election-${electionId}-results.csv`);
+    });
+  });
 });

@@ -45,6 +45,11 @@ export interface ElectionResponse {
   }>;
 }
 
+// interface ElectionResultsDownload {
+//   filename: string;
+//   csvData: string;
+// }
+
 @Injectable()
 export class ElectionService {
   private readonly logger = new Logger(ElectionService.name);

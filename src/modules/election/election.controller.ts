@@ -11,6 +11,7 @@ import {
   Put,
   Query,
   Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -27,15 +28,17 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../../guards/auth.guard';
-import * as SYS_MSG from '../../shared/constants/systemMessages';
-import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResponseDto } from './dto/election-response.dto';
-import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { VerifyVoterDto } from './dto/verify-voter.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+import { VerifyVoterDto } from './dto/verify-voter.dto';
+import { ElectionResultsDto } from './dto/results.dto';
+import { Response } from 'express';
 
 @ApiTags()
 @Controller('elections')
@@ -207,5 +210,32 @@ export class ElectionController {
   @ApiResponse({ status: 500, description: SYS_MSG.FAILED_TO_SEND_VOTING_LINK })
   async sendVotingLinks(@Param('id') id: string) {
     return await this.electionService.sendVotingLinkToVoters(id);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/result')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get election results by ID' })
+  @ApiResponse({ status: 200, description: 'Election results retrieved', type: ElectionResultsDto })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Election not found' })
+  async getElectionResults(@Param('id') id: string, @Req() req: any): Promise<ElectionResultsDto> {
+    const adminId = req.user.sub;
+    return this.electionService.getElectionResults(id, adminId);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/result/download')
+  @UseGuards(AuthGuard)
+  async downloadElectionResults(@Param('id') id: string, @Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const adminId = req.user.sub;
+    const { filename, csvData } = await this.electionService.getElectionResultsForDownload(id, adminId);
+
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    return csvData;
   }
 }

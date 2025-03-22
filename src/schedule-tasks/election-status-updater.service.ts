@@ -92,9 +92,40 @@ export class ElectionStatusUpdaterService {
           } else if (statusType === 'end') {
             this.logger.log(`Updating election ${electionId} from ONGOING to COMPLETED`);
             await this.updateElectionStatus(electionId, ElectionStatus.COMPLETED);
+
+            // Send end election emails
+            const election = await this.electionRepository.findOne({
+              where: { id: electionId },
+              relations: ['voters', 'created_by_user'],
+            });
+
+            if (election && election.email_notification) {
+              try {
+                await this.emailService.sendElectionEndEmails(election);
+                this.logger.log(`Election end emails sent for election ${electionId}`);
+
+                if (election.created_by_user && election.created_by_user.email) {
+                  await this.emailService.sendResultsToAdminEmail(election.created_by_user.email, election);
+                  this.logger.log(`Results sent to admin: ${election.created_by_user.email}`);
+                } else {
+                  this.logger.error('Admin email not found. Unable to send results to admin.');
+                }
+              } catch (error) {
+                this.logger.error(`Error sending election result emails: ${error.message}`);
+              }
+            }
           } else if (statusType === 'reminder') {
-            this.logger.log(`Sending reminder for election ${electionId}`);
+            this.logger.log(`Sending 24-hour reminder for election ${electionId}`);
             await this.sendReminderEmails(electionId);
+          } else if (statusType === 'reminder_90min') {
+            this.logger.log(`Sending 90-minute reminder for election ${electionId}`);
+            await this.sendIntervalReminderEmails(electionId, '1hour30min');
+          } else if (statusType === 'reminder_60min') {
+            this.logger.log(`Sending 60-minute reminder for election ${electionId}`);
+            await this.sendIntervalReminderEmails(electionId, '1hour');
+          } else if (statusType === 'reminder_30min') {
+            this.logger.log(`Sending 30-minute reminder for election ${electionId}`);
+            await this.sendIntervalReminderEmails(electionId, '30min');
           } else if (statusType === 'admin_monitor') {
             this.logger.log(`Sending admin monitoring emails for election ${electionId}`);
             await this.sendAdminMonitoringEmails(electionId);
@@ -190,6 +221,28 @@ export class ElectionStatusUpdaterService {
         this.logger.log(`Scheduling reminder for election ${id} in ${reminderTtlSeconds} seconds`);
         await this.redis.set(reminderKey, '1', 'EX', reminderTtlSeconds);
       }
+
+      // Schedule interval-based reminders (90 minutes, 60 minutes, 30 minutes)
+      const reminderIntervals = [
+        { time: 90, key: 'reminder_90min' },
+        { time: 60, key: 'reminder_60min' },
+        { time: 30, key: 'reminder_30min' },
+      ];
+
+      for (const interval of reminderIntervals) {
+        const intervalReminderTime = moment(endDateTime).subtract(interval.time, 'minutes');
+
+        // Only schedule if this time is in the future
+        if (intervalReminderTime.isAfter(currentDate)) {
+          const intervalKey = `${this.redisKeyPrefix}${id}:${interval.key}`;
+          const intervalTtlSeconds = Math.floor(intervalReminderTime.diff(currentDate) / 1000);
+
+          this.logger.log(
+            `Scheduling ${interval.time}-minute reminder for election ${id} in ${intervalTtlSeconds} seconds`,
+          );
+          await this.redis.set(intervalKey, '1', 'EX', intervalTtlSeconds);
+        }
+      }
     } else {
       this.logger.log(`End date/time for election ${id} is in the past`);
       if (election.status !== ElectionStatus.COMPLETED) {
@@ -231,7 +284,7 @@ export class ElectionStatusUpdaterService {
 
       const updatedElection = await this.electionRepository.findOne({
         where: { id },
-        relations: ['voters'],
+        relations: ['voters', 'created_by_user'],
       });
 
       if (!updatedElection) {
@@ -241,11 +294,25 @@ export class ElectionStatusUpdaterService {
 
       // Send email notifications if enabled
       if (updatedElection.email_notification) {
-        try {
-          await this.emailService.sendElectionStartEmails(updatedElection);
-          this.logger.log(`Email notifications sent for election ${id}`);
-        } catch (error) {
-          this.logger.error(`Failed to send email notifications for election ${id}: ${error.message}`);
+        if (status === ElectionStatus.ONGOING) {
+          try {
+            await this.emailService.sendElectionStartEmails(updatedElection);
+            this.logger.log(`Start email notifications sent for election ${id}`);
+          } catch (error) {
+            this.logger.error(`Failed to send start email notifications for election ${id}: ${error.message}`);
+          }
+        } else if (status === ElectionStatus.COMPLETED) {
+          try {
+            await this.emailService.sendElectionEndEmails(updatedElection);
+            this.logger.log(`End email notifications sent for election ${id}`);
+
+            if (updatedElection.created_by_user && updatedElection.created_by_user.email) {
+              await this.emailService.sendResultsToAdminEmail(updatedElection.created_by_user.email, updatedElection);
+              this.logger.log(`Results sent to admin: ${updatedElection.created_by_user.email}`);
+            }
+          } catch (error) {
+            this.logger.error(`Failed to send end email notifications for election ${id}: ${error.message}`);
+          }
         }
       }
 
@@ -287,6 +354,41 @@ export class ElectionStatusUpdaterService {
           this.logger.log(`Reminder emails sent for election ${electionId}`);
         } catch (error) {
           this.logger.error(`Failed to send reminder emails for election ${electionId}: ${error.message}`);
+        }
+      }
+    }
+  }
+
+  private async sendIntervalReminderEmails(electionId: string, interval: '30min' | '1hour' | '1hour30min') {
+    const election = await this.electionRepository.findOne({
+      where: { id: electionId },
+      relations: ['voters'],
+    });
+
+    if (!election) {
+      this.logger.error(`Election with id ${electionId} not found!`);
+      return;
+    }
+
+    const allVoterIds = election.voters.map(voter => voter.id);
+    const votedVoterIds = await this.voteRepository
+      .createQueryBuilder('vote')
+      .where('vote.electionId = :electionId', { electionId })
+      .select('vote.voterId')
+      .getMany()
+      .then(votes => votes.map(vote => vote.voter_id));
+
+    const nonVotedVoterIds = allVoterIds.filter(id => !votedVoterIds.includes(id));
+
+    if (nonVotedVoterIds.length > 0) {
+      const nonVotedVoters = election.voters.filter(voter => nonVotedVoterIds.includes(voter.id));
+
+      if (election.email_notification) {
+        try {
+          const result = await this.emailService.sendIntervalReminderEmails(election, nonVotedVoters, interval);
+          this.logger.log(`Interval reminder (${interval}) result: ${result.message}`);
+        } catch (error) {
+          this.logger.error(`Error sending ${interval} reminder emails: ${error.message}`);
         }
       }
     }
