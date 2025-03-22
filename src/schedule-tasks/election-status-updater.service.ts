@@ -83,7 +83,7 @@ export class ElectionStatusUpdaterService {
           const votedVoterIds = await this.voteRepository
             .createQueryBuilder('vote')
             .where('vote.electionId = :electionId', { electionId: id })
-            .select('vote.voterId')
+            .select('vote.voter_id')
             .getMany()
             .then(votes => votes.map(vote => vote.voter_id));
 
