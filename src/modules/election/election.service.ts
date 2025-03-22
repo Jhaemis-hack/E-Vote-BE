@@ -6,8 +6,8 @@ import { randomUUID } from 'crypto';
 import { config } from 'dotenv';
 import * as moment from 'moment';
 import * as path from 'path';
-import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { In, Repository } from 'typeorm';
+import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
@@ -43,6 +43,15 @@ export interface ElectionResponse {
     name: any;
     photo_url: any;
   }>;
+}
+
+interface CandidateResult {
+  candidate_id: string;
+  name: string;
+  votes: number;
+  photo_url: string;
+  bio: string;
+  position: number;
 }
 
 // interface ElectionResultsDownload {
@@ -372,6 +381,7 @@ export class ElectionService {
       photo_url: candidate.photo_url,
       bio: candidate.bio,
       vote_count: voteCounts.get(candidate.id) || 0,
+      position: candidate.position,
     }));
 
     return {
@@ -564,6 +574,7 @@ export class ElectionService {
               name: candidate.name,
               photo_url: candidate.photo_url,
               bio: candidate.bio,
+              position: candidate.position,
             })) || [],
         };
       }),
@@ -662,13 +673,41 @@ export class ElectionService {
       });
     });
 
-    const results = election.candidates.map(candidate => ({
-      candidate_id: candidate.id,
-      name: candidate.name,
-      votes: voteCounts.get(candidate.id) || 0,
-      photo_url: candidate.photo_url,
-      bio: candidate.bio,
-    }));
+    //Set candidates votes by decending order
+    const sortedCandidates = election.candidates
+      .map(candidate => ({
+        candidate_id: candidate.id,
+        name: candidate.name,
+        votes: voteCounts.get(candidate.id) || 0,
+        photo_url: candidate.photo_url,
+        bio: candidate.bio,
+        position: candidate.position,
+      }))
+      .sort((a, b) => b.votes - a.votes);
+
+    const resultWithPosition: CandidateResult[] = [];
+    let previousVotes = -1;
+    let previousPosition = 0;
+
+    for (let i = 0; i < sortedCandidates.length; i++) {
+      const candidate = sortedCandidates[i];
+      if (candidate.votes === previousVotes) {
+        candidate.position = previousPosition;
+      } else {
+        candidate.position = i + 1;
+        previousPosition = i + 1;
+      }
+      previousVotes = candidate.votes;
+      resultWithPosition.push(candidate);
+    }
+
+    // const results = election.candidates.map(candidate => ({
+    //   candidate_id: candidate.id,
+    //   name: candidate.name,
+    //   votes: voteCounts.get(candidate.id) || 0,
+    //   photo_url: candidate.photo_url,
+    //   bio: candidate.bio,
+    // }));
 
     return {
       status_code: HttpStatus.OK,
@@ -677,7 +716,7 @@ export class ElectionService {
         election_id: election.id,
         title: election.title,
         total_votes: election.votes.length,
-        results: results,
+        results: resultWithPosition,
       },
     };
   }

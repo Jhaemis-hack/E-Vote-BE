@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ElectionModule } from '../src/modules/election/election.module';
+import { ElectionModule } from './modules/election/election.module';
 import { UserModule } from './modules/user/user.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import authConfig from './config/auth.config';

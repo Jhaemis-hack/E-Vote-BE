@@ -16,6 +16,9 @@ export class Candidate extends AbstractBaseEntity {
   @Column()
   election_id: string;
 
+  @Column({ default: 0 })
+  position: number;
+
   @Column({ nullable: true })
   photo_url: string;
 
