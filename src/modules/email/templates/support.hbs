@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resolve Support Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: #003366;
+            padding: 15px;
+            text-align: center;
+            color: #fff;
+            font-size: 20px;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .button {
+            background: #003366;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <strong>Resolve</strong> | Secure Elections, Trusted Results
+        </div>
+        <div class="content">
+            <h3>User Support Inquiry</h3>
+            <p><strong>Dear Resolve Team,</strong></p>
+            <p>A user has submitted an inquiry via our Support feature. Below are the details:</p>
+            <p><strong>User Name:</strong>{{name}}</p>
+            <p><strong>Email:</strong>{{email}}</p>
+            <p><strong>Issue:</strong>{{message}}</p>
+            <p><strong>Attachments:</strong> *image of the loading screen*</p>
+            <p>Please review and respond to the user as soon as possible. If escalation is required, forward it to the
+                appropriate team.</p>
+            <p>Thank you!</p>
+        </div>
+        <div class="footer">
+            <p>Start with Resolve: <br> Create, manage, and monitor your elections effortlessly.</p>
+            <p>@Resolve | All Rights Reserved 2025</p>
+        </div>
+    </div>
+</body>
+
+</html>

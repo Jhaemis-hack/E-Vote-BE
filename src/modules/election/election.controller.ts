@@ -63,7 +63,6 @@ export class ElectionController {
   @ApiResponse({ status: 200, description: SYS_MSG.FETCH_ELECTIONS, type: [ElectionResponseDto] })
   @ApiResponse({ status: 401, description: SYS_MSG.UNAUTHORIZED_USER })
   @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
-  @ApiResponse({ status: 400, description: SYS_MSG.INCORRECT_UUID })
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (default: 1)' })
   @ApiQuery({ name: 'page_size', required: false, example: 10, description: 'Number of items per page (default: 10)' })
   async findAll(
