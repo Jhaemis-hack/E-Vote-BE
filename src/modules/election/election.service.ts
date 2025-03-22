@@ -38,6 +38,11 @@ import { User } from '../user/entities/user.entity';
 
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
 
+// interface ElectionResultsDownload {
+//   filename: string;
+//   csvData: string;
+// }
+
 @Injectable()
 export class ElectionService {
   private readonly logger = new Logger(ElectionService.name);
