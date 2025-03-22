@@ -49,7 +49,7 @@ export class EmailProcessor {
       } = job;
       await this.mailerService.sendMail({
         ...mail,
-        subject: 'Welcome to our platform',
+        subject: 'Welcome to Resolve',
         template: 'welcome-email',
       });
       this.logger.log(`Welcome email sent successfully to ${mail.to}`);
