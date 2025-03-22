@@ -89,6 +89,16 @@
       font-size: 8px;
       color: #999999;
     }
+    .action-button {
+      display: inline-block;
+      background-color: #002347;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      margin: 15px 0;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -104,10 +114,29 @@
       </div>
     </div>
     <div class="main-content" style="padding: 20px;">
-      <h2 style="padding: 10px 0; font-size: 16px; font-weight: 600;">Reminder: Your Vote is Waiting. Act Now with Resolve!</h2>
+      {{#if reminderInterval}}
+        <h2 style="padding: 10px 0; font-size: 16px; font-weight: 600;">Urgent: Election Ending in {{reminderInterval}}!</h2>
+      {{else}}
+        <h2 style="padding: 10px 0; font-size: 16px; font-weight: 600;">Reminder: Your Vote is Waiting. Act Now with Resolve!</h2>
+      {{/if}}
+      
       <p style="font-size: 14px;">Hi {{voterName}},</p>
-      <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">This is a friendly reminder that your election is still open! Don't miss the chance to make your voice heard.</p>
+      
+      {{#if reminderInterval}}
+        <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">This is an urgent reminder that the election <strong>"{{electionTitle}}"</strong> will end in <strong>{{reminderInterval}}</strong>. Don't miss the chance to make your voice heard!</p>
+      {{else}}
+        <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">This is a friendly reminder that your election is still open! Don't miss the chance to make your voice heard.</p>
+      {{/if}}
+      
       <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Hurry now! Voting closes on: {{electionEndDate}} by {{electionEndTime}}.</p>
+      
+      <div style="text-align: center; margin: 15px 0;">
+        <a href="{{electionLink}}" class="action-button">Vote Now</a>
+      </div>
+      
+      <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">If the button doesn't work, copy and paste this link into your browser:</p>
+      <p style="font-size: 10px; color: #1F2124; word-break: break-all;">{{electionLink}}</p>
+      
       <p style="padding: 8px 0; font-size: 10px; color: #1F2124;">Best regards,</p>
       <p style="font-size: 10px; color: #1F2124;">The Resolve Team</p>
     </div>

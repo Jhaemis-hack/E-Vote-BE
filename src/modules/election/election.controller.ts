@@ -40,6 +40,7 @@ import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
+import { ElectionResultsDto } from './dto/results.dto';
 import { Response } from 'express';
 
 @ApiTags()
@@ -240,6 +241,18 @@ export class ElectionController {
   @ApiResponse({ status: 500, description: SYS_MSG.FAILED_TO_SEND_VOTING_LINK })
   async sendVotingLinks(@Param('id') id: string) {
     return await this.electionService.sendVotingLinkToVoters(id);
+  }
+
+  @ApiBearerAuth()
+  @Get(':id/result')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get election results by ID' })
+  @ApiResponse({ status: 200, description: 'Election results retrieved', type: ElectionResultsDto })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Election not found' })
+  async getElectionResults(@Param('id') id: string, @Req() req: any): Promise<ElectionResultsDto> {
+    const adminId = req.user.sub;
+    return this.electionService.getElectionResults(id, adminId);
   }
 
   @ApiBearerAuth()
