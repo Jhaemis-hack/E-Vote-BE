@@ -403,7 +403,6 @@ export class EmailService {
             electionEndDate: new Date(election.end_date).toISOString().split('T')[0],
             electionWinner: winner,
             electionResults: formattedResults,
-            // electionLink: `${process.env.FRONTEND_URL}/results/${election.id}`,
           },
           template: 'election-results',
           attachments: [
