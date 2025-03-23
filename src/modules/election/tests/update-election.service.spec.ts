@@ -1,4 +1,3 @@
-import { NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { ElectionService } from '../election.service';
 import { Election, ElectionStatus, ElectionType } from '../entities/election.entity';
@@ -7,8 +6,9 @@ import { Vote } from 'src/modules/votes/entities/votes.entity';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UpdateElectionDto } from '../dto/update-election.dto';
 import { ElectionStatusUpdaterService } from 'src/schedule-tasks/election-status-updater.service';
+import { Voter } from '../../voter/entities/voter.entity';
+import { NotFoundError } from '../../../errors';
 import { EmailService } from 'src/modules/email/email.service';
-import { Voter } from 'src/modules/voter/entities/voter.entity';
 import { VoterService } from 'src/modules/voter/voter.service';
 
 describe('ElectionService - update', () => {
@@ -155,7 +155,7 @@ describe('ElectionService - update', () => {
 
     jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
-    await expect(service.update(electionId, updateElectionDto)).rejects.toThrow(NotFoundException);
+    await expect(service.update(electionId, updateElectionDto)).rejects.toThrow(NotFoundError);
     expect(electionRepository.findOne).toHaveBeenCalledWith({ where: { id: electionId } });
   });
 

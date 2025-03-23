@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ContactService } from '../contact-us.service';
 import { EmailService } from '../../email/email.service';
+import _default from 'uuid/dist/cjs/max';
 
 describe('ContactService', () => {
   let contactService: ContactService;
-  let emailService: EmailService;
+  let _: EmailService;
 
   const mockEmailService = {
     sendContactUsEmail: jest.fn(),
@@ -22,7 +23,7 @@ describe('ContactService', () => {
     }).compile();
 
     contactService = module.get<ContactService>(ContactService);
-    emailService = module.get<EmailService>(EmailService);
+    _ = module.get<EmailService>(EmailService);
   });
 
   it('should be defined', () => {

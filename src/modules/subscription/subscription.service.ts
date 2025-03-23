@@ -113,7 +113,7 @@ export class SubscriptionService {
   /**
    * Verify webhook signature
    */
-  verifyWebhookSignature(payload: Buffer, signature: string): any {
+  verifyWebhookSignature(payload: Buffer, _: string): any {
     console.warn('STRIPE_WEBHOOK_SECRET is not defined. This is only for development.');
     console.warn('In production, webhook events should be verified with Stripe.');
 

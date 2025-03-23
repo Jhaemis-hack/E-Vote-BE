@@ -5,20 +5,17 @@ import {
   ArrayMinSize,
   IsArray,
   IsDate,
-  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
-  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 import { ElectionStatus, ElectionType } from '../entities/election.entity';
 import { CreateElectionDto } from './create-election.dto';
-import { CandidateDto } from './single-election.dto';
-import { CreateCandidateDto } from 'src/modules/candidate/dto/create-candidate.dto';
+import { CreateCandidateDto } from '../../candidate/dto/create-candidate.dto';
 export class UpdateElectionDto extends PartialType(CreateElectionDto) {
   @ApiProperty({
     example: 'Updated Election Title',

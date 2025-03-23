@@ -5,13 +5,12 @@ import { User } from '../../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { ElectionService } from '../../election/election.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Logger } from '@nestjs/common';
 
 describe('EmailService', () => {
   let emailService: EmailService;
   let emailQueueMock: jest.Mocked<EmailQueue>;
   let electionServiceMock: jest.Mocked<ElectionService>;
-  let userRepositoryMock: jest.Mocked<Repository<User>>;
+  let _: jest.Mocked<Repository<User>>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -47,7 +46,7 @@ describe('EmailService', () => {
     emailService = module.get<EmailService>(EmailService);
     emailQueueMock = module.get(EmailQueue);
     electionServiceMock = module.get(ElectionService);
-    userRepositoryMock = module.get(getRepositoryToken(User));
+    _ = module.get(getRepositoryToken(User));
   });
 
   afterEach(() => {

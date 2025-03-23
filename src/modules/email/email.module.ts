@@ -1,15 +1,16 @@
-import { forwardRef, Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { BullModule } from '@nestjs/bull';
-import { EmailQueue } from './email.queue';
-import { EmailProcessor } from './email.processor';
-import { ElectionModule } from '../election/election.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { EmailService } from './email.service';
-import { join } from 'path';
+import { BullModule } from '@nestjs/bull';
+import { forwardRef, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { join } from 'path';
 import { User } from '../user/entities/user.entity';
+import { UserModule } from '../user/user.module';
+import { EmailProcessor } from './email.processor';
+import { EmailQueue } from './email.queue';
+import { EmailService } from './email.service';
+import { ElectionModule } from '../election/election.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { User } from '../user/entities/user.entity';
     }),
     ConfigModule,
     TypeOrmModule.forFeature([User]),
+    forwardRef(() => UserModule),
     forwardRef(() => ElectionModule),
   ],
   providers: [EmailQueue, EmailProcessor, EmailService],

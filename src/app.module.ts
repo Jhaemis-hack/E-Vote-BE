@@ -11,8 +11,8 @@ import dataSource from './migrations/migration.config';
 import { VoteModule } from './modules/votes/votes.module';
 import { EmailModule } from './modules/email/email.module';
 import { VoterModule } from './modules/voter/voter.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
 import { CandidateModule } from './modules/candidate/candidate.module';
-
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { GoogleAuthModule } from './modules/googleAuth/google.auth.module';
 import { SupportModule } from './modules/support/support.module';
@@ -37,6 +37,16 @@ import { ContactModule } from './modules/contact-us/contact-us.module';
         autoLoadEntities: true,
       }),
       dataSourceFactory: async () => dataSource,
+    }),
+    RedisModule.forRootAsync({
+      useFactory: async (configService: ConfigService) => ({
+        type: 'single', // Use a single Redis instance
+        url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`,
+        options: {
+          password: configService.get('REDIS_PASSWORD'), // Optional password
+        },
+      }),
+      inject: [ConfigService], // Inject ConfigService
     }),
     UserModule,
     ElectionModule,

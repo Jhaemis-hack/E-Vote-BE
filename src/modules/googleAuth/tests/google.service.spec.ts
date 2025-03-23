@@ -22,8 +22,8 @@ globalThis.fetch = jest.fn();
 
 describe('GoogleAuthService', () => {
   let service: GoogleService;
-  let userRepository: Repository<User>;
-  let jwtService: JwtService;
+  let _: Repository<User>;
+  let __: JwtService;
   let emailService: EmailService;
 
   beforeEach(async () => {
@@ -50,8 +50,8 @@ describe('GoogleAuthService', () => {
     }).compile();
 
     service = module.get<GoogleService>(GoogleService);
-    userRepository = module.get<Repository<User>>(getRepositoryToken(User));
-    jwtService = module.get<JwtService>(JwtService);
+    _ = module.get<Repository<User>>(getRepositoryToken(User));
+    __ = module.get<JwtService>(JwtService);
     emailService = module.get<EmailService>(EmailService);
   });
 

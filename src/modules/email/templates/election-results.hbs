@@ -322,6 +322,13 @@
             <tbody>
               {{#each electionResults}}
                 <tr>
+                  <td>
+                    {{#if this.position}}
+                      {{this.position}}
+                    {{else}}
+                      -
+                    {{/if}}
+                  </td>
                   <td class='candidate-name'>{{this.name}}</td>
                   <td>{{this.votes}}</td>
                   <td>{{this.percentage}}%</td>

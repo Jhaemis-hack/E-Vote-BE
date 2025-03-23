@@ -1,17 +1,11 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import appConfig from '../config/auth.config';
 import * as SYS_MSG from '../shared/constants/systemMessages';
 import { IS_PUBLIC_KEY } from '../shared/helpers/skipAuth';
+import { UnauthorizedError } from '../errors/';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -34,26 +28,19 @@ export class AuthGuard implements CanActivate {
     }
 
     if (!token) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.UNAUTHORIZED,
-          message: SYS_MSG.UNAUTHENTICATED_MESSAGE,
-          data: null,
-        },
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new UnauthorizedError(SYS_MSG.UNAUTHENTICATED_MESSAGE);
     }
 
     const payload = await this.jwtService
       .verifyAsync(token, {
         secret: appConfig().jwtSecret,
       })
-      .catch(err => null);
+      .catch(_ => null);
 
-    if (!payload) throw new UnauthorizedException(SYS_MSG.UNAUTHENTICATED_MESSAGE);
+    if (!payload) throw new UnauthorizedError(SYS_MSG.UNAUTHENTICATED_MESSAGE);
 
     if (this.isExpiredToken(payload)) {
-      throw new UnauthorizedException(SYS_MSG.UNAUTHENTICATED_MESSAGE);
+      throw new UnauthorizedError(SYS_MSG.UNAUTHENTICATED_MESSAGE);
     }
     request['user'] = payload;
 

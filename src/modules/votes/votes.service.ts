@@ -1,12 +1,13 @@
-import { ConflictException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../../errors';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Election, ElectionStatus, ElectionType } from '../election/entities/election.entity';
+import { Voter } from '../voter/entities/voter.entity';
 import { CreateVoteDto } from './dto/create-votes.dto';
 import { Vote } from './entities/votes.entity';
-import { Voter } from '../voter/entities/voter.entity';
 
 @Injectable()
 export class VoteService {
@@ -20,19 +21,11 @@ export class VoteService {
     const voter = await this.getVoter(vote_link);
 
     if (voter.is_voted) {
-      throw new ConflictException({
-        status_code: HttpStatus.CONFLICT,
-        message: SYS_MSG.ALREADY_VOTED,
-        data: null,
-      });
+      throw new ConflictError(SYS_MSG.ALREADY_VOTED);
     }
 
     if (!voter.election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     const election = await this.electionRepository.findOne({
@@ -41,56 +34,27 @@ export class VoteService {
     });
 
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     if (election.status === ElectionStatus.COMPLETED) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED,
-          data: null,
-        },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new ForbiddenError(SYS_MSG.ELECTION_ENDED_VOTE_NOT_ALLOWED);
     } else if (election.status === ElectionStatus.UPCOMING) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.FORBIDDEN,
-          message: SYS_MSG.ELECTION_HAS_NOT_STARTED,
-          data: null,
-        },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new ForbiddenError(SYS_MSG.ELECTION_HAS_NOT_STARTED);
     }
 
     if (
       election.type === ElectionType.MULTIPLECHOICE &&
       createVoteDto.candidate_id.length > (election.max_choices ?? 0)
     ) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: `You can select up to ${election.max_choices} candidates.`,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(`You can select up to ${election.max_choices} candidates.`);
     }
 
     const validCandidateIds = election.candidates.map(candidate => candidate.id);
     const invalidCandidates = createVoteDto.candidate_id.filter(id => !validCandidateIds.includes(id));
 
     if (invalidCandidates.length > 0) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.CANDIDATE_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.CANDIDATE_NOT_FOUND);
     }
 
     const newVote = this.voteRepository.create({
@@ -117,14 +81,7 @@ export class VoteService {
 
   async getVoter(vote_link: string): Promise<Voter> {
     if (!isUUID(vote_link)) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     const voterExist = await this.voterRepository.findOne({
@@ -133,11 +90,7 @@ export class VoteService {
     });
 
     if (!voterExist) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.INVALID_VOTE_LINK,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.INVALID_VOTE_LINK);
     }
 
     return voterExist;

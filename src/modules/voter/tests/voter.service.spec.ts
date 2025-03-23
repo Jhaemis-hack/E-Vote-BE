@@ -1,61 +1,56 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { DeepPartial, Repository } from 'typeorm';
-import { VoterService } from '../voter.service';
-import { In } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Voter } from '../entities/voter.entity';
-import { Election } from '../../election/entities/election.entity';
-import * as SYS_MSG from '../../../shared/constants/systemMessages';
+import { In, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestException } from '@nestjs/common';
 import * as xlsx from 'xlsx';
+import { BadRequestError, NotFoundError, UnauthorizedError } from '../../../errors';
+import * as SYS_MSG from '../../../shared/constants/systemMessages';
+import { Election } from '../../election/entities/election.entity';
 import { UserService } from '../../user/user.service';
+import { Voter } from '../entities/voter.entity';
+import { VoterService } from '../voter.service';
 
 describe('VoterService', () => {
   let service: VoterService;
   let voterRepository: Repository<Voter>;
   let electionRepository: Repository<Election>;
-  let userService: UserService;
-
-  const mockVoterRepository = () => ({
-    findAndCount: jest.fn().mockResolvedValue([[], 0]),
-    save: jest
-      .fn()
-      .mockImplementation((entity: DeepPartial<Voter>) => Promise.resolve(Object.assign(new Voter(), entity))),
-    findOne: jest.fn().mockResolvedValue(null),
-    update: jest.fn().mockResolvedValue(true),
-    delete: jest.fn().mockResolvedValue(true),
-  });
-
-  const mockElectionRepository = {
-    findOne: jest.fn(),
-    find: jest.fn(),
-  };
-
-  const mockUserService = {
-    getUserById: jest.fn().mockResolvedValue({
-      data: { plan: 'free' },
-    }),
-  };
+  let _: UserService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        VoterService,
-        { provide: getRepositoryToken(Voter), useFactory: mockVoterRepository },
-        { provide: getRepositoryToken(Election), useValue: mockElectionRepository },
-        { provide: UserService, useValue: mockUserService },
-        {
-          provide: getRepositoryToken(Voter),
-          useClass: Repository,
-        },
-      ],
-    }).compile();
+    // Mock repositories
+    voterRepository = {
+      findAndCount: jest.fn().mockResolvedValue([[], 0]),
+      save: jest.fn().mockImplementation(entity => Promise.resolve({ ...entity })),
+      findOne: jest.fn().mockResolvedValue(null),
+      update: jest.fn().mockResolvedValue(true),
+      delete: jest.fn().mockResolvedValue(true),
+      find: jest.fn().mockResolvedValue([]),
+    } as any;
 
-    service = module.get<VoterService>(VoterService);
-    voterRepository = module.get<Repository<Voter>>(getRepositoryToken(Voter));
-    electionRepository = module.get<Repository<Election>>(getRepositoryToken(Election));
+    electionRepository = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+    } as any;
+
+    // Mock services
+    const mockUserService = {
+      getUserById: jest.fn().mockResolvedValue({
+        data: { plan: 'free' },
+      }),
+    };
+
+    const mockEmailService = {
+      sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+    };
+
+    // Create service instance directly
+    service = new VoterService(
+      voterRepository as any,
+      electionRepository as any,
+      mockUserService as any,
+      mockEmailService as any,
+    );
+
+    // Reset the emailOccurrences map
+    (service as any).emailOccurrences = new Map<string, number[]>();
   });
 
   afterEach(() => {
@@ -147,10 +142,7 @@ describe('VoterService', () => {
 
     it('should throw UNAUTHORIZED if adminId is missing', async () => {
       await expect(service.findAll(1, 10, '', validElectionId)).rejects.toThrow(
-        new HttpException(
-          { status_code: 401, message: SYS_MSG.UNAUTHORIZED_USER, data: null },
-          HttpStatus.UNAUTHORIZED,
-        ),
+        new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER),
       );
     });
 
@@ -158,7 +150,7 @@ describe('VoterService', () => {
       jest.spyOn(electionRepository, 'findOne').mockResolvedValue(null);
 
       await expect(service.findAll(1, 10, validAdminId, invalidElectionId)).rejects.toThrow(
-        new HttpException({ status_code: 404, message: SYS_MSG.ELECTION_NOT_FOUND, data: null }, HttpStatus.NOT_FOUND),
+        new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND),
       );
     });
 
@@ -166,25 +158,11 @@ describe('VoterService', () => {
       jest.spyOn(voterRepository, 'findOne').mockResolvedValue({} as Voter);
 
       await expect(service.findAll(0, 10, validAdminId, validElectionId)).rejects.toThrow(
-        new HttpException(
-          {
-            status_code: 400,
-            message: 'Invalid pagination parameters. Page and pageSize must be greater than 0.',
-            data: null,
-          },
-          HttpStatus.BAD_REQUEST,
-        ),
+        new BadRequestError(SYS_MSG.PAGE_SIZE_ERROR),
       );
 
       await expect(service.findAll(1, 0, validAdminId, validElectionId)).rejects.toThrow(
-        new HttpException(
-          {
-            status_code: 400,
-            message: 'Invalid pagination parameters. Page and pageSize must be greater than 0.',
-            data: null,
-          },
-          HttpStatus.BAD_REQUEST,
-        ),
+        new BadRequestError(SYS_MSG.PAGE_SIZE_ERROR),
       );
     });
 
@@ -193,17 +171,14 @@ describe('VoterService', () => {
       jest.spyOn(voterRepository, 'findAndCount').mockResolvedValue([[], 0]);
 
       await expect(service.findAll(1, 10, validAdminId, validElectionId)).rejects.toThrow(
-        new HttpException(
-          { status_code: 404, message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND, data: null },
-          HttpStatus.NOT_FOUND,
-        ),
+        new NotFoundError(SYS_MSG.ELECTION_VOTERS_NOT_FOUND),
       );
     });
   });
 
   describe('processFile', () => {
     it('should process CSV file successfully', async () => {
-      const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,jane@example.com');
+      const fileBuffer = Buffer.from('name,email\nClark kent,clark@example.com\nHelen,helen@example.com');
       const file = { originalname: 'test.csv', buffer: fileBuffer } as Express.Multer.File;
 
       jest.spyOn(service, 'processCSV').mockResolvedValue({
@@ -241,27 +216,26 @@ describe('VoterService', () => {
     it('should throw BadRequestException for invalid file format', async () => {
       const file = { originalname: 'invalid.txt', buffer: Buffer.from('test') } as Express.Multer.File;
 
-      await expect(service.processFile(file, '123', 'user-id')).rejects.toThrow(BadRequestException);
+      await expect(service.processFile(file, '123', 'user-id')).rejects.toThrow(BadRequestError);
     });
   });
 
   describe('processCSV', () => {
     it('should process a valid CSV file and save voters', async () => {
-      const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,jane@example.com');
+      const fileBuffer = Buffer.from('name,email\nKenedy Doe,kennedy@example.com\nElla Smith,ella.smith@example.com');
 
       jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
-      jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
+      jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
 
       const result = await service.processCSV(fileBuffer, '123', 'free');
 
       expect(result.status_code).toBe(201);
-      expect(voterRepository.insert).toHaveBeenCalledTimes(1);
+      expect(voterRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('should reject duplicate emails in CSV', async () => {
       const fileBuffer = Buffer.from('name,email\nJohn Doe,john@example.com\nJane Doe,john@example.com');
-
-      await expect(service.processCSV(fileBuffer, '123', 'free')).rejects.toThrow(HttpException);
+      await expect(service.processCSV(fileBuffer, '123', 'free')).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -270,18 +244,18 @@ describe('VoterService', () => {
       const workbook = xlsx.utils.book_new();
       const worksheet = xlsx.utils.aoa_to_sheet([
         ['name', 'email'],
-        ['John Doe', 'john@example.com'],
-        ['Jane Doe', 'jane@example.com'],
+        ['Samson Doe', 'samson@example.com'],
+        ['scarlet Johnson', 'scarlet.johnson@example.com'],
       ]);
       xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
       jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
-      jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
+      jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
 
       const result = await service.processExcel(fileBuffer, '123', 'free');
       expect(result.status_code).toBe(201);
-      expect(voterRepository.insert).toHaveBeenCalledTimes(1);
+      expect(voterRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('should reject duplicate emails in Excel', async () => {
@@ -294,7 +268,7 @@ describe('VoterService', () => {
       xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
       const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-      await expect(service.processExcel(fileBuffer, '123', 'free')).rejects.toThrow(HttpException);
+      await expect(service.processExcel(fileBuffer, '123', 'free')).rejects.toThrow(BadRequestError);
     });
   });
 
@@ -312,7 +286,7 @@ describe('VoterService', () => {
 
       jest.spyOn(voterRepository, 'find').mockResolvedValue([]);
 
-      jest.spyOn(voterRepository, 'insert').mockResolvedValue({} as any);
+      jest.spyOn(voterRepository, 'save').mockResolvedValue({} as any);
 
       await service.saveVoters(voters);
 
@@ -321,7 +295,7 @@ describe('VoterService', () => {
         select: ['email'],
       });
 
-      expect(voterRepository.insert).toHaveBeenCalledWith(voters);
+      expect(voterRepository.save).toHaveBeenCalledWith(voters);
     });
   });
 });

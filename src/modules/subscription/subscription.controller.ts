@@ -17,7 +17,7 @@ import { SubscriptionPlansResponseDto } from './dto/subscription-plan.dto';
 import { AuthGuard } from '../../guards/auth.guard';
 import { Request } from 'express';
 import { JwtPayload } from '../../shared/interfaces/jwt-payload.interface';
-import { Subscription, SubscriptionStatus } from './entities/subscription.entity';
+import { SubscriptionStatus } from './entities/subscription.entity';
 
 class UpdateSubscriptionStatusDto {
   status: SubscriptionStatus;

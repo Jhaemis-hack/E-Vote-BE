@@ -1,16 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  NotFoundException,
-  UnauthorizedException,
-  forwardRef,
-  Inject,
-} from '@nestjs/common';
+import { forwardRef, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createClient } from '@supabase/supabase-js';
 import { isUUID } from 'class-validator';
@@ -19,24 +7,52 @@ import { config } from 'dotenv';
 import * as moment from 'moment';
 import * as path from 'path';
 import { In, Repository } from 'typeorm';
+import { BadRequestError, ForbiddenError, InternalServerError, NotFoundError, UnauthorizedError } from '../../errors';
 import { ElectionStatusUpdaterService } from '../../schedule-tasks/election-status-updater.service';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { Candidate } from '../candidate/entities/candidate.entity';
+import { EmailService } from '../email/email.service';
+import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
+import { User } from '../user/entities/user.entity';
+import { Voter } from '../voter/entities/voter.entity';
+import { VoterService } from '../voter/voter.service';
 import { Vote } from '../votes/entities/votes.entity';
 import { CreateElectionDto } from './dto/create-election.dto';
 import { ElectionResultsDto } from './dto/results.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
-import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 import { VerifyVoterDto } from './dto/verify-voter.dto';
-import { VoterService } from '../voter/voter.service';
+import { Election, ElectionStatus, ElectionType } from './entities/election.entity';
 
 config();
-import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
-import { Voter } from '../voter/entities/voter.entity';
-import { EmailService } from '../email/email.service';
-import { User } from '../user/entities/user.entity';
-
 const DEFAULT_PLACEHOLDER_PHOTO = process.env.DEFAULT_PHOTO_URL;
+
+export interface ElectionResponse {
+  election_id: any;
+  title: any;
+  start_date: any;
+  end_date: any;
+  status: any;
+  start_time: any;
+  end_time: any;
+  vote_id?: any;
+  created_by?: any;
+  max_choices?: any;
+  election_type?: ElectionType;
+  candidates?: Array<{
+    candidate_id: any;
+    name: any;
+    photo_url: any;
+  }>;
+}
+
+interface CandidateResult {
+  candidate_id: string;
+  name: string;
+  votes: number;
+  photo_url: string;
+  bio: string;
+  position: number;
+}
 
 // interface ElectionResultsDownload {
 //   filename: string;
@@ -86,7 +102,7 @@ export class ElectionService {
     const admin = await this.userRepository.findOne({ where: { id: adminId } });
 
     if (!admin) {
-      throw new HttpException({ status_code: 404, message: 'Admin not found', data: null }, HttpStatus.NOT_FOUND);
+      throw new NotFoundError(SYS_MSG.ADMIN_NOT_FOUND);
     }
 
     const activeElectionCount = await this.electionRepository.count({
@@ -103,14 +119,7 @@ export class ElectionService {
     const maxAllowed = planLimits[userPlan];
 
     if (activeElectionCount >= maxAllowed) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.MAX_ELECTIONS_LIMIT_REACHED);
     }
 
     const currentDate = moment().utc();
@@ -120,17 +129,11 @@ export class ElectionService {
 
     // Validate start_date and end_date
     if (startDate.isBefore(currentDateStartOfDay)) {
-      throw new HttpException(
-        { status_code: 400, message: SYS_MSG.ERROR_START_DATE_PAST, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.ERROR_START_DATE_PAST);
     }
 
     if (startDate.isAfter(endDate)) {
-      throw new HttpException(
-        { status_code: 400, message: SYS_MSG.ERROR_START_DATE_AFTER_END_DATE, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.ERROR_START_DATE_AFTER_END_DATE);
     }
 
     // If start_time and end_time are provided
@@ -141,43 +144,23 @@ export class ElectionService {
       // For same-day elections, compare times directly
       if (startDate.isSame(endDate, 'day')) {
         if (startTime.isAfter(endTime) || startTime.isSame(endTime)) {
-          throw new HttpException(
-            { status_code: 400, message: SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME, data: null },
-            HttpStatus.BAD_REQUEST,
-          );
+          throw new BadRequestError(SYS_MSG.ERROR_START_TIME_AFTER_OR_EQUAL_END_TIME);
         }
       }
 
       // Validate startDateTime against currentDate and startTime
       const startDateTime = moment.utc(`${startDate.format('YYYY-MM-DD')}T${start_time}`);
       if (startDateTime.isBefore(currentDate.add(1, 'hour'))) {
-        throw new HttpException(
-          { status_code: 400, message: SYS_MSG.ERROR_START_TIME_PAST, data: null },
-          HttpStatus.BAD_REQUEST,
-        );
+        throw new BadRequestError(SYS_MSG.ERROR_START_TIME_PAST);
       }
     }
 
     if (election_type === ElectionType.SINGLECHOICE && max_choices !== 1) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.ERROR_MAX_CHOICES,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.ERROR_MAX_CHOICES);
     }
 
     if (election_type === ElectionType.MULTIPLECHOICE && candidates.length <= max_choices!) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.ERROR_TOTAL_CANDIDATES,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.ERROR_TOTAL_CANDIDATES);
     }
 
     const election = this.electionRepository.create({
@@ -207,6 +190,7 @@ export class ElectionService {
 
     const savedCandidates = await this.candidateRepository.save(candidateEntities);
     savedElection.candidates = savedCandidates;
+
     await this.emailService.sendElectionCreationEmail(admin.email, savedElection);
     await this.electionStatusUpdaterService.scheduleElectionUpdates(savedElection);
 
@@ -237,14 +221,7 @@ export class ElectionService {
 
   async uploadPhoto(file: Express.Multer.File, adminId: string) {
     if (!adminId) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.UNAUTHORIZED,
-          message: SYS_MSG.UNAUTHORIZED_USER,
-          data: null,
-        },
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER);
     }
 
     if (!file) {
@@ -258,19 +235,13 @@ export class ElectionService {
     // Validate file type
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new HttpException(
-        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INVALID_FILE_TYPE, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.INVALID_FILE_TYPE);
     }
 
     // Validate file size (limit: 2MB)
     const maxSize = 1 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
-      throw new HttpException(
-        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.PHOTO_SIZE_LIMIT, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.PHOTO_SIZE_LIMIT);
     }
 
     const { buffer, originalname, mimetype } = file;
@@ -283,10 +254,7 @@ export class ElectionService {
 
     if (error) {
       console.error('Supabase upload error:', error);
-      throw new HttpException(
-        { status_code: HttpStatus.INTERNAL_SERVER_ERROR, message: SYS_MSG.FAILED_PHOTO_UPLOAD, data: null },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new InternalServerError(SYS_MSG.INTERNAL_SERVER_ERROR);
     }
 
     const { data: publicUrlData } = this.supabase.storage
@@ -316,21 +284,15 @@ export class ElectionService {
     };
   }> {
     if (!adminId) {
-      throw new HttpException(
-        { status_code: 401, message: SYS_MSG.UNAUTHORIZED_USER, data: null },
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER);
     }
 
     if (!isUUID(adminId)) {
-      throw new HttpException(
-        { status_code: 400, message: SYS_MSG.INCORRECT_UUID, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     if (page < 1 || pageSize < 1) {
-      throw new Error('Invalid pagination parameters. Page and pageSize must be greater than 0.');
+      throw new BadRequestError(SYS_MSG.PAGE_SIZE_ERROR);
     }
     const skip = (page - 1) * pageSize;
 
@@ -388,11 +350,7 @@ export class ElectionService {
     ]);
 
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new BadRequestError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     const startDateTime = new Date(election.start_date);
@@ -402,8 +360,7 @@ export class ElectionService {
     const endDateTime = new Date(election.end_date);
     const [endHour, endMinute, endSecond] = election.end_time.split(':').map(Number);
     endDateTime.setHours(endHour, endMinute, endSecond || 0);
-
-    const mappedElection = this.transformElectionResponseFindOne(election);
+    const mappedElection = this.transformElectionResponse(election, true);
 
     const voteCounts = new Map<string, number>();
     votes.forEach(vote => {
@@ -424,6 +381,7 @@ export class ElectionService {
       photo_url: candidate.photo_url,
       bio: candidate.bio,
       vote_count: voteCounts.get(candidate.id) || 0,
+      position: candidate.position,
     }));
 
     return {
@@ -437,7 +395,7 @@ export class ElectionService {
           description: election.description,
           votes_casted: totalVotesCast,
           start_date: election.start_date,
-          status: mappedElection.status,
+          status: mappedElection?.status,
           start_time: election.start_time,
           end_date: election.end_date,
           end_time: election.end_time,
@@ -453,16 +411,12 @@ export class ElectionService {
     const election = await this.electionRepository.findOne({ where: { id } });
 
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     if (start_date && end_date) {
       if (new Date(start_date) >= new Date(end_date)) {
-        throw new BadRequestException(SYS_MSG.ELECTION_START_DATE_BEFORE_END_DATE);
+        throw new BadRequestError(SYS_MSG.ELECTION_START_DATE_BEFORE_END_DATE);
       }
     }
 
@@ -470,7 +424,7 @@ export class ElectionService {
       const startTime = new Date(`1970-01-01T${start_time}`);
       const endTime = new Date(`1970-02-01T${end_time}`);
       if (startTime >= endTime) {
-        throw new BadRequestException(SYS_MSG.ELECTION_START_TIME_BEFORE_END_TIME);
+        throw new BadRequestError(SYS_MSG.ELECTION_START_TIME_BEFORE_END_TIME);
       }
     }
 
@@ -488,14 +442,7 @@ export class ElectionService {
 
   async remove(id: string, adminId: string) {
     if (!isUUID(id)) {
-      throw new HttpException(
-        {
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     const election = await this.electionRepository.findOne({
@@ -504,19 +451,11 @@ export class ElectionService {
     });
 
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     if (election.created_by !== adminId) {
-      throw new ForbiddenException({
-        status_code: HttpStatus.FORBIDDEN,
-        message: SYS_MSG.UNAUTHORIZED_ACCESS,
-        data: null,
-      });
+      throw new ForbiddenError(SYS_MSG.UNAUTHORIZED_ACCESS);
     }
 
     try {
@@ -531,17 +470,20 @@ export class ElectionService {
       };
     } catch (error) {
       this.logger.error(`Error deleting election with id ${id}: ${error.message}`, error.stack);
-      throw new InternalServerErrorException(`Internal error occurred: ${error.message}`);
+      throw new InternalServerError(`Internal error occurred: ${error.message}`);
     }
   }
 
   async getElectionByVoterLink(vote_id: string) {
+    if (!isUUID(vote_id)) {
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
+    }
     const voter = await this.voterRepository.findOne({
       where: { verification_token: vote_id },
       relations: ['election', 'election.candidates'],
     });
-    if (!voter) throw new NotFoundException('Voter with given vote link not found');
-    if (voter.is_voted) throw new ForbiddenException('Voter has a vote for this election already.');
+    if (!voter) throw new NotFoundError(SYS_MSG.VOTE_LINK_NOT_FOUND);
+    if (voter.is_voted) throw new ForbiddenError(SYS_MSG.VOTE_ALREADY_CAST);
 
     const now = new Date(Date.now());
 
@@ -573,6 +515,8 @@ export class ElectionService {
     }
 
     const mappedElection = this.transformElectionResponse(voter.election);
+
+    if (!mappedElection) throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
 
     mappedElection.vote_id = voter.verification_token;
     return {
@@ -617,7 +561,7 @@ export class ElectionService {
           start_date: election.start_date,
           end_date: election.end_date,
           vote_id: election.vote_id,
-          status: mappedElection.status,
+          status: mappedElection?.status,
           start_time: election.start_time,
           end_time: election.end_time,
           created_by: election.created_by,
@@ -630,6 +574,7 @@ export class ElectionService {
               name: candidate.name,
               photo_url: candidate.photo_url,
               bio: candidate.bio,
+              position: candidate.position,
             })) || [],
         };
       }),
@@ -637,11 +582,12 @@ export class ElectionService {
     return mappedElections.filter(election => election !== null);
   }
 
-  private transformElectionResponse(election: any): any {
+  private transformElectionResponse(election: any, includeCandidates: boolean = false): ElectionResponse | null {
     if (!election) {
       return null;
     }
 
+    // Determine election type
     let electionType: ElectionType;
     if (election.type === 'singlechoice') {
       electionType = ElectionType.SINGLECHOICE;
@@ -652,100 +598,53 @@ export class ElectionService {
       electionType = ElectionType.SINGLECHOICE;
     }
 
-    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
-      };
-    } else if (election.status === ElectionStatus.ONGOING) {
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
+    // Base response object
+    const baseResponse = {
+      election_id: election.id,
+      title: election.title,
+      start_date: election.start_date,
+      end_date: election.end_date,
+      status: election.status,
+      start_time: election.start_time,
+      end_time: election.end_time,
+    };
+
+    // Additional fields for ONGOING elections
+    if (election.status === ElectionStatus.ONGOING) {
+      const ongoingResponse: ElectionResponse = {
+        ...baseResponse,
         vote_id: election.vote_id,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
-        created_by: election.created_by,
-        max_choices: election.max_choices,
-        election_type: electionType,
-        candidates:
-          election.candidates.map(candidate => {
-            return {
-              candidate_id: candidate.id,
-              name: candidate.name,
-              photo_url: candidate.photo_url,
-            };
-          }) || [],
-      };
-    } else {
-      console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
-    }
-  }
-
-  private transformElectionResponseFindOne(election: any): any {
-    if (!election) {
-      return null;
-    }
-
-    let electionType: ElectionType;
-    if (election.type === 'singlechoice') {
-      electionType = ElectionType.SINGLECHOICE;
-    } else if (election.type === 'multiplechoice') {
-      electionType = ElectionType.MULTIPLECHOICE;
-    } else {
-      console.warn(`Unknown election type "${election.type}" for election with ID ${election.id}.`);
-      electionType = ElectionType.SINGLECHOICE;
-    }
-
-    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
-      };
-    } else if (election.status === ElectionStatus.ONGOING) {
-      return {
-        election_id: election.id,
-        title: election.title,
-        start_date: election.start_date,
-        end_date: election.end_date,
-        vote_id: election.vote_id,
-        status: election.status,
-        start_time: election.start_time,
-        end_time: election.end_time,
         created_by: election.created_by,
         max_choices: election.max_choices,
         election_type: electionType,
       };
-    } else {
-      console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
+
+      // Include candidates if requested
+      if (includeCandidates) {
+        ongoingResponse.candidates =
+          election.candidates?.map(candidate => ({
+            candidate_id: candidate.id,
+            name: candidate.name,
+            photo_url: candidate.photo_url,
+          })) || [];
+      }
+
+      return ongoingResponse;
     }
+
+    // Handle UPCOMING and COMPLETED elections
+    if (election.status === ElectionStatus.UPCOMING || election.status === ElectionStatus.COMPLETED) {
+      return baseResponse;
+    }
+
+    // Handle unknown status
+    console.warn(`Unknown status "${election.status}" for election with ID ${election.id}.`);
+    return null;
   }
 
   async getElectionResults(electionId: string, adminId: string): Promise<ElectionResultsDto> {
-    if (!isUUID(electionId)) {
-      throw new HttpException(
-        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    if (!isUUID(adminId)) {
-      throw new HttpException(
-        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+    if (!isUUID(electionId) || !isUUID(adminId)) {
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     const election = await this.electionRepository.findOne({
@@ -754,19 +653,11 @@ export class ElectionService {
     });
 
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     if (election.created_by !== adminId) {
-      throw new ForbiddenException({
-        status_code: HttpStatus.FORBIDDEN,
-        message: SYS_MSG.UNAUTHORIZED_ACCESS,
-        data: null,
-      });
+      throw new ForbiddenError(SYS_MSG.UNAUTHORIZED_ACCESS);
     }
 
     const voteCounts = new Map<string, number>();
@@ -782,13 +673,43 @@ export class ElectionService {
       });
     });
 
-    const results = election.candidates.map(candidate => ({
-      candidate_id: candidate.id,
-      name: candidate.name,
-      votes: voteCounts.get(candidate.id) || 0,
-      photo_url: candidate.photo_url,
-      bio: candidate.bio,
-    }));
+    //Set candidates votes by decending order
+    const sortedCandidates = election.candidates
+      .map(candidate => ({
+        candidate_id: candidate.id,
+        name: candidate.name,
+        votes: voteCounts.get(candidate.id) || 0,
+        photo_url: candidate.photo_url,
+        bio: candidate.bio,
+        position: candidate.position,
+      }))
+      .sort((a, b) => b.votes - a.votes);
+
+    const resultWithPosition: CandidateResult[] = [];
+    let previousVotes = -1;
+    let currentPosition = 0;
+    let tieCount = 0;
+
+    for (let i = 0; i < sortedCandidates.length; i++) {
+      const candidate = sortedCandidates[i];
+
+      if (candidate.votes == 0) {
+        candidate.position = 0;
+        resultWithPosition.push(candidate);
+        continue;
+      }
+
+      if (candidate.votes === previousVotes) {
+        candidate.position = currentPosition;
+        tieCount++;
+      } else {
+        currentPosition = i + 1 - tieCount;
+        candidate.position = currentPosition;
+        tieCount = 0;
+      }
+      previousVotes = candidate.votes;
+      resultWithPosition.push(candidate);
+    }
 
     return {
       status_code: HttpStatus.OK,
@@ -797,7 +718,7 @@ export class ElectionService {
         election_id: election.id,
         title: election.title,
         total_votes: election.votes.length,
-        results: results,
+        results: resultWithPosition,
       },
     };
   }
@@ -825,19 +746,11 @@ export class ElectionService {
     settings: NotificationSettingsDto,
   ): Promise<{ status_code: number; data: { electionId: string }; message: string }> {
     if (!isUUID(id)) {
-      throw new BadRequestException({
-        status_code: HttpStatus.BAD_REQUEST,
-        message: SYS_MSG.INCORRECT_UUID,
-        data: null,
-      });
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
     const election = await this.electionRepository.findOne({ where: { id } });
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
     election.email_notification = settings.email_notification;
     await this.electionRepository.save(election);
@@ -855,11 +768,7 @@ export class ElectionService {
       relations: ['voters'],
     });
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
     if (election.voters.some(voter => voter.email === email)) {
       return {
@@ -868,11 +777,7 @@ export class ElectionService {
         data: null,
       };
     } else {
-      throw new UnauthorizedException({
-        status_code: HttpStatus.UNAUTHORIZED,
-        message: SYS_MSG.VOTER_UNVERIFIED,
-        data: null,
-      });
+      throw new UnauthorizedError(SYS_MSG.VOTER_UNVERIFIED);
     }
   }
 
@@ -883,7 +788,7 @@ export class ElectionService {
     });
 
     if (!election) {
-      throw new NotFoundException(`Election with ID ${id} not found`);
+      throw new NotFoundError(`Election with ID ${id} not found`);
     }
 
     // Find voters who haven't voted yet
@@ -910,29 +815,18 @@ export class ElectionService {
         sentCount: nonVotedVoters.length,
       };
     } else {
-      throw new BadRequestException('Email notifications are not enabled for this election');
+      throw new BadRequestError('Email notifications are not enabled for this election');
     }
   }
 
   async sendVotingLinkToVoters(id: string) {
     if (!isUUID(id)) {
-      throw new HttpException(
-        {
-          status_code: 400,
-          message: SYS_MSG.INCORRECT_UUID,
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     const election = await this.electionRepository.findOne({ where: { id } });
     if (!election) {
-      throw new NotFoundException({
-        status_code: HttpStatus.NOT_FOUND,
-        message: SYS_MSG.ELECTION_NOT_FOUND,
-        data: null,
-      });
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     if (election.email_notification === false) {

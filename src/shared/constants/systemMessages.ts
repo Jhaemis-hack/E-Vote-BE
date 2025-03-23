@@ -96,6 +96,9 @@ export const DUPLICATE_EMAILS_ELECTION =
   'Duplicate Voter Registration Detected: The email(s) are already registered for this election.';
 export const FETCH_ADMINS = 'Admins fetched successfully';
 export const ERROR_VOTER_LIST_FORBBIDEN_ACCESS = "Only Election Creator can view Voter's list.";
+export const PAGE_SIZE_ERROR = 'Invalid pagination parameters. Page and pageSize must be greater than 0.';
+export const VOTE_LINK_NOT_FOUND = 'Voter with given vote link not found';
+export const VOTE_ALREADY_CAST = 'Voter has a vote for this election already.';
 export const ELECTION_CREATED_EMAIL_FAILED = 'Election created email failed to send';
 export const INVALID_CREDENTIALS = 'Invalid credentials';
 export const SERVER_ERROR = 'Sorry a server error occured';
@@ -119,5 +122,7 @@ export const FAILED_TO_SEND_VOTING_LINK = 'Failed to send voting link to voters'
 export const SUBSCRIPTION_SUCCESSFUL = 'User subscription payment successful';
 export const VOTER_UPLOAD_LIMIT_EXCEEDED =
   'Your plan does not support the number of voters you try to upload, upgrade your plan to increase number of allowed voters.';
+export const ADMIN_NOT_FOUND = 'Admin not found';
 export const CONTACT_US_SENT_MESSAGE = 'Thank you for reaching out. We will respond shortly.';
 export const PICTURE_UPDATED = 'Picture updated successfully';
+export const INVALID_TOKEN = 'invalid token';

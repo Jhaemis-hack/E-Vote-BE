@@ -1,23 +1,25 @@
-import {
-  BadRequestException,
-  ConflictException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
-import { isUUID } from 'class-validator';
-import { Election } from '../election/entities/election.entity';
-import * as csv from 'csv-parser';
-import * as xlsx from 'xlsx';
-import * as stream from 'stream';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Voter } from '../voter/entities/voter.entity';
-import { In, Repository } from 'typeorm';
-import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { isUUID } from 'class-validator';
 import * as crypto from 'crypto';
+import * as csv from 'csv-parser';
+import * as stream from 'stream';
+import { In, Repository } from 'typeorm';
+import * as xlsx from 'xlsx';
+import {
+  AppError,
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../errors';
+import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { Election } from '../election/entities/election.entity';
 import { UserService } from '../user/user.service';
+import { Voter } from '../voter/entities/voter.entity';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class VoterService {
@@ -27,6 +29,7 @@ export class VoterService {
     @InjectRepository(Voter) private voterRepository: Repository<Voter>,
     @InjectRepository(Election) private electionRepository: Repository<Election>,
     private userService: UserService,
+    private emailService: EmailService,
   ) {}
 
   async findAll(
@@ -47,28 +50,15 @@ export class VoterService {
     };
   }> {
     if (!adminId) {
-      throw new HttpException(
-        { status_code: 401, message: SYS_MSG.UNAUTHORIZED_USER, data: null },
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw new UnauthorizedError(SYS_MSG.UNAUTHORIZED_USER);
     }
 
     if (!isUUID(adminId)) {
-      throw new HttpException(
-        { status_code: 400, message: SYS_MSG.INCORRECT_UUID, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     if (page < 1 || pageSize < 1) {
-      throw new HttpException(
-        {
-          status_code: 400,
-          message: 'Invalid pagination parameters. Page and pageSize must be greater than 0.',
-          data: null,
-        },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.PAGE_SIZE_ERROR);
     }
 
     const skip = (page - 1) * pageSize;
@@ -78,10 +68,7 @@ export class VoterService {
     });
 
     if (!election) {
-      throw new HttpException(
-        { status_code: 404, message: SYS_MSG.ELECTION_NOT_FOUND, data: null },
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundError(SYS_MSG.ELECTION_NOT_FOUND);
     }
 
     const admin_created_election = await this.electionRepository.findOne({
@@ -89,10 +76,7 @@ export class VoterService {
     });
 
     if (!admin_created_election) {
-      throw new HttpException(
-        { status_code: 403, message: SYS_MSG.ERROR_VOTER_LIST_FORBBIDEN_ACCESS, data: null },
-        HttpStatus.FORBIDDEN,
-      );
+      throw new ForbiddenError(SYS_MSG.ERROR_VOTER_LIST_FORBBIDEN_ACCESS);
     }
 
     const [voter_list, total] = await this.voterRepository.findAndCount({
@@ -103,10 +87,7 @@ export class VoterService {
     });
 
     if (total === 0) {
-      throw new HttpException(
-        { status_code: 404, message: SYS_MSG.ELECTION_VOTERS_NOT_FOUND, data: null },
-        HttpStatus.NOT_FOUND,
-      );
+      throw new NotFoundError(SYS_MSG.ELECTION_VOTERS_NOT_FOUND);
     }
 
     const data = voter_list.map(voter => ({
@@ -149,13 +130,10 @@ export class VoterService {
     } else if (ext === 'xlsx') {
       return this.processExcel(file.buffer, electionId, plan);
     } else {
-      throw new BadRequestException({
-        status_code: HttpStatus.BAD_REQUEST,
-        message: SYS_MSG.INVALID_VOTER_FILE_UPLOAD,
-        data: null,
-      });
+      throw new BadRequestError(SYS_MSG.INVALID_VOTER_FILE_UPLOAD);
     }
   }
+
   async processCSV(
     fileBuffer: Buffer,
     electionId: string,
@@ -182,7 +160,7 @@ export class VoterService {
           .on('data', row => {
             try {
               const name = row.name || row.Name || row.NAME;
-              const email = (row.email || row.Email || row.EMAIL)?.toLowerCase();
+              const email = (row.email || row.Email || row.EMAIL)?.toLowerCase().trim();
 
               if (email) {
                 if (emailOccurrences.has(email)) {
@@ -199,14 +177,8 @@ export class VoterService {
                 }
               }
               rowIndex++;
-            } catch (error) {
-              reject(
-                new InternalServerErrorException({
-                  status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-                  message: SYS_MSG.ERROR_CSV_PROCESSING,
-                  data: null,
-                }),
-              );
+            } catch {
+              reject(new InternalServerError(SYS_MSG.ERROR_CSV_PROCESSING));
             }
           })
           .on('end', async () => {
@@ -214,71 +186,36 @@ export class VoterService {
               const duplicates = Array.from(emailOccurrences.entries())
                 .filter(([_, rows]) => rows.length > 1)
                 .map(([email, rows]) => ({ email, rows }));
-
               if (duplicates.length > 0) {
                 return reject(
-                  new HttpException(
-                    {
-                      status_code: HttpStatus.BAD_REQUEST,
-                      message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
-                      data: duplicates.map(d => d.email).join(', '),
-                    },
-                    HttpStatus.BAD_REQUEST,
+                  new BadRequestError(
+                    `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
+                    duplicates.map(d => d.email).join(', '),
                   ),
                 );
               }
               if (plan in planLimits && voters.length > planLimits[plan]) {
-                return reject(
-                  new HttpException(
-                    {
-                      status_code: HttpStatus.BAD_REQUEST,
-                      message: SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED,
-                      data: null,
-                    },
-                    HttpStatus.BAD_REQUEST,
-                  ),
-                );
+                throw new BadRequestError(SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED);
               }
-              const savedVoters = await this.saveVoters(voters);
-
+              const _ = await this.saveVoters(voters);
               resolve({
                 status_code: HttpStatus.CREATED,
                 message: SYS_MSG.UPLOAD_VOTER_SUCCESS,
                 data: null,
               });
             } catch (error) {
-              reject(
-                error instanceof HttpException
-                  ? error
-                  : new InternalServerErrorException({
-                      status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-                      message: SYS_MSG.ERROR_CSV_PROCESSING,
-                      data: null,
-                    }),
-              );
+              reject(error instanceof AppError ? error : new InternalServerError(SYS_MSG.ERROR_CSV_PROCESSING));
             }
           })
           .on('error', error => {
-            reject(
-              error instanceof HttpException
-                ? error
-                : new InternalServerErrorException({
-                    status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-                    message: SYS_MSG.ERROR_CSV_PROCESSING,
-                    data: null,
-                  }),
-            );
+            reject(error instanceof AppError ? error : new InternalServerError(SYS_MSG.ERROR_CSV_PROCESSING));
           });
       });
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof AppError) {
         throw error;
       }
-      throw new InternalServerErrorException({
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.ERROR_CSV_PROCESSING,
-        data: null,
-      });
+      throw new InternalServerError(SYS_MSG.ERROR_CSV_PROCESSING);
     }
   }
 
@@ -292,11 +229,7 @@ export class VoterService {
       const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
-        throw new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.ERROR_EXCEL_INVALID,
-          data: null,
-        });
+        throw new BadRequestError(SYS_MSG.ERROR_EXCEL_INVALID);
       }
 
       const rows = xlsx.utils.sheet_to_json(sheet);
@@ -334,24 +267,12 @@ export class VoterService {
         .map(([email, rows]) => ({ email, rows }));
 
       if (duplicates.length > 0) {
-        throw new HttpException(
-          {
-            status_code: HttpStatus.BAD_REQUEST,
-            message: `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
-            data: null,
-          },
-          HttpStatus.BAD_REQUEST,
+        throw new BadRequestError(
+          `Oops! The following emails are already in use: ${duplicates.map(d => d.email).join(', ')}. Please use unique emails.`,
         );
       }
       if (plan in planLimits && voters.length > planLimits[plan]) {
-        throw new HttpException(
-          {
-            status_code: HttpStatus.BAD_REQUEST,
-            message: SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED,
-            data: null,
-          },
-          HttpStatus.BAD_REQUEST,
-        );
+        throw new BadRequestError(SYS_MSG.VOTER_UPLOAD_LIMIT_EXCEEDED);
       }
 
       await this.saveVoters(voters);
@@ -362,17 +283,13 @@ export class VoterService {
         data: null,
       };
     } catch (error) {
-      if (error instanceof HttpException) {
+      if (error instanceof BadRequestError) {
         throw error;
       }
-      if (error instanceof ConflictException) {
+      if (error instanceof ConflictError) {
         throw error;
       }
-      throw new InternalServerErrorException({
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.ERROR_EXCEL_PROCESSING,
-        data: null,
-      });
+      throw new InternalServerError(SYS_MSG.ERROR_EXCEL_PROCESSING);
     }
   }
 
@@ -387,11 +304,7 @@ export class VoterService {
   ): Promise<any> {
     try {
       if (!data.length) {
-        throw new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: SYS_MSG.NO_VOTERS_DATA,
-          data: null,
-        });
+        throw new BadRequestError(SYS_MSG.NO_VOTERS_DATA);
       }
       const electionId = data[0].election.id;
       const emails = data.map(voter => voter.email);
@@ -402,31 +315,22 @@ export class VoterService {
       });
 
       if (existingVoters.length > 0) {
-        throw new ConflictException({
-          status_code: HttpStatus.CONFLICT,
-          message: SYS_MSG.DUPLICATE_EMAILS_ELECTION,
-        });
+        const existingEmails = existingVoters.map(voter => voter.email);
+        throw new ConflictError(SYS_MSG.DUPLICATE_EMAILS_ELECTION, existingEmails);
       }
-      await this.voterRepository.insert(data);
+      await this.voterRepository.save(data);
     } catch (error) {
-      if (error instanceof HttpException) {
+      this.logger.error(error);
+      if (error instanceof ConflictError) {
         throw error;
       }
-      this.logger.log(error);
-      throw new InternalServerErrorException({
-        status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: SYS_MSG.VOTER_INSERTION_ERROR,
-        data: null,
-      });
+      throw new InternalServerError(SYS_MSG.VOTER_INSERTION_ERROR);
     }
   }
 
   async getVotersByElection(electionId: string) {
     if (!isUUID(electionId)) {
-      throw new HttpException(
-        { status_code: HttpStatus.BAD_REQUEST, message: SYS_MSG.INCORRECT_UUID, data: null },
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     return await this.voterRepository.find({

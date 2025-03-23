@@ -17,7 +17,7 @@ import {
 } from 'class-validator';
 import { IsAfterDate } from '../../common/validators/is-after-date.validator';
 import { ElectionType } from '../entities/election.entity';
-import { CreateCandidateDto } from 'src/modules/candidate/dto/create-candidate.dto';
+import { CreateCandidateDto } from '../../candidate/dto/create-candidate.dto';
 
 export class CreateElectionDto {
   @ApiProperty({ example: 'Presidential Election 2025' })

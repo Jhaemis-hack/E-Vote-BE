@@ -1,13 +1,10 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Post,
@@ -19,6 +16,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -35,7 +33,6 @@ import { ElectionResponseDto } from './dto/election-response.dto';
 import { UpdateElectionDto } from './dto/update-election.dto';
 import { ElectionService } from './election.service';
 import { Election } from './entities/election.entity';
-import { FileInterceptor } from '@nestjs/platform-express';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ElectionNotFound, SingleElectionResponseDto } from './dto/single-election.dto';
 import { NotificationSettingsDto } from '../notification/dto/notification-settings.dto';
@@ -113,35 +110,7 @@ export class ElectionController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: SYS_MSG.ELECTION_NOT_FOUND })
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: SYS_MSG.INTERNAL_SERVER_ERROR })
   async update(@Param('id') id: string, @Body() updateElectionDto: UpdateElectionDto) {
-    try {
-      const updatedElection = await this.electionService.update(id, updateElectionDto);
-
-      return {
-        status_code: HttpStatus.OK,
-        message: SYS_MSG.ELECTION_UPDATED,
-        data: updatedElection,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException({
-          status_code: HttpStatus.NOT_FOUND,
-          message: SYS_MSG.ELECTION_NOT_FOUND,
-          data: null,
-        });
-      } else if (error instanceof BadRequestException) {
-        throw new BadRequestException({
-          status_code: HttpStatus.BAD_REQUEST,
-          message: error.message || SYS_MSG.BAD_REQUEST,
-          data: null,
-        });
-      } else {
-        throw new InternalServerErrorException({
-          status_code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: SYS_MSG.INTERNAL_SERVER_ERROR,
-          data: null,
-        });
-      }
-    }
+    return this.electionService.update(id, updateElectionDto);
   }
 
   @ApiBearerAuth()

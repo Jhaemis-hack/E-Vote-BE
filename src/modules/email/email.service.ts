@@ -6,7 +6,7 @@ import { ElectionService } from '../election/election.service';
 import { Election } from '../election/entities/election.entity';
 @Injectable()
 export class EmailService {
-  sendSupportMessage(sendSupportMessage: any) {
+  sendSupportMessage(_sendSupportMessage: any) {
     throw new Error('Method not implemented.');
   }
   private readonly logger = new Logger(EmailService.name);
@@ -402,7 +402,8 @@ export class EmailService {
       name: res.name || 'Unknown Candidate',
       votes: res.votes !== undefined ? res.votes : 0,
       percentage: totalVotes > 0 ? ((res.votes / totalVotes) * 100).toFixed(2) : '0.00',
-      isWinner: res.votes === highestVotes,
+      isWinner: res.votes === highestVotes && res.votes > 0,
+      position: res.position,
     }));
 
     const { filename, csvData } = await this.electionService.getElectionResultsForDownload(

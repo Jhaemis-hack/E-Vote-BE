@@ -1,8 +1,10 @@
 import { AuthGuard } from '../auth.guard';
-import { ExecutionContext, HttpException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { ExecutionContext } from '@nestjs/common';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
+import { UnauthorizedError } from '../../errors';
+
 describe('AuthGuard', () => {
   let authGuard: AuthGuard;
   let jwtService: JwtService;
@@ -22,21 +24,21 @@ describe('AuthGuard', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
     const context = createMockExecutionContext();
     context.switchToHttp().getRequest().headers.authorization = undefined;
-    await expect(authGuard.canActivate(context)).rejects.toThrow(HttpException);
+    await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedError);
   });
   it('should throw UnauthorizedException if token is invalid', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
-    jest.spyOn(jwtService, 'verifyAsync').mockRejectedValue(new Error('Invalid token'));
+    jest.spyOn(jwtService, 'verifyAsync').mockRejectedValue(new Error(SYS_MSG.INVALID_TOKEN));
     const context = createMockExecutionContext();
     context.switchToHttp().getRequest().headers.authorization = 'Bearer invalid-token';
-    await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+    await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedError);
   });
   it('should throw UnauthorizedException if token is expired', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
     jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue({ exp: Math.floor(Date.now() / 1000) - 10 });
     const context = createMockExecutionContext();
     context.switchToHttp().getRequest().headers.authorization = 'Bearer expired-token';
-    await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+    await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedError);
   });
   it('should allow access if token is valid', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);

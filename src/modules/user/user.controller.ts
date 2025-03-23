@@ -11,11 +11,8 @@ import {
   HttpStatus,
   HttpCode,
   ParseUUIDPipe,
-  UsePipes,
   ValidationPipe,
-  BadRequestException,
   Req,
-  UnauthorizedException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -38,10 +35,10 @@ import { User } from './entities/user.entity';
 import * as SYS_MSG from '../../shared/constants/systemMessages';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { STATUS_CODES } from 'http';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { BadRequestError } from '../../errors';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -99,10 +96,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found.' })
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Req() req: any) {
     if (!id.match(/^[0-9a-fA-F-]{36}$/)) {
-      throw new BadRequestException({
-        message: SYS_MSG.INCORRECT_UUID,
-        status_code: HttpStatus.BAD_REQUEST,
-      });
+      throw new BadRequestError(SYS_MSG.INCORRECT_UUID);
     }
 
     const currentUser = req.user;

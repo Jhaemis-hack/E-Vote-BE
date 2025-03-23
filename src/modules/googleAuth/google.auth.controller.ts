@@ -1,8 +1,6 @@
-import { Controller, Body, Get, Post, HttpCode, Req, Res, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
+import { Controller, Body, Post, HttpCode } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ApiBody, ApiResponse, ApiBadRequestResponse, ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBody, ApiResponse, ApiBadRequestResponse, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { GoogleAuthDto } from './dto/google.auth.dto';
 import { skipAuth } from 'src/shared/helpers/skipAuth';
 import GoogleAuthPayload from './interfaces/googlePayload';

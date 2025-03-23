@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { AbstractBaseEntity } from '../../../entities/base.entity';
 
 @Entity()

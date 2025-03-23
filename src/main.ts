@@ -1,12 +1,10 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './shared/helpers/global.filter';
 import { initializeDataSource } from './migrations/migration.config';
-import { ValidationPipe } from '@nestjs/common';
-import { ResponseInterceptor } from './shared/interceptors/response.interceptor';
-import { HttpExceptionFilter } from './shared/helpers/http-exception-filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,8 +30,9 @@ async function bootstrap() {
 
   app.enableCors();
   app.setGlobalPrefix('api/v1');
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  // app.useGlobalFilters(new GlobalExceptionFilter(), new HttpExceptionFilter());
 
   const config = new DocumentBuilder()
     .setTitle('Resolve API')
