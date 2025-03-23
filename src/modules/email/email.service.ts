@@ -6,7 +6,7 @@ import { ElectionService } from '../election/election.service';
 import { Election } from '../election/entities/election.entity';
 @Injectable()
 export class EmailService {
-  sendSupportMessage(sendSupportMessage: any) {
+  sendSupportMessage(_sendSupportMessage: any) {
     throw new Error('Method not implemented.');
   }
   private readonly logger = new Logger(EmailService.name);
